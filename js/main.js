@@ -6,10 +6,10 @@
 
   /* ---- Mobile menu -------------------------------------------------- */
   var hamburger = document.querySelector(".nav__hamburger");
-  var menu = document.getElementById("nav-menu");
-  if (hamburger && menu) {
+  var collapse = document.getElementById("nav-collapse");
+  if (hamburger && collapse) {
     hamburger.addEventListener("click", function () {
-      var open = menu.classList.toggle("is-open");
+      var open = collapse.classList.toggle("is-open");
       hamburger.setAttribute("aria-expanded", String(open));
     });
   }

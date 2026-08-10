@@ -36,41 +36,45 @@
                alt="MatchPlay" width="242" height="40">
         </a>
 
-        <ul class="nav__menu" id="nav-menu">
-          <li class="nav__dropdown" data-dropdown>
-            <button type="button" class="nav__dropdown-toggle" aria-expanded="false" aria-haspopup="true">Matches</button>
-            <ul class="nav__dropdown-menu">
-              <li><a href="/resources/press/press">Investors</a></li>
-              <li><a href="/resources/press/press">Mentors</a></li>
-              <li><a href="/resources/press/press">Accelerators</a></li>
-              <li><a href="/resources/press/press">Partners</a></li>
-              <li><a href="/resources/press/press">Sponsors</a></li>
-            </ul>
-          </li>
-          <li><a href="/testimonials" class="nav__link">Founders</a></li>
-          <li><a href="/tiers/investor-offering" class="nav__link">Investors</a></li>
-          <li><a href="/blog" class="nav__link">Blog</a></li>
-          <li class="nav__dropdown" data-dropdown>
-            <button type="button" class="nav__dropdown-toggle" aria-expanded="false" aria-haspopup="true">Events</button>
-            <ul class="nav__dropdown-menu">
-              <li><a href="/tiers/challenge">Open Challenges</a></li>
-              <li><a href="/tiers/summit-2024">2024 ATX Summit</a></li>
-              <li><a href="/tiers/2025-nyc-summit">2025 NYC Summit</a></li>
-            </ul>
-          </li>
-          <li class="nav__dropdown" data-dropdown>
-            <button type="button" class="nav__dropdown-toggle" aria-expanded="false" aria-haspopup="true">About</button>
-            <ul class="nav__dropdown-menu">
-              <li><a href="/resources/press/press-home">Press</a></li>
-              <li><a href="/resources/partners">Partners</a></li>
-              <li><a href="/resources/team">Team</a></li>
-            </ul>
-          </li>
-          <li class="nav__item--login"><a href="https://app.matchplaygroup.com/#/home" target="_blank" rel="noopener" class="nav__link">Log In</a></li>
-          <li><a href="https://app.matchplaygroup.com/#/auth/signup" target="_blank" rel="noopener" class="btn btn--nav">Apply</a></li>
-        </ul>
+        <div class="nav__collapse" id="nav-collapse">
+          <ul class="nav__menu">
+            <li class="nav__dropdown" data-dropdown>
+              <button type="button" class="nav__dropdown-toggle" aria-expanded="false" aria-haspopup="true">Matches</button>
+              <ul class="nav__dropdown-menu">
+                <li><a href="/resources/press/press">Investors</a></li>
+                <li><a href="/resources/press/press">Mentors</a></li>
+                <li><a href="/resources/press/press">Accelerators</a></li>
+                <li><a href="/resources/press/press">Partners</a></li>
+                <li><a href="/resources/press/press">Sponsors</a></li>
+              </ul>
+            </li>
+            <li><a href="/testimonials" class="nav__link">Founders</a></li>
+            <li><a href="/tiers/investor-offering" class="nav__link">Investors</a></li>
+            <li><a href="/blog" class="nav__link">Blog</a></li>
+            <li class="nav__dropdown" data-dropdown>
+              <button type="button" class="nav__dropdown-toggle" aria-expanded="false" aria-haspopup="true">Events</button>
+              <ul class="nav__dropdown-menu">
+                <li><a href="/tiers/challenge">Open Challenges</a></li>
+                <li><a href="/tiers/summit-2024">2024 ATX Summit</a></li>
+                <li><a href="/tiers/2025-nyc-summit">2025 NYC Summit</a></li>
+              </ul>
+            </li>
+            <li class="nav__dropdown" data-dropdown>
+              <button type="button" class="nav__dropdown-toggle" aria-expanded="false" aria-haspopup="true">About</button>
+              <ul class="nav__dropdown-menu">
+                <li><a href="/resources/press/press-home">Press</a></li>
+                <li><a href="/resources/partners">Partners</a></li>
+                <li><a href="/resources/team">Team</a></li>
+              </ul>
+            </li>
+          </ul>
+          <div class="nav__actions">
+            <a href="https://app.matchplaygroup.com/#/home" target="_blank" rel="noopener" class="nav__link nav__login">Log In</a>
+            <a href="https://app.matchplaygroup.com/#/auth/signup" target="_blank" rel="noopener" class="btn btn--nav">Apply</a>
+          </div>
+        </div>
 
-        <button type="button" class="nav__hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-menu">
+        <button type="button" class="nav__hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-collapse">
           <span></span><span></span><span></span>
         </button>
       </nav>
