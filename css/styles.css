@@ -313,7 +313,7 @@ button { font: inherit; cursor: pointer; }
   border: 0;
   color: inherit;
   font-family: var(--font-mono);
-  font-size: 1rem;
+  font-size: 0.95rem;
   letter-spacing: 1.5px;
   text-transform: uppercase;
   padding: 5px 0;
