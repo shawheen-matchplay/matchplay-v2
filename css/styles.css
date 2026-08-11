@@ -196,6 +196,7 @@ button { font: inherit; cursor: pointer; }
   padding: 0.85em 2.2em;
   border: 2px solid transparent;
   border-radius: var(--radius-btn);
+  white-space: nowrap;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   transition: background-color var(--dur), border-color var(--dur),
               transform var(--dur), box-shadow var(--dur);
@@ -269,7 +270,7 @@ button { font: inherit; cursor: pointer; }
   border-radius: 999px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
-.nav__brand { display: flex; }
+.nav__brand { display: flex; flex-shrink: 0; }
 .nav__brand img { width: 160px; }
 
 /* Desktop: the collapse wrapper is transparent to layout so brand | menu |
@@ -288,6 +289,7 @@ button { font: inherit; cursor: pointer; }
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  flex-shrink: 0;
 }
 .nav__link {
   font-family: var(--font-mono);
@@ -295,6 +297,7 @@ button { font: inherit; cursor: pointer; }
   letter-spacing: 1.5px;
   text-transform: uppercase;
   padding: 5px 0;
+  white-space: nowrap;
 }
 .nav__link:hover { text-decoration: underline; }
 
@@ -737,7 +740,9 @@ button { font: inherit; cursor: pointer; }
 /* ==========================================================================
    Responsive
    ========================================================================== */
-@media (max-width: 991px) {
+/* Collapse the nav to the hamburger earlier than the section layout, so the
+   Log In / Apply items never get squeezed into wrapping in the ~992-1040px band. */
+@media (max-width: 1040px) {
   .nav__hamburger { display: flex; }
   .nav__brand img { width: 150px; }
   .nav__collapse {
@@ -772,7 +777,9 @@ button { font: inherit; cursor: pointer; }
     margin-top: 6px;
   }
   .nav__dropdown[data-open="true"] .nav__dropdown-menu { display: block; }
+}
 
+@media (max-width: 991px) {
   .hero__video { width: 100%; opacity: 0.35; }
   .hero__overlay {
     background: linear-gradient(180deg,
