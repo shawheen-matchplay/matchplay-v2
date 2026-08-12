@@ -5,48 +5,29 @@
   "use strict";
 
   /* ---- Mobile menu -------------------------------------------------- */
+  // Desktop dropdowns are pure CSS (:hover / :focus-within); only the
+  // mobile panel needs JS.
   var hamburger = document.querySelector(".nav__hamburger");
-  var collapse = document.getElementById("nav-collapse");
-  if (hamburger && collapse) {
+  var mobileMenu = document.getElementById("nav-mobile");
+  if (hamburger && mobileMenu) {
     hamburger.addEventListener("click", function () {
-      var open = collapse.classList.toggle("is-open");
+      var open = mobileMenu.classList.toggle("is-open");
       hamburger.setAttribute("aria-expanded", String(open));
     });
-  }
-
-  /* ---- Nav dropdowns ------------------------------------------------ */
-  var dropdowns = Array.prototype.slice.call(document.querySelectorAll("[data-dropdown]"));
-
-  function closeAll(except) {
-    dropdowns.forEach(function (d) {
-      if (d === except) return;
-      d.setAttribute("data-open", "false");
-      var t = d.querySelector(".nav__dropdown-toggle");
-      if (t) t.setAttribute("aria-expanded", "false");
+    // Close when a link is chosen or on Escape
+    mobileMenu.addEventListener("click", function (e) {
+      if (e.target.closest("a")) {
+        mobileMenu.classList.remove("is-open");
+        hamburger.setAttribute("aria-expanded", "false");
+      }
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && mobileMenu.classList.contains("is-open")) {
+        mobileMenu.classList.remove("is-open");
+        hamburger.setAttribute("aria-expanded", "false");
+      }
     });
   }
-
-  dropdowns.forEach(function (d) {
-    var toggle = d.querySelector(".nav__dropdown-toggle");
-    if (!toggle) return;
-
-    toggle.addEventListener("click", function (e) {
-      e.stopPropagation();
-      var open = d.getAttribute("data-open") === "true";
-      closeAll(d);
-      d.setAttribute("data-open", String(!open));
-      toggle.setAttribute("aria-expanded", String(!open));
-    });
-
-    // Hover to open on pointer devices (desktop)
-    if (window.matchMedia("(hover: hover) and (min-width: 992px)").matches) {
-      d.addEventListener("mouseenter", function () { closeAll(d); d.setAttribute("data-open", "true"); toggle.setAttribute("aria-expanded", "true"); });
-      d.addEventListener("mouseleave", function () { d.setAttribute("data-open", "false"); toggle.setAttribute("aria-expanded", "false"); });
-    }
-  });
-
-  document.addEventListener("click", function () { closeAll(null); });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeAll(null); });
 
   /* ---- Testimonial marquee ----------------------------------------- */
   // Duplicate the items so the -50% keyframe loops seamlessly.

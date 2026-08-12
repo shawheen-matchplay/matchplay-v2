@@ -223,8 +223,10 @@ button { font: inherit; cursor: pointer; }
 .btn--inverted:hover { background-color: #7e7e7e; border-color: #7e7e7e; }
 
 .btn--nav {
-  font-size: 0.95rem;
-  padding: 0.65em 1.5em;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  padding: 9px 18px;
+  margin-left: 4px;
   border-radius: 999px;
   background-color: var(--cyan);
   border-color: var(--cyan);
@@ -273,14 +275,10 @@ button { font: inherit; cursor: pointer; }
 .nav__brand { display: flex; flex-shrink: 0; }
 .nav__brand img { width: 160px; }
 
-/* Desktop: the collapse wrapper is transparent to layout so brand | menu |
-   actions spread evenly across the pill. It becomes a panel on mobile. */
-.nav__collapse { display: contents; }
-
 .nav__menu {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: 2px;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -288,94 +286,166 @@ button { font: inherit; cursor: pointer; }
 .nav__actions {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: 2px;
   flex-shrink: 0;
 }
+/* Divider separating Log In / Apply from the rest of the menu */
+.nav__divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.25);
+  margin: 0 8px;
+  flex-shrink: 0;
+}
+
 .nav__link {
-  font-family: var(--font-mono);
-  font-size: 0.95rem;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  padding: 5px 0;
-  white-space: nowrap;
-}
-.nav__link:hover { text-decoration: underline; }
-
-.nav__login {
-  border-left: 1px solid rgba(255, 255, 255, 0.25);
-  padding-left: var(--space-sm);
-}
-
-/* Dropdowns */
-.nav__dropdown { position: relative; }
-.nav__dropdown-toggle {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   background: none;
   border: 0;
-  color: inherit;
   font-family: var(--font-mono);
-  font-size: 0.95rem;
-  letter-spacing: 1.5px;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
   text-transform: uppercase;
-  padding: 5px 0;
+  color: rgba(255, 255, 255, 0.72);
+  padding: 8px 13px;
+  border-radius: 999px;
+  transition: color var(--dur), background-color var(--dur);
+  white-space: nowrap;
 }
-.nav__dropdown-toggle::after {
-  content: "";
-  width: 0.5em; height: 0.5em;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  transform: rotate(45deg) translateY(-2px);
+.nav__link:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+
+.nav__chev {
+  font-size: 8px;
+  opacity: 0.6;
+  transform: translateY(1px);
   transition: transform var(--dur);
 }
-.nav__dropdown[data-open="true"] .nav__dropdown-toggle::after { transform: rotate(225deg) translateY(-2px); }
+.nav__dropdown:hover .nav__chev,
+.nav__dropdown:focus-within .nav__chev { transform: translateY(3px); }
 
+/* Dropdowns — hover/focus driven glass panels */
+.nav__dropdown { position: relative; }
 .nav__dropdown-menu {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 12px);
   left: 50%;
-  translate: -50% 0;
-  min-width: 190px;
-  background: #fff;
-  color: var(--text-on-light);
-  border-radius: 12px;
-  padding: 8px 0;
+  transform: translate(-50%, 6px);
+  min-width: 200px;
+  background: rgba(46, 46, 49, 0.92);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+          backdrop-filter: blur(18px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 8px;
   list-style: none;
   margin: 0;
-  box-shadow: var(--shadow-card);
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-6px);
-  transition: opacity var(--dur), transform var(--dur), visibility var(--dur);
+  transition: opacity 0.22s var(--ease), transform 0.22s var(--ease), visibility 0.22s;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
 }
-.nav__dropdown[data-open="true"] .nav__dropdown-menu {
-  opacity: 1; visibility: visible; transform: translateY(0);
+/* Invisible bridge so the cursor can cross the gap without closing it */
+.nav__dropdown-menu::before {
+  content: "";
+  position: absolute;
+  top: -14px; left: 0; right: 0;
+  height: 14px;
+}
+.nav__dropdown:hover .nav__dropdown-menu,
+.nav__dropdown:focus-within .nav__dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
 }
 .nav__dropdown-menu a {
-  display: block;
-  text-align: center;
-  text-transform: uppercase;
+  display: flex;
+  align-items: center;
   font-family: var(--font-mono);
-  font-size: var(--fs-sm);
-  padding: 8px 20px;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+  padding: 9px 14px;
+  border-radius: 12px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  white-space: nowrap;
 }
-.nav__dropdown-menu a:hover { background: rgba(0, 0, 0, 0.06); }
+.nav__dropdown-menu a:hover { color: #fff; background: rgba(255, 255, 255, 0.07); }
 
-/* Hamburger */
+/* Hamburger — round pill button */
 .nav__hamburger {
   display: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
   flex-direction: column;
   gap: 5px;
   background: none;
   border: 0;
-  padding: 10px;
+  padding: 0;
+  transition: background-color var(--dur);
 }
+.nav__hamburger:hover { background: rgba(255, 255, 255, 0.06); }
 .nav__hamburger span {
-  width: 26px; height: 2px;
+  display: block;
+  width: 16px;
+  height: 1.5px;
   background: #fff;
-  transition: transform var(--dur), opacity var(--dur);
+  transition: transform 0.25s ease, opacity 0.25s ease;
 }
+
+/* Mobile menu — floating glass panel below the pill */
+.nav__mobile {
+  pointer-events: auto;
+  position: fixed;
+  top: 84px;
+  left: 20px;
+  right: 20px;
+  z-index: 999;
+  background: rgba(46, 46, 49, 0.96);
+  -webkit-backdrop-filter: blur(20px);
+          backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 16px;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  max-height: calc(100vh - 104px);
+  overflow: auto;
+}
+.nav__mobile.is-open { display: flex; }
+.nav__mobile a {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 12px 16px;
+  border-radius: 14px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+.nav__mobile a:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+.nav__mobile-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 14px 16px 6px;
+}
+.nav__mobile-cta {
+  margin-top: 10px;
+  text-align: center;
+  background: var(--cyan);
+  color: #fff;
+  border-radius: 999px;
+}
+.nav__mobile-cta:hover { background: var(--cyan-hover); color: #fff; }
 
 /* 7. Hero ----------------------------------------------------------------- */
 .hero {
@@ -740,43 +810,13 @@ button { font: inherit; cursor: pointer; }
 /* ==========================================================================
    Responsive
    ========================================================================== */
-/* Collapse the nav to the hamburger earlier than the section layout, so the
-   Log In / Apply items never get squeezed into wrapping in the ~992-1040px band. */
-@media (max-width: 1040px) {
-  .nav__hamburger { display: flex; }
+/* Collapse the nav to the hamburger before the desktop links get tight. */
+@media (max-width: 1080px) {
+  .nav { padding: 8px 8px 8px 16px; gap: 10px; }
+  .nav__menu,
+  .nav__actions { display: none; }
   .nav__brand img { width: 150px; }
-  .nav__collapse {
-    position: absolute;
-    top: calc(100% + 12px);
-    left: 0;
-    right: 0;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-lg);
-    background: rgba(46, 46, 49, 0.92);
-    -webkit-backdrop-filter: blur(18px) saturate(1.2);
-            backdrop-filter: blur(18px) saturate(1.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-    padding: var(--space-lg);
-    display: none;
-  }
-  .nav__collapse.is-open { display: flex; }
-  .nav__menu { flex-direction: column; align-items: center; gap: var(--space-md); }
-  .nav__actions { flex-direction: column; gap: var(--space-md); }
-  .nav__login { border-left: 0; padding-left: 0; }
-  .nav__dropdown-menu {
-    position: static;
-    translate: none;
-    transform: none;
-    opacity: 1;
-    visibility: visible;
-    box-shadow: none;
-    display: none;
-    margin-top: 6px;
-  }
-  .nav__dropdown[data-open="true"] .nav__dropdown-menu { display: block; }
+  .nav__hamburger { display: flex; }
 }
 
 @media (max-width: 991px) {

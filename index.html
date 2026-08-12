@@ -36,48 +36,70 @@
                alt="MatchPlay" width="242" height="40">
         </a>
 
-        <div class="nav__collapse" id="nav-collapse">
-          <ul class="nav__menu">
-            <li class="nav__dropdown" data-dropdown>
-              <button type="button" class="nav__dropdown-toggle" aria-expanded="false" aria-haspopup="true">Matches</button>
-              <ul class="nav__dropdown-menu">
-                <li><a href="/resources/press/press">Investors</a></li>
-                <li><a href="/resources/press/press">Mentors</a></li>
-                <li><a href="/resources/press/press">Accelerators</a></li>
-                <li><a href="/resources/press/press">Partners</a></li>
-                <li><a href="/resources/press/press">Sponsors</a></li>
-              </ul>
-            </li>
-            <li><a href="/testimonials" class="nav__link">Founders</a></li>
-            <li><a href="/tiers/investor-offering" class="nav__link">Investors</a></li>
-            <li><a href="/blog" class="nav__link">Blog</a></li>
-            <li class="nav__dropdown" data-dropdown>
-              <button type="button" class="nav__dropdown-toggle" aria-expanded="false" aria-haspopup="true">Events</button>
-              <ul class="nav__dropdown-menu">
-                <li><a href="/tiers/challenge">Open Challenges</a></li>
-                <li><a href="/tiers/summit-2024">2024 ATX Summit</a></li>
-                <li><a href="/tiers/2025-nyc-summit">2025 NYC Summit</a></li>
-              </ul>
-            </li>
-            <li class="nav__dropdown" data-dropdown>
-              <button type="button" class="nav__dropdown-toggle" aria-expanded="false" aria-haspopup="true">About</button>
-              <ul class="nav__dropdown-menu">
-                <li><a href="/resources/press/press-home">Press</a></li>
-                <li><a href="/resources/partners">Partners</a></li>
-                <li><a href="/resources/team">Team</a></li>
-              </ul>
-            </li>
-          </ul>
-          <div class="nav__actions">
-            <a href="https://app.matchplaygroup.com/#/home" target="_blank" rel="noopener" class="nav__link nav__login">Log In</a>
-            <a href="https://app.matchplaygroup.com/#/auth/signup" target="_blank" rel="noopener" class="btn btn--nav">Apply</a>
-          </div>
+        <ul class="nav__menu">
+          <li class="nav__dropdown">
+            <button type="button" class="nav__link" aria-expanded="false" aria-haspopup="true">Matches <span class="nav__chev" aria-hidden="true">&#9662;</span></button>
+            <ul class="nav__dropdown-menu">
+              <li><a href="/resources/press/press">Investors</a></li>
+              <li><a href="/resources/press/press">Mentors</a></li>
+              <li><a href="/resources/press/press">Accelerators</a></li>
+              <li><a href="/resources/press/press">Partners</a></li>
+              <li><a href="/resources/press/press">Sponsors</a></li>
+            </ul>
+          </li>
+          <li><a href="/testimonials" class="nav__link">Founders</a></li>
+          <li><a href="/tiers/investor-offering" class="nav__link">Investors</a></li>
+          <li><a href="/blog" class="nav__link">Blog</a></li>
+          <li class="nav__dropdown">
+            <button type="button" class="nav__link" aria-expanded="false" aria-haspopup="true">Events <span class="nav__chev" aria-hidden="true">&#9662;</span></button>
+            <ul class="nav__dropdown-menu">
+              <li><a href="/tiers/challenge">Open Challenges</a></li>
+              <li><a href="/tiers/summit-2024">2024 ATX Summit</a></li>
+              <li><a href="/tiers/2025-nyc-summit">2025 NYC Summit</a></li>
+            </ul>
+          </li>
+          <li class="nav__dropdown">
+            <button type="button" class="nav__link" aria-expanded="false" aria-haspopup="true">About <span class="nav__chev" aria-hidden="true">&#9662;</span></button>
+            <ul class="nav__dropdown-menu">
+              <li><a href="/resources/press/press-home">Press</a></li>
+              <li><a href="/resources/partners">Partners</a></li>
+              <li><a href="/resources/team">Team</a></li>
+            </ul>
+          </li>
+        </ul>
+
+        <div class="nav__actions">
+          <span class="nav__divider" aria-hidden="true"></span>
+          <a href="https://app.matchplaygroup.com/#/home" target="_blank" rel="noopener" class="nav__link">Log In</a>
+          <a href="https://app.matchplaygroup.com/#/auth/signup" target="_blank" rel="noopener" class="btn btn--nav">Apply</a>
         </div>
 
-        <button type="button" class="nav__hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-collapse">
+        <button type="button" class="nav__hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-mobile">
           <span></span><span></span><span></span>
         </button>
       </nav>
+    </div>
+
+    <div class="nav__mobile" id="nav-mobile">
+      <a href="/testimonials">Founders</a>
+      <a href="/tiers/investor-offering">Investors</a>
+      <a href="/blog">Blog</a>
+      <div class="nav__mobile-label">Matches</div>
+      <a href="/resources/press/press">Investors</a>
+      <a href="/resources/press/press">Mentors</a>
+      <a href="/resources/press/press">Accelerators</a>
+      <a href="/resources/press/press">Partners</a>
+      <a href="/resources/press/press">Sponsors</a>
+      <div class="nav__mobile-label">Events</div>
+      <a href="/tiers/challenge">Open Challenges</a>
+      <a href="/tiers/summit-2024">2024 ATX Summit</a>
+      <a href="/tiers/2025-nyc-summit">2025 NYC Summit</a>
+      <div class="nav__mobile-label">About</div>
+      <a href="/resources/press/press-home">Press</a>
+      <a href="/resources/partners">Partners</a>
+      <a href="/resources/team">Team</a>
+      <a href="https://app.matchplaygroup.com/#/home" target="_blank" rel="noopener">Log In</a>
+      <a href="https://app.matchplaygroup.com/#/auth/signup" target="_blank" rel="noopener" class="nav__mobile-cta">Apply &rarr;</a>
     </div>
   </header>
 
