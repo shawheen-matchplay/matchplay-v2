@@ -117,9 +117,8 @@
   --container-wide: 1400px;
 
   /* Hero splash animation */
-  --splash-bg: #3A3A40;      /* bright field during the intro */
-  --splash-bg-dim: #1F1F23;  /* clearly darker once the intro completes, so the
-                                dot field recedes behind the hero content */
+  --splash-bg: #26262A;      /* field gray before the dim */
+  --splash-bg-dim: #0E0E11;  /* after the dim */
 
   /* Motion */
   --ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -522,8 +521,9 @@ button { font: inherit; cursor: pointer; }
 .nav__mobile-cta:hover { background: var(--cyan-hover); color: #fff; }
 
 /* 7. Hero ----------------------------------------------------------------- */
-/* The dot field, links and logo mark are generated as SVG by js/hero-splash.js
-   and animated with the transitions below. See that file for the timeline. */
+/* Animation only — the black dot grid, the colored links and rings, and the
+   MatchPlay mark. All of it is generated as SVG by js/hero-splash.js; see that
+   file for the load sequence. */
 .hero {
   position: relative;
   min-height: 100vh;
@@ -531,11 +531,11 @@ button { font: inherit; cursor: pointer; }
   background: var(--splash-bg);
   transition: background 1.1s ease;
 }
-.hero.is-dim { background: var(--splash-bg-dim); }
+.hero.is-dim { background: var(--splash-bg-dim); }        /* step 4 */
 
-/* Oversized and slice-scaled so no bare edge shows while the window is
-   being dragged larger. */
-.hero__splash {
+/* The SVG is oversized and slice-scaled so the background never shows a
+   bare edge while the user is dragging the window larger. */
+.hero-splash {
   position: absolute;
   left: -18%;
   top: -18%;
@@ -546,8 +546,8 @@ button { font: inherit; cursor: pointer; }
 }
 #splash-grid,
 #splash-links { transition: opacity 1.1s ease; }
-.hero.is-dim #splash-grid { opacity: 0.55; }
-.hero.is-dim #splash-links { opacity: 0.32; }
+.hero.is-dim #splash-grid { opacity: 0.5; }
+.hero.is-dim #splash-links { opacity: 0.26; }
 
 #splash-grid circle {
   transform-box: fill-box;
@@ -564,16 +564,10 @@ button { font: inherit; cursor: pointer; }
   transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
 }
 #splash-dimples circle { transition: opacity 0.3s ease; }
-#splash-word {
-  opacity: 0;
-  transform: translateY(12px);
-  transform-box: fill-box;
-  transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-#splash-word.shown { opacity: 1; transform: translateY(0); }
 
-/* Reveal gating — scoped to html.splash so no-JS and reduced-motion
-   visitors never get hidden content. */
+/* Reveal gating — anything with data-reveal stays hidden until the timeline
+   adds .shown. Scoped to html.splash so no-JS / reduced-motion never hides
+   content. */
 [data-reveal] {
   transition: opacity 0.85s cubic-bezier(0.2, 0.8, 0.2, 1),
               transform 0.85s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -585,69 +579,6 @@ html.splash [data-reveal]:not(.shown) {
 }
 /* The fixed header drops in from above instead. */
 html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px); }
-
-.hero__stack {
-  position: relative;
-  z-index: 2;
-  text-align: center;
-  /* --logo-bottom is set by hero-splash.js to where the mark comes to rest. */
-  padding-top: calc(var(--logo-bottom, 34vh) + clamp(0.5rem, 2vw, 1.75rem));
-  padding-bottom: clamp(2rem, 5vw, 3.5rem);
-}
-
-/* Wordmark + tagline read as one locked-up unit under the mark. */
-.hero__lockup { display: inline-block; text-align: center; }
-.hero__wordmark {
-  display: inline-block;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: clamp(3.25rem, 11.5vw, 9.5rem);
-  line-height: 0.92;
-  letter-spacing: -0.035em;
-  color: #fff;
-  white-space: nowrap;
-}
-/* Tracked out by hero-splash.js until it spans the wordmark exactly. */
-.hero__title {
-  display: inline-block;
-  margin: clamp(0.35rem, 1vw, 0.75rem) 0 0;
-  font-family: var(--font-mono);
-  font-weight: 400;
-  font-size: clamp(0.7rem, 1.55vw, 1.35rem);
-  line-height: 1.2;
-  text-transform: uppercase;
-  color: var(--cyan);
-  white-space: nowrap;
-}
-
-/* Full-bleed hairline, then the supporting copy and CTAs. */
-.hero__foot {
-  margin-top: clamp(2rem, 5vw, 3.5rem);
-  padding-top: clamp(2rem, 4vw, 3rem);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-.hero__sub {
-  max-width: 780px;
-  margin: 0 auto;
-  font-size: clamp(1rem, 1.35vw, 1.3rem);
-  font-weight: 300;
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.82);
-  text-wrap: balance;
-}
-.hero__sub em {
-  font-family: var(--font-display);
-  font-style: italic;
-  color: #fff;
-}
-.hero__ctas {
-  margin-top: clamp(1.75rem, 3.5vw, 2.75rem);
-  display: flex;
-  gap: clamp(1.25rem, 2.5vw, 1.75rem);
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-}
 
 /* 8. Partners ------------------------------------------------------------- */
 .partners__grid {
@@ -974,10 +905,6 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 }
 
 @media (max-width: 991px) {
-  /* Logo mark sits higher on short/narrow screens, so the copy needs less
-     clearance above it. */
-  .hero__stack { padding-bottom: 48px; }
-
   .offer__row,
   .offer__row--navigator { grid-template-columns: 1fr; gap: var(--space-lg); }
   .offer__panel--investment { text-align: center; }
