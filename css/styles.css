@@ -272,8 +272,16 @@ button { font: inherit; cursor: pointer; }
   border-radius: 999px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
-.nav__brand { display: flex; flex-shrink: 0; }
+.nav__brand { display: flex; align-items: center; flex-shrink: 0; }
 .nav__brand img { width: 160px; }
+/* Dividing line to the right of the logo — stays visible in mobile mode */
+.nav__brand::after {
+  content: "";
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.25);
+  margin-left: 16px;
+}
 
 .nav__menu {
   display: flex;
@@ -397,10 +405,14 @@ button { font: inherit; cursor: pointer; }
   background: #fff;
   transition: transform 0.25s ease, opacity 0.25s ease;
 }
+/* Morph to an X while the menu is open */
+.nav__hamburger.is-active span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+.nav__hamburger.is-active span:nth-child(2) { opacity: 0; transform: scaleX(0.4); }
+.nav__hamburger.is-active span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
 
 /* Mobile menu — floating glass panel below the pill */
 .nav__mobile {
-  pointer-events: auto;
+  pointer-events: none;
   position: fixed;
   top: 84px;
   left: 20px;
@@ -412,13 +424,25 @@ button { font: inherit; cursor: pointer; }
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
   padding: 16px;
-  display: none;
+  display: flex;
   flex-direction: column;
   gap: 2px;
   max-height: calc(100vh - 104px);
   overflow: auto;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px) scale(0.98);
+  transform-origin: top center;
+  transition: opacity 0.28s var(--ease),
+              transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1),
+              visibility 0.32s;
 }
-.nav__mobile.is-open { display: flex; }
+.nav__mobile.is-open {
+  pointer-events: auto;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
 .nav__mobile a {
   font-family: var(--font-mono);
   font-size: 0.95rem;
@@ -810,9 +834,15 @@ button { font: inherit; cursor: pointer; }
 /* ==========================================================================
    Responsive
    ========================================================================== */
-/* Collapse the nav to the hamburger before the desktop links get tight. */
+/* Collapse the nav to the hamburger before the desktop links get tight.
+   The pill shrinks to a compact centered capsule (brand + toggle). */
 @media (max-width: 1080px) {
-  .nav { padding: 8px 8px 8px 16px; gap: 10px; }
+  .nav {
+    width: fit-content;
+    margin-inline: auto;
+    padding: 8px 8px 8px 16px;
+    gap: 10px;
+  }
   .nav__menu,
   .nav__actions { display: none; }
   .nav__brand img { width: 150px; }
@@ -853,4 +883,6 @@ button { font: inherit; cursor: pointer; }
   .reveal { opacity: 1; transform: none; transition: none; }
   .marquee__track { animation: none; }
   .btn:hover { transform: none; }
+  .nav__mobile { transition: none; transform: none; }
+  .nav__hamburger span { transition: none; }
 }
