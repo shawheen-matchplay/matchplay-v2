@@ -24,8 +24,9 @@
 
 /* 1. Fonts ---------------------------------------------------------------- */
 /* Display face is self-hosted on the original CDN. Only the weights actually
-   used on this page are loaded (down from 15 files to 4). Inter, Share Tech
-   Mono and Libre Baskerville come from Google Fonts (see <head>). */
+   used on this page are loaded (down from 15 files to 4). Sora, Geist,
+   JetBrains Mono, Inter and Libre Baskerville come from Google Fonts
+   (see <head>). */
 @font-face {
   font-family: "BW Gradual";
   src: url("https://cdn.prod.website-files.com/655541c5d304e11b258d53d4/655542476ce092d80baad4d6_BwGradualDEMO-Regular.otf") format("opentype");
@@ -78,11 +79,11 @@
 
   /* Typography */
   --font-display: "BW Gradual", "Segoe UI", sans-serif;
-  --font-mono: "Share Tech Mono", ui-monospace, monospace;
+  /* One mono across the whole site, always set uppercase. */
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
   /* MatchPlay Ventures faces, used by the hero lockup and copy */
   --font-wordmark: "Sora", "Helvetica Neue", Arial, sans-serif;
   --font-ui: "Geist", -apple-system, system-ui, sans-serif;
-  --font-mono-alt: "JetBrains Mono", ui-monospace, monospace;
   --font-body: "Inter", system-ui, sans-serif;
   --font-serif: "Libre Baskerville", Georgia, serif;
 
@@ -627,7 +628,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
      to the lockup width and main.js could not measure the natural width. */
   display: inline-block;
   margin-top: clamp(0.75rem, 1.6vw, 1.4rem);
-  font-family: var(--font-mono-alt);
+  font-family: var(--font-mono);
   font-weight: 400;
   /* Size drives the tracking: main.js fits this to the wordmark width, so a
      larger size leaves less letter-spacing to distribute (~0.5em, per the
@@ -663,10 +664,11 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   border-radius: 999px;
   background: var(--cyan);
   color: #fff;
-  font-family: var(--font-mono-alt);
+  font-family: var(--font-mono);
   font-size: 14px;
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: 1px;
+  text-transform: uppercase;
   white-space: nowrap;
   /* Colour swap only, as on the Ventures site. */
   transition: background-color var(--dur), color var(--dur);
@@ -904,6 +906,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   font-family: var(--font-mono);
   font-size: 1.5rem;
   letter-spacing: 1px;
+  text-transform: uppercase;
 }
 .feature__text { font-size: 1rem; line-height: 1.6; }
 
