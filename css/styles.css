@@ -603,9 +603,14 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 .hero__wordmark {
   display: block;
   font-family: var(--font-wordmark);
+  /* weight / line-height / tracking per the Ventures .hero-title. Its size
+     (clamp(64px,13vw,180px)) is for a two-line lockup with no mark above it —
+     scaled down here so the wordmark sits with the animated mark. */
   font-weight: 600;
-  font-size: clamp(3rem, 10.5vw, 8.75rem);
-  line-height: 0.92;
+  /* the floor keeps the wordmark in proportion on small screens, where the
+     dot grid (and so the mark) stops shrinking */
+  font-size: clamp(2.9rem, 7.5vw, 6.75rem);
+  line-height: 0.88;
   letter-spacing: -0.04em;
   color: #fff;
   white-space: nowrap;
@@ -617,24 +622,23 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   margin-top: clamp(0.5rem, 1.2vw, 1rem);
   font-family: var(--font-mono-alt);
   font-weight: 400;
-  font-size: clamp(0.7rem, 1.45vw, 1.1rem);
+  font-size: clamp(0.7rem, 1.1vw, 0.95rem);
   line-height: 1.2;
   text-transform: uppercase;
   color: var(--cyan);
   white-space: nowrap;
 }
 
-/* Hairline, then the supporting copy and the single CTA. */
+/* Supporting copy and the single CTA. */
 .hero__copy {
   margin-top: clamp(2.5rem, 6vw, 4rem);
-  padding-top: clamp(2rem, 4vw, 3rem);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
+/* Matches the Ventures .hero-sub exactly. */
 .hero__sub {
-  max-width: 760px;
+  max-width: 620px;
   margin: 0 auto;
   font-family: var(--font-ui);
-  font-size: clamp(1rem, 1.2vw, 1.0625rem);
+  font-size: clamp(17px, 1.6vw, 21px);
   font-weight: 400;
   line-height: 1.45;
   color: rgba(255, 255, 255, 0.85);
