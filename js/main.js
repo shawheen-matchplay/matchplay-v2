@@ -52,7 +52,9 @@
       // n glyphs give n-1 gaps between them, so size the gap off that. The
       // trailing gap after the last glyph is then cancelled by the margin,
       // which leaves the visible run spanning the wordmark exactly.
-      var ls = (target - natural) / (taglineChars - 1);
+      // Never go negative: if a fallback face measures wider than the wordmark,
+      // leave the tagline untracked rather than overlapping its own glyphs.
+      var ls = Math.max(0, (target - natural) / (taglineChars - 1));
       tagline.style.letterSpacing = ls + "px";
       tagline.style.marginRight = -ls + "px";
     }

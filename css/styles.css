@@ -590,7 +590,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   z-index: 2;
   text-align: center;
   /* --logo-bottom is set by hero-splash.js to where the mark comes to rest. */
-  padding-top: calc(var(--logo-bottom, 32vh) + clamp(1.25rem, 3vw, 2.5rem));
+  padding-top: calc(var(--logo-bottom, 32vh) + clamp(0.5rem, 1.6vw, 1.5rem));
   padding-bottom: clamp(2.5rem, 6vw, 4rem);
 }
 
@@ -619,10 +619,13 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   /* inline-block so it shrink-wraps to its text — a block child would stretch
      to the lockup width and main.js could not measure the natural width. */
   display: inline-block;
-  margin-top: clamp(0.5rem, 1.2vw, 1rem);
+  margin-top: clamp(0.75rem, 1.6vw, 1.4rem);
   font-family: var(--font-mono-alt);
   font-weight: 400;
-  font-size: clamp(0.7rem, 1.1vw, 0.95rem);
+  /* Size drives the tracking: main.js fits this to the wordmark width, so a
+     larger size leaves less letter-spacing to distribute (~0.5em, per the
+     brand lockup) instead of the very wide gaps a small size forces. */
+  font-size: clamp(0.8rem, 1.75vw, 1.6rem);
   line-height: 1.2;
   text-transform: uppercase;
   color: var(--cyan);
