@@ -122,8 +122,10 @@
            preserveAspectRatio="xMidYMid slice"
            aria-hidden="true" focusable="false"></svg>
 
-      <!-- Sits below the animated mark; --logo-bottom is published by hero-splash.js. -->
+      <!-- The whole group is centred below the nav by CSS; this spacer reserves
+           the animated mark's slot in flow and hero-splash.js aligns the mark to it. -->
       <div class="hero__content">
+        <div class="hero__mark-space" aria-hidden="true"></div>
         <div class="container container--wide">
           <h1 class="hero__lockup" data-reveal>
             <span class="hero__wordmark" id="hero-wordmark">MatchPlay</span>

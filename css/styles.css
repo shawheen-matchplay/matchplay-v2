@@ -534,18 +534,27 @@ button { font: inherit; cursor: pointer; }
   overflow: hidden;
   background: var(--splash-bg);
   transition: background 1.1s ease;
+  /* Centre the content in the area below the fixed nav, not the whole
+     viewport. --nav-h is published by hero-splash.js. */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: var(--nav-h, 90px);
 }
 .hero.is-dim { background: var(--splash-bg-dim); }        /* step 4 */
 
 /* The SVG is oversized and slice-scaled so the background never shows a
-   bare edge while the user is dragging the window larger. */
+   bare edge while the user is dragging the window larger. Height is in vh,
+   not %, so the viewBox keeps its 1:1 pixel mapping even if the hero grows
+   past 100vh while its copy reflows — otherwise slice starts scaling and the
+   mark's placement maths drifts. */
 .hero-splash {
   position: absolute;
   left: -18%;
-  top: -18%;
+  top: -18vh;
   z-index: 0;
   width: 136%;
-  height: 136%;
+  height: 136vh;
   display: block;
 }
 #splash-grid,
@@ -589,10 +598,15 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   position: relative;
   z-index: 2;
   text-align: center;
-  /* --logo-bottom is set by hero-splash.js to where the mark comes to rest. */
-  padding-top: calc(var(--logo-bottom, 32vh) + clamp(0.5rem, 1.6vw, 1.5rem));
-  padding-bottom: clamp(2.5rem, 6vw, 4rem);
 }
+/* Reserves the animated mark's slot so the group centres as one unit.
+   --mark-h is published by hero-splash.js. */
+.hero__mark-space {
+  height: var(--mark-h, 200px);
+  pointer-events: none;
+}
+/* Gap between the mark and the wordmark. */
+.hero__content > .container { margin-top: clamp(0.5rem, 1.6vw, 1.5rem); }
 
 /* Wordmark + tagline read as one locked-up unit: the lockup shrinks to the
    wordmark, and main.js tracks the tagline out to match that exact width. */

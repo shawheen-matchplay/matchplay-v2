@@ -116,7 +116,7 @@
 
   /* ---- state ---- */
   let W, H, TW, TH, OX, OY, S, R;
-  let cols, rows, x0, y0;
+  let cols, rows, x0, y0, rowTop;
   let gridG, linksG, logoG, logoPaths, ballEl, dimpleG;
   let usedCells, excluded, dotCells, population = [];
   let logoShift = 0, splashDone = false, ambientTimer = null;
@@ -235,6 +235,37 @@
     }, 550);
   }
 
+  /* ---------- align the mark to the slot CSS reserved for it ---------------
+     The viewBox is the hero scaled by (1 + 2*MARGIN) on both axes, so aspect
+     is preserved and one viewBox unit === one px, with viewBox y = 0 sitting
+     OY above the hero's top edge. That lets the reserved spacer's position be
+     read straight off the layout and the mark translated onto it, so CSS owns
+     the centring and the animation follows it. */
+  function resolveShift() {
+    const spacer = document.querySelector('.hero__mark-space');
+    /* The shift targets the mark's midpoint — it sits centred between rowTop
+       and rowBot — so aim at the middle of the reserved slot, not its top. */
+    let centre;                                     /* hero-relative y */
+    if (spacer) {
+      const r = spacer.getBoundingClientRect();
+      centre = (r.top - hero.getBoundingClientRect().top) + r.height / 2;
+    } else {
+      centre = Math.max(H * 0.26, 150 * SCALE);     /* fallback: fixed position */
+    }
+    logoShift = (y0 + (rowTop + 0.5) * S) - (OY + centre);
+  }
+
+  /* Re-resolve against the settled layout and move the mark if it has already
+     travelled. Needed because webfonts (and the reveal) change the text height
+     after build(), which shifts where the slot lands. */
+  function realignMark() {
+    if (!logoG || rowTop === undefined) return;
+    resolveShift();
+    if (splashDone || logoG.style.transform) {
+      logoG.style.transform = 'translateY(' + (-logoShift) + 'px)';
+    }
+  }
+
   /* ---------- build the scene --------------------------------------------- */
   function build(instant) {
     svg.innerHTML = '';
@@ -242,8 +273,10 @@
     usedCells = new Set();
     excluded = new Set();
 
-    /* viewBox is the hero plus MARGIN bleed on all four sides */
-    W = hero.clientWidth; H = Math.max(hero.clientHeight, 560);
+    /* viewBox is the hero plus MARGIN bleed on all four sides. H tracks the
+       viewport (matching the CSS 136vh) rather than the hero's own height, so
+       copy reflow can never desync the viewBox from the element box. */
+    W = hero.clientWidth; H = Math.max(window.innerHeight, 560);
     OX = W * MARGIN; OY = H * MARGIN;
     TW = W * (1 + 2 * MARGIN); TH = H * (1 + 2 * MARGIN);
     svg.setAttribute('viewBox', '0 0 ' + TW + ' ' + TH);
@@ -259,19 +292,22 @@
     linksG = el('g', { id: 'splash-links' }, svg);
     logoG  = el('g', { id: 'splash-logo' }, svg);
 
+    /* Publish the nav height and the mark's own height so CSS can reserve the
+       mark's slot and centre the whole group in the area below the nav.
+       offsetHeight is used because the header carries a reveal transform. */
+    const header = document.querySelector('.site-header');
+    hero.style.setProperty('--nav-h',
+      ((header ? header.offsetTop + header.offsetHeight : 0)) + 'px');
+    /* The mark spans its row plus the next, and the ball radius is R * 1.10
+       (= S * 0.55), so its full height is S * 2.1. */
+    hero.style.setProperty('--mark-h', (S * 2.1) + 'px');
+
     /* logo placement is resolved first, so its cells are guaranteed dots */
     const logoY0 = OY + H * 0.46;                         /* start: optical center */
-    const logoY1 = OY + Math.max(H * 0.26, 150 * SCALE);  /* end: after the shift */
     const midC   = Math.round((OX + W / 2 - x0) / S);
-    const rowTop = Math.round((logoY0 - y0) / S - 0.5);
+    rowTop = Math.round((logoY0 - y0) / S - 0.5);
     const rowBot = rowTop + 1;
-    logoShift = (y0 + (rowTop + 0.5) * S) - logoY1;       /* grid-snapped travel */
-
-    /* Publish where the mark comes to rest, in hero-relative px, so the CSS can
-       clear it. The viewBox is the hero scaled by (1 + 2*MARGIN) in both axes,
-       so aspect is preserved and one viewBox unit === one px; the mark spans
-       its own row plus the next, and the ball radius is R * 1.10 (= S * 0.55). */
-    hero.style.setProperty('--logo-bottom', ((logoY1 - OY) + S * 1.55) + 'px');
+    resolveShift();                                       /* sets logoShift */
 
     const forced = new Set([
       key(midC - 2, rowBot),                              /* ball */
@@ -346,7 +382,10 @@
     splashDone = true;
     document.querySelectorAll('[data-reveal]').forEach(e => e.classList.add('shown'));
     hero.classList.add('is-dim');
-    if (logoG) logoG.style.transform = 'translateY(' + (-logoShift) + 'px)';
+    if (logoG) {
+      resolveShift();                                     /* against the settled layout */
+      logoG.style.transform = 'translateY(' + (-logoShift) + 'px)';
+    }
     if (logoPaths) logoPaths.forEach(p => {               /* finish a skipped draw */
       p.style.transition = 'stroke-dashoffset .5s ease';
       p.style.strokeDashoffset = 0;
@@ -411,6 +450,7 @@
 
     /* STEP 5 — mark shifts up into its resting position */
     t(3450, () => {
+      resolveShift();                                     /* against the settled layout */
       logoG.style.transform = 'translateY(' + (-logoShift) + 'px)';
     });
 
@@ -424,6 +464,16 @@
     window.addEventListener('pointerdown', finish, { once: true });   /* skip */
     window.addEventListener('keydown', finish, { once: true });
   }
+
+  /* The slot moves whenever the hero copy reflows — most notably when the
+     webfonts land and the paragraph re-wraps. Watch the content box and
+     re-align, rather than trying to guess when the layout has settled.
+     Re-aligning only moves the SVG transform, so this cannot feed back. */
+  if (window.ResizeObserver) {
+    const contentEl = document.querySelector('.hero__content');
+    if (contentEl) new ResizeObserver(realignMark).observe(contentEl);
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(realignMark);
 
   /* Rebuild on resize, final state only. The 18% bleed plus slice scaling
      keeps the field full while the drag is in progress. */
