@@ -41,7 +41,10 @@
   var DOT_SKIP = 0.14;    /* fraction of grid cells left empty */
   var MAX_AMBIENT = 32;   /* concurrent coloured shapes */
   var LINK_RATIO = 0.62;  /* chance a new shape is a link vs a ring */
-  var WORDMARK = "MatchPlay";
+  /* The dot field sits on a fine grid (step S) with the dots touching. The
+     logo and the coloured shapes sit on a coarser lattice of every STEP-th
+     dot, so halving S makes the background finer without shrinking them. */
+  var STEP = 2;
 
   /* Dimple wedge of the golf ball, as fractions of the ball radius. */
   var DIMPLES = [
@@ -97,9 +100,9 @@
   }
 
   /* ---- state ---- */
-  var W, H, TW, TH, OX, OY, S, R;
+  var W, H, TW, TH, OX, OY, S, LS, R;
   var cols, rows, x0, y0;
-  var gridG, linksG, logoG, wordEl, logoPaths, ballEl, dimpleG;
+  var gridG, linksG, logoG, logoPaths, ballEl, dimpleG;
   var usedCells, excluded, dotCells, population = [];
   var logoShift = 0, splashDone = false, ambientTimer = null;
 
@@ -137,20 +140,28 @@
      dot, and that shapes reserve their orthogonal neighbours so they never
      touch, cross or chain into each other.
      ------------------------------------------------------------------------ */
+  /* Reserve the block of grid cells a shape covers, plus a STEP-wide skirt, so
+     neighbouring shapes can never touch or chain into each other. */
+  function reserveAround(cells, cx, cy) {
+    for (var dc = -STEP; dc <= STEP; dc++) {
+      for (var dr = -STEP; dr <= STEP; dr++) cells.push(key(cx + dc, cy + dr));
+    }
+  }
+
   function claimSpot(kind) {
     for (var i = 0; i < 70; i++) {
-      var c = 1 + Math.floor(Math.random() * (cols - 3));
-      var r = 1 + Math.floor(Math.random() * (rows - 3));
+      /* snap to the coarse lattice so shapes always land on real dots */
+      var c = STEP * (1 + Math.floor(Math.random() * ((cols - 3 * STEP) / STEP)));
+      var r = STEP * (1 + Math.floor(Math.random() * ((rows - 3 * STEP) / STEP)));
       var cells;
 
       if (kind === "link") {
         var dir = Math.random() < 0.5 ? 1 : -1;      /* down-right or up-right */
-        if (!dotCells.has(key(c, r)) || !dotCells.has(key(c + 1, r + dir))) continue;
+        var c2 = c + STEP, r2 = r + dir * STEP;
+        if (!dotCells.has(key(c, r)) || !dotCells.has(key(c2, r2))) continue;
         cells = [];
-        [[c, r], [c + 1, r + dir]].forEach(function (pair) {
-          var a = pair[0], b = pair[1];
-          cells.push(key(a, b), key(a + 1, b), key(a - 1, b), key(a, b + 1), key(a, b - 1));
-        });
+        reserveAround(cells, c, r);
+        reserveAround(cells, c2, r2);
         cells = cells.filter(function (v, j, self) { return self.indexOf(v) === j; });
         if (cells.some(function (k2) { return usedCells.has(k2) || excluded.has(k2); })) continue;
         cells.forEach(function (k2) { usedCells.add(k2); });
@@ -158,7 +169,8 @@
       }
 
       if (!dotCells.has(key(c, r))) continue;
-      cells = [key(c, r), key(c + 1, r), key(c - 1, r), key(c, r + 1), key(c, r - 1)];
+      cells = [];
+      reserveAround(cells, c, r);
       if (cells.some(function (k2) { return usedCells.has(k2) || excluded.has(k2); })) continue;
       cells.forEach(function (k2) { usedCells.add(k2); });
       return { c: c, r: r, cells: cells };
@@ -168,11 +180,11 @@
 
   function makeShape(kind, spot, color) {
     var d = kind === "link"
-      ? linkPath(cellXY(spot.c, spot.r), cellXY(spot.c + 1, spot.r + spot.dir), R)
+      ? linkPath(cellXY(spot.c, spot.r), cellXY(spot.c + STEP, spot.r + spot.dir * STEP), R)
       : ringPath(cellXY(spot.c, spot.r), R);
     return el("path", {
       d: d, fill: "none", stroke: color,
-      "stroke-width": S * 0.1, "stroke-linecap": "round"
+      "stroke-width": LS * 0.1, "stroke-linecap": "round"
     }, linksG);
   }
 
@@ -217,6 +229,37 @@
     }, 550);
   }
 
+  /* ---------- tagline tracking ---------------------------------------------
+     "The Venture Standard" is tracked out with letter-spacing until it spans
+     exactly the width of the MatchPlay wordmark above it. CSS letter-spacing
+     also adds a trailing advance after the last character, so that is pulled
+     back with a negative margin to keep the line optically centred.
+     ------------------------------------------------------------------------ */
+  function fitTagline() {
+    var word = document.querySelector(".hero__wordmark");
+    var tag = document.querySelector(".hero__title");
+    if (!word || !tag) return;
+
+    tag.style.letterSpacing = "0px";
+    tag.style.marginRight = "0px";
+
+    var target = word.getBoundingClientRect().width;
+    var natural = tag.getBoundingClientRect().width;
+    var chars = (tag.textContent || "").trim().length;
+    if (!target || !natural || chars < 2) return;
+
+    var extra = (target - natural) / chars;
+    if (extra <= 0) return;                 /* already wider than the wordmark */
+    tag.style.letterSpacing = extra.toFixed(3) + "px";
+    tag.style.marginRight = (-extra).toFixed(3) + "px";
+  }
+
+  /* Re-fit once webfonts land, otherwise the measurement is taken against the
+     fallback face and the tracking is wrong. */
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(fitTagline).catch(function () {});
+  }
+
   /* ---------- build the scene ---------------------------------------------- */
   function build(instant) {
     svg.innerHTML = "";
@@ -230,8 +273,14 @@
     TW = W * (1 + 2 * MARGIN); TH = H * (1 + 2 * MARGIN);
     svg.setAttribute("viewBox", "0 0 " + TW + " " + TH);
 
-    S = Math.max(48, Math.min(78, W / 19));             /* grid step */
-    R = S * 0.5;                                        /* ring radius */
+    /* Fine dot grid — half the old step, so the field reads as texture.
+       ~38 dots across on desktop. The 16px floor matters twice on phones: it
+       keeps the step from going so fine that the circle count (and its 5k+
+       entrance transitions) becomes a performance problem, while staying well
+       under the old 24px floor that rendered as a coarse checkerboard. */
+    S = Math.max(16, Math.min(40, W / 38));             /* grid step */
+    LS = S * STEP;                                      /* logo / shape lattice */
+    R = LS * 0.5;                                       /* ring radius */
     cols = Math.ceil(TW / S) + 2;
     rows = Math.ceil(TH / S) + 2;
     x0 = (TW - (cols - 1) * S) / 2;
@@ -242,27 +291,28 @@
     logoG = el("g", { id: "splash-logo" }, svg);
 
     /* logo placement is resolved first, so its cells are guaranteed dots */
-    var logoY0 = OY + H * 0.46;                         /* start: optical centre */
-    var logoY1 = OY + Math.max(H * 0.26, 150);          /* end: after the shift */
-    var midC = Math.round((OX + W / 2 - x0) / S);
-    var rowTop = Math.round((logoY0 - y0) / S - 0.5);
-    var rowBot = rowTop + 1;
-    logoShift = (y0 + (rowTop + 0.5) * S) - logoY1;     /* grid-snapped travel */
+    var logoY0 = OY + H * 0.44;                         /* start: optical centre */
+    var logoY1 = OY + Math.max(H * 0.2, 132);           /* end: after the shift */
+    /* snap the anchor to the coarse lattice so the mark lands on real dots */
+    var midC = STEP * Math.round((OX + W / 2 - x0) / LS);
+    var rowTop = STEP * Math.round((logoY0 - y0) / LS - 0.5);
+    var rowBot = rowTop + STEP;
+    logoShift = (y0 + (rowTop + STEP / 2) * S) - logoY1;  /* grid-snapped travel */
 
     var forced = new Set([
-      key(midC - 2, rowBot),                            /* ball */
-      key(midC - 1, rowTop), key(midC, rowBot),         /* link 1 */
-      key(midC + 1, rowTop), key(midC + 2, rowBot)      /* link 2 */
+      key(midC - 2 * STEP, rowBot),                     /* ball */
+      key(midC - STEP, rowTop), key(midC, rowBot),      /* link 1 */
+      key(midC + STEP, rowTop), key(midC + 2 * STEP, rowBot)  /* link 2 */
     ]);
 
-    /* dot field: uniform black dots, random cells left empty */
+    /* dot field: uniform black dots, touching, random cells left empty */
     dotCells = new Set();
     for (var c = 0; c < cols; c++) {
       for (var r = 0; r < rows; r++) {
         if (Math.random() < DOT_SKIP && !forced.has(key(c, r))) continue;
         dotCells.add(key(c, r));
         var xy = cellXY(c, r);
-        var dot = el("circle", { cx: xy[0], cy: xy[1], r: S * 0.43, fill: "#0B0B0B" }, gridG);
+        var dot = el("circle", { cx: xy[0], cy: xy[1], r: S * 0.5, fill: "#0B0B0B" }, gridG);
         if (!instant) {
           dot.style.opacity = 0;
           dot.style.transform = "scale(.45)";
@@ -272,14 +322,14 @@
     }
 
     /* keep ambient shapes clear of the logo, before AND after it shifts up */
-    var rowsUp = Math.ceil(logoShift / S) + 1;
-    for (var c2 = midC - 4; c2 <= midC + 4; c2++) {
-      for (var r2 = rowTop - rowsUp; r2 <= rowBot + 2; r2++) excluded.add(key(c2, r2));
+    var rowsUp = Math.ceil(logoShift / S) + STEP;
+    for (var c2 = midC - 3 * STEP; c2 <= midC + 3 * STEP; c2++) {
+      for (var r2 = rowTop - rowsUp; r2 <= rowBot + 2 * STEP; r2++) excluded.add(key(c2, r2));
     }
 
     /* ---- the mark ---- */
-    var lw = S * 0.1;
-    var ballC = cellXY(midC - 2, rowBot);
+    var lw = LS * 0.1;
+    var ballC = cellXY(midC - 2 * STEP, rowBot);
     var ballR = R * 1.10;
 
     ballEl = el("circle", {
@@ -297,30 +347,25 @@
 
     logoPaths = [
       el("path", {
-        d: linkPath(cellXY(midC - 1, rowTop), cellXY(midC, rowBot), R),
+        d: linkPath(cellXY(midC - STEP, rowTop), cellXY(midC, rowBot), R),
         fill: "none", stroke: "#fff", "stroke-width": lw, "stroke-linecap": "round"
       }, logoG),
       el("path", {
-        d: linkPath(cellXY(midC + 1, rowTop), cellXY(midC + 2, rowBot), R),
+        d: linkPath(cellXY(midC + STEP, rowTop), cellXY(midC + 2 * STEP, rowBot), R),
         fill: "none", stroke: "#fff", "stroke-width": lw, "stroke-linecap": "round"
       }, logoG)
     ];
 
-    /* wordmark sits at its FINAL position; the mark travels up to meet it */
-    wordEl = el("text", {
-      id: "splash-word",
-      x: OX + W / 2, y: logoY1 + S * 1.9,
-      "text-anchor": "middle", fill: "#fff",
-      "font-family": '"BW Gradual", sans-serif', "font-weight": 400,
-      "font-size": Math.min(46, S * 0.7), "letter-spacing": "-0.02em"
-    }, svg);
-    wordEl.textContent = WORDMARK;
+    /* Tell the HTML lockup where the mark comes to rest, so the wordmark can
+       sit directly beneath it at any viewport size. viewBox y maps to screen
+       y as (y - OY), and the mark settles with its centre on logoY1. */
+    hero.style.setProperty("--logo-bottom", Math.round(logoY1 - OY + ballR + LS * 0.35) + "px");
+
+    fitTagline();
 
     if (instant) {                                      /* resting state, no intro */
       logoG.style.transition = "none";
       logoG.style.transform = "translateY(" + (-logoShift) + "px)";
-      wordEl.style.transition = "none";
-      wordEl.classList.add("shown");
       hero.classList.add("is-dim");
       for (var i = 0; i < 24; i++) {
         spawnAmbient({ instant: true, life: SPLASH ? rand(2000, 9000) : 86400000 });
@@ -333,7 +378,6 @@
     if (splashDone) return;
     splashDone = true;
     document.querySelectorAll("[data-reveal]").forEach(function (e) { e.classList.add("shown"); });
-    if (wordEl) wordEl.classList.add("shown");
     hero.classList.add("is-dim");
     if (logoG) logoG.style.transform = "translateY(" + (-logoShift) + "px)";
     if (logoPaths) logoPaths.forEach(function (p) {     /* finish a skipped draw */
@@ -405,13 +449,12 @@
     /* STEP 5 — mark shifts up, wordmark fades in beneath it */
     t(3450, function () {
       logoG.style.transform = "translateY(" + (-logoShift) + "px)";
-      t(350, function () { wordEl.classList.add("shown"); });
+      t(350, function () { fitTagline(); show(".hero__wordmark"); });
     });
 
     /* STEP 6 — page content cascades in */
-    t(4000, function () { show(".hero__title"); });
-    t(4150, function () { show(".hero__sub"); });
-    t(4300, function () { show(".hero__ctas"); });
+    t(4050, function () { show(".hero__title"); });
+    t(4250, function () { show(".hero__foot"); });
     t(4450, function () { show(".site-header"); });
     t(5100, finish);
 
