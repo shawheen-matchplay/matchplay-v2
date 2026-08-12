@@ -31,7 +31,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdn.prod.website-files.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Libre+Baskerville:ital@0;1&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <!-- Sora / Geist / JetBrains Mono are the MatchPlay Ventures faces, used by the hero lockup and copy. -->
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Libre+Baskerville:ital@0;1&family=Share+Tech+Mono&family=Sora:wght@600&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -120,6 +121,27 @@
       <svg class="hero-splash" id="splash-svg"
            preserveAspectRatio="xMidYMid slice"
            aria-hidden="true" focusable="false"></svg>
+
+      <!-- Sits below the animated mark; --logo-bottom is published by hero-splash.js. -->
+      <div class="hero__content">
+        <div class="container container--wide">
+          <h1 class="hero__lockup" data-reveal>
+            <span class="hero__wordmark" id="hero-wordmark">MatchPlay</span>
+            <!-- tracked out by main.js until it spans the wordmark exactly -->
+            <span class="hero__tagline" id="hero-tagline">The Venture Standard</span>
+          </h1>
+
+          <div class="hero__copy" data-reveal>
+            <p class="hero__sub">
+              One platform connecting companies, investors, and syndicates to manage
+              diligence, fundraising, ownership, and liquidity across U.S. private markets.
+            </p>
+            <a href="https://app.matchplaygroup.com/#/auth/signup" target="_blank" rel="noopener" class="hero__cta">
+              Get matched today <span class="hero__cta-arrow" aria-hidden="true">&#8599;</span>
+            </a>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ===== Partners ===== -->

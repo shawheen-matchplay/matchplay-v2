@@ -267,6 +267,12 @@
     const rowBot = rowTop + 1;
     logoShift = (y0 + (rowTop + 0.5) * S) - logoY1;       /* grid-snapped travel */
 
+    /* Publish where the mark comes to rest, in hero-relative px, so the CSS can
+       clear it. The viewBox is the hero scaled by (1 + 2*MARGIN) in both axes,
+       so aspect is preserved and one viewBox unit === one px; the mark spans
+       its own row plus the next, and the ball radius is R * 1.10 (= S * 0.55). */
+    hero.style.setProperty('--logo-bottom', ((logoY1 - OY) + S * 1.55) + 'px');
+
     const forced = new Set([
       key(midC - 2, rowBot),                              /* ball */
       key(midC - 1, rowTop), key(midC, rowBot),           /* link 1 */
@@ -408,12 +414,11 @@
       logoG.style.transform = 'translateY(' + (-logoShift) + 'px)';
     });
 
-    /* STEP 6 — page content cascades in. The hero itself is animation only;
-       the fixed nav is the one element still gated behind data-reveal, so it
-       drops in once the mark has settled. Add more show() calls here as
-       hero copy comes back. */
+    /* STEP 6 — page content cascades in behind the settled mark. */
     t(3700, () => show('.site-header'));
-    t(4200, finish);
+    t(3850, () => show('.hero__lockup'));
+    t(4050, () => show('.hero__copy'));
+    t(4400, finish);
 
     setTimeout(finish, 9000);                             /* watchdog */
     window.addEventListener('pointerdown', finish, { once: true });   /* skip */

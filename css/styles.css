@@ -79,6 +79,10 @@
   /* Typography */
   --font-display: "BW Gradual", "Segoe UI", sans-serif;
   --font-mono: "Share Tech Mono", ui-monospace, monospace;
+  /* MatchPlay Ventures faces, used by the hero lockup and copy */
+  --font-wordmark: "Sora", "Helvetica Neue", Arial, sans-serif;
+  --font-ui: "Geist", -apple-system, system-ui, sans-serif;
+  --font-mono-alt: "JetBrains Mono", ui-monospace, monospace;
   --font-body: "Inter", system-ui, sans-serif;
   --font-serif: "Libre Baskerville", Georgia, serif;
 
@@ -579,6 +583,85 @@ html.splash [data-reveal]:not(.shown) {
 }
 /* The fixed header drops in from above instead. */
 html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px); }
+
+/* --- Hero content: lockup + copy, stacked under the animated mark --------- */
+.hero__content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  /* --logo-bottom is set by hero-splash.js to where the mark comes to rest. */
+  padding-top: calc(var(--logo-bottom, 32vh) + clamp(1.25rem, 3vw, 2.5rem));
+  padding-bottom: clamp(2.5rem, 6vw, 4rem);
+}
+
+/* Wordmark + tagline read as one locked-up unit: the lockup shrinks to the
+   wordmark, and main.js tracks the tagline out to match that exact width. */
+.hero__lockup {
+  display: inline-block;
+  margin: 0;
+}
+.hero__wordmark {
+  display: block;
+  font-family: var(--font-wordmark);
+  font-weight: 600;
+  font-size: clamp(3rem, 10.5vw, 8.75rem);
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+  color: #fff;
+  white-space: nowrap;
+}
+.hero__tagline {
+  /* inline-block so it shrink-wraps to its text — a block child would stretch
+     to the lockup width and main.js could not measure the natural width. */
+  display: inline-block;
+  margin-top: clamp(0.5rem, 1.2vw, 1rem);
+  font-family: var(--font-mono-alt);
+  font-weight: 400;
+  font-size: clamp(0.7rem, 1.45vw, 1.1rem);
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--cyan);
+  white-space: nowrap;
+}
+
+/* Hairline, then the supporting copy and the single CTA. */
+.hero__copy {
+  margin-top: clamp(2.5rem, 6vw, 4rem);
+  padding-top: clamp(2rem, 4vw, 3rem);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.hero__sub {
+  max-width: 760px;
+  margin: 0 auto;
+  font-family: var(--font-ui);
+  font-size: clamp(1rem, 1.2vw, 1.0625rem);
+  font-weight: 400;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.85);
+  text-wrap: balance;
+}
+.hero__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
+  padding: 16px 28px;
+  border-radius: 999px;
+  background: var(--cyan);
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color var(--dur), transform var(--dur), box-shadow var(--dur);
+}
+.hero__cta:hover {
+  background: var(--cyan-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(30, 210, 244, 0.35);
+}
+.hero__cta-arrow { transition: transform var(--dur); }
+.hero__cta:hover .hero__cta-arrow { transform: translate(2px, -2px); }
 
 /* 8. Partners ------------------------------------------------------------- */
 .partners__grid {

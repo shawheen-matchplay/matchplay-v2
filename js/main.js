@@ -34,6 +34,40 @@
     });
   }
 
+  /* ---- Hero lockup -------------------------------------------------- */
+  // Track the tagline out until it spans the wordmark exactly, the way the
+  // brand lockup sets it. letter-spacing also adds a trailing gap after the
+  // last glyph, so pull that back off with a negative margin.
+  var wordmark = document.getElementById("hero-wordmark");
+  var tagline = document.getElementById("hero-tagline");
+  if (wordmark && tagline) {
+    var taglineChars = tagline.textContent.trim().length;
+
+    function fitTagline() {
+      tagline.style.letterSpacing = "0px";
+      tagline.style.marginRight = "0px";
+      var target = wordmark.getBoundingClientRect().width;
+      var natural = tagline.getBoundingClientRect().width;
+      if (!target || !natural || taglineChars < 2) return;
+      // n glyphs give n-1 gaps between them, so size the gap off that. The
+      // trailing gap after the last glyph is then cancelled by the margin,
+      // which leaves the visible run spanning the wordmark exactly.
+      var ls = (target - natural) / (taglineChars - 1);
+      tagline.style.letterSpacing = ls + "px";
+      tagline.style.marginRight = -ls + "px";
+    }
+
+    fitTagline();
+    // Re-fit once the webfonts land, otherwise the measurement is of the fallback.
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTagline);
+
+    var fitTimer;
+    window.addEventListener("resize", function () {
+      clearTimeout(fitTimer);
+      fitTimer = setTimeout(fitTagline, 150);
+    });
+  }
+
   /* ---- Testimonial marquee ----------------------------------------- */
   // Duplicate the items so the -50% keyframe loops seamlessly.
   var track = document.querySelector("[data-marquee]");
