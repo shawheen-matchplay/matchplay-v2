@@ -206,11 +206,9 @@ button { font: inherit; cursor: pointer; }
   border-radius: var(--radius-btn);
   white-space: nowrap;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  transition: background-color var(--dur), border-color var(--dur),
-              transform var(--dur), box-shadow var(--dur);
+  /* Hover is a colour swap only — no lift, no glow — as on the Ventures site. */
+  transition: background-color var(--dur), border-color var(--dur), color var(--dur);
 }
-.btn:hover { transform: translateY(-2px); }
-.btn:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12); }
 
 .btn--primary {
   background-color: var(--cyan);
@@ -218,9 +216,9 @@ button { font: inherit; cursor: pointer; }
   color: #fff;
 }
 .btn--primary:hover {
-  background-color: var(--cyan-hover);
-  border-color: var(--cyan-hover);
-  box-shadow: 0 8px 22px rgba(30, 210, 244, 0.35);
+  background-color: #fff;
+  border-color: #fff;
+  color: var(--cyan);
 }
 
 /* Fully-rounded CTA with a trailing arrow (matches the nav Apply pill). */
@@ -228,9 +226,7 @@ button { font: inherit; cursor: pointer; }
 .btn__arrow {
   display: inline-block;
   margin-left: 0.5em;
-  transition: transform var(--dur);
 }
-.btn--pill:hover .btn__arrow { transform: translate(2px, -2px); }
 
 /* Quiet secondary action — underline only, no chrome. */
 .btn--quiet {
@@ -245,7 +241,6 @@ button { font: inherit; cursor: pointer; }
 .btn--quiet:hover {
   color: #fff;
   border-bottom-color: #fff;
-  transform: none;
   box-shadow: none;
 }
 
@@ -269,15 +264,13 @@ button { font: inherit; cursor: pointer; }
 .btn--nav::after {
   content: "→";
   margin-left: 0.5em;
-  transition: transform var(--dur);
   display: inline-block;
 }
 .btn--nav:hover {
-  background-color: var(--cyan-hover);
-  border-color: var(--cyan-hover);
-  box-shadow: 0 8px 22px rgba(30, 210, 244, 0.35);
+  background-color: #fff;
+  border-color: #fff;
+  color: var(--cyan);
 }
-.btn--nav:hover::after { transform: translateX(3px); }
 
 /* 6. Header / navigation -------------------------------------------------- */
 /* Floating glass pill navbar (inspired by MatchPlay Ventures, in group colors) */
@@ -650,9 +643,9 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 .hero__copy {
   margin-top: clamp(2.5rem, 6vw, 4rem);
 }
-/* Matches the Ventures .hero-sub exactly. */
+/* Ventures .hero-sub, widened 25% (620px -> 775px) on desktop. */
 .hero__sub {
-  max-width: 620px;
+  max-width: 775px;
   margin: 0 auto;
   font-family: var(--font-ui);
   font-size: clamp(17px, 1.6vw, 21px);
@@ -670,19 +663,18 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   border-radius: 999px;
   background: var(--cyan);
   color: #fff;
-  font-family: var(--font-ui);
+  font-family: var(--font-mono-alt);
   font-size: 14px;
   font-weight: 500;
+  letter-spacing: 0.02em;
   white-space: nowrap;
-  transition: background-color var(--dur), transform var(--dur), box-shadow var(--dur);
+  /* Colour swap only, as on the Ventures site. */
+  transition: background-color var(--dur), color var(--dur);
 }
 .hero__cta:hover {
-  background: var(--cyan-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 8px 22px rgba(30, 210, 244, 0.35);
+  background: #fff;
+  color: var(--cyan);
 }
-.hero__cta-arrow { transition: transform var(--dur); }
-.hero__cta:hover .hero__cta-arrow { transform: translate(2px, -2px); }
 
 /* 8. Partners ------------------------------------------------------------- */
 .partners__grid {
@@ -1032,7 +1024,6 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   html { scroll-behavior: auto; }
   .reveal { opacity: 1; transform: none; transition: none; }
   .marquee__track { animation: none; }
-  .btn:hover { transform: none; }
   .nav__mobile,
   .nav__mobile.is-open,
   .nav__mobile > *,
