@@ -431,17 +431,36 @@ button { font: inherit; cursor: pointer; }
   overflow: auto;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-10px) scale(0.98);
+  transform: translateY(-14px) scale(0.96);
   transform-origin: top center;
-  transition: opacity 0.28s var(--ease),
-              transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1),
-              visibility 0.32s;
+  /* Closing: short and snappy so dismissing never feels sluggish. */
+  transition: opacity 0.18s ease-in,
+              transform 0.2s ease-in,
+              visibility 0.2s;
 }
 .nav__mobile.is-open {
   pointer-events: auto;
   opacity: 1;
   visibility: visible;
   transform: translateY(0) scale(1);
+  /* Opening: long, decelerating ease-out-expo for a fluid unfurl. */
+  transition: opacity 0.3s ease-out,
+              transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.45s;
+}
+
+/* Staggered reveal of the rows — --i is set per child in main.js */
+.nav__mobile > * {
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.16s ease-in, transform 0.16s ease-in;
+}
+.nav__mobile.is-open > * {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.28s ease-out, transform 0.36s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Capped so a long list still finishes promptly instead of dragging. */
+  transition-delay: calc(40ms + min(var(--i, 0) * 12ms, 170ms));
 }
 .nav__mobile a {
   font-family: var(--font-mono);
@@ -883,6 +902,9 @@ button { font: inherit; cursor: pointer; }
   .reveal { opacity: 1; transform: none; transition: none; }
   .marquee__track { animation: none; }
   .btn:hover { transform: none; }
-  .nav__mobile { transition: none; transform: none; }
+  .nav__mobile,
+  .nav__mobile.is-open,
+  .nav__mobile > *,
+  .nav__mobile.is-open > * { transition: none; transform: none; transition-delay: 0s; }
   .nav__hamburger span { transition: none; }
 }

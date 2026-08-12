@@ -10,7 +10,14 @@
   var hamburger = document.querySelector(".nav__hamburger");
   var mobileMenu = document.getElementById("nav-mobile");
   if (hamburger && mobileMenu) {
+    // Index each row so CSS can stagger their entrance.
+    Array.prototype.forEach.call(mobileMenu.children, function (child, i) {
+      child.style.setProperty("--i", i);
+    });
+
     function setMenu(open) {
+      // Always reveal the list from the top, even if it was scrolled before.
+      if (open) mobileMenu.scrollTop = 0;
       mobileMenu.classList.toggle("is-open", open);
       hamburger.classList.toggle("is-active", open);
       hamburger.setAttribute("aria-expanded", String(open));
