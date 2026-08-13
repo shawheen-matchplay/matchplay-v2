@@ -61,7 +61,10 @@
 
   /* Concurrent colored shapes. Scaled by area so a smaller grid (which fits
      more cells on screen) keeps a similar visual density. */
-  const MAX_AMBIENT = Math.round(32 / (SCALE * SCALE));
+  /* Concurrent shapes per grid cell. Every field derives its own cap from this,
+     so the hero and the ecosystem section hold the same density whatever their
+     heights, and one number tunes both. */
+  const AMBIENT_DENSITY = 0.06;
 
   /* dimple wedge of the golf ball: exact positions measured from the brand
      mark, as fractions of the ball radius */
@@ -118,11 +121,28 @@
   let W, H, TW, TH, OX, OY, S, R;
   let cols, rows, x0, y0, rowTop;
   let gridG, linksG, logoG, logoPaths, ballEl, dimpleG;
-  let usedCells, excluded, dotCells, population = [];
-  let logoShift = 0, splashDone = false, ambientTimer = null;
+  let usedCells, excluded, dotCells;
+  let logoShift = 0, splashDone = false;
 
   const cellXY = (c, r) => [x0 + c * S, y0 + r * S];
   const key = (c, r) => c + ',' + r;
+
+  /* ---------- fields -------------------------------------------------------
+     A field is one dot grid plus the coloured shapes that come and go on it.
+     The hero and the ecosystem section each own one and drive it through the
+     same functions below, which is what keeps their shapes, density and
+     timings identical rather than merely similar. */
+  function createField() {
+    return {
+      layer: null,                 /* <g> the shapes are drawn into */
+      S: 0, R: 0, cols: 0, rows: 0, x0: 0, y0: 0,
+      dots: null, used: null, excluded: null,
+      population: [], timer: null, cap: 0
+    };
+  }
+  const cellOf = (f, c, r) => [f.x0 + c * f.S, f.y0 + r * f.S];
+
+  const heroField = createField();
 
   /* ---- line-drawing via stroke-dash ---- */
   function preparePath(p) {
@@ -156,61 +176,62 @@
        - shapes reserve their orthogonal neighbours, so they never touch,
          cross, or chain into each other
      ---------------------------------------------------------------------- */
-  function claimSpot(kind) {
+  function claimSpot(f, kind) {
     for (let i = 0; i < 70; i++) {
-      const c = 1 + Math.floor(Math.random() * (cols - 3));
-      const r = 1 + Math.floor(Math.random() * (rows - 3));
+      const c = 1 + Math.floor(Math.random() * (f.cols - 3));
+      const r = 1 + Math.floor(Math.random() * (f.rows - 3));
       let cells;
 
       if (kind === 'link') {
         const dir = Math.random() < 0.5 ? 1 : -1;         /* down-right or up-right */
-        if (!dotCells.has(key(c, r)) || !dotCells.has(key(c + 1, r + dir))) continue;
+        if (!f.dots.has(key(c, r)) || !f.dots.has(key(c + 1, r + dir))) continue;
         cells = [];
         [[c, r], [c + 1, r + dir]].forEach(([a, b]) => {
           cells.push(key(a, b), key(a + 1, b), key(a - 1, b), key(a, b + 1), key(a, b - 1));
         });
         cells = [...new Set(cells)];
-        if (cells.some(k2 => usedCells.has(k2) || excluded.has(k2))) continue;
-        cells.forEach(k2 => usedCells.add(k2));
+        if (cells.some(k2 => f.used.has(k2) || f.excluded.has(k2))) continue;
+        cells.forEach(k2 => f.used.add(k2));
         return { c, r, dir, cells };
       }
 
-      if (!dotCells.has(key(c, r))) continue;
+      if (!f.dots.has(key(c, r))) continue;
       cells = [key(c, r), key(c + 1, r), key(c - 1, r), key(c, r + 1), key(c, r - 1)];
-      if (cells.some(k2 => usedCells.has(k2) || excluded.has(k2))) continue;
-      cells.forEach(k2 => usedCells.add(k2));
+      if (cells.some(k2 => f.used.has(k2) || f.excluded.has(k2))) continue;
+      cells.forEach(k2 => f.used.add(k2));
       return { c, r, cells };
     }
     return null;                                          /* field is full */
   }
 
-  function makeShape(kind, spot, color) {
+  function makeShape(f, kind, spot, color) {
     const d = kind === 'link'
-      ? linkPath(cellXY(spot.c, spot.r), cellXY(spot.c + 1, spot.r + spot.dir), R)
-      : ringPath(cellXY(spot.c, spot.r), R);
+      ? linkPath(cellOf(f, spot.c, spot.r), cellOf(f, spot.c + 1, spot.r + spot.dir), f.R)
+      : ringPath(cellOf(f, spot.c, spot.r), f.R);
     return el('path', {
       d, fill: 'none', stroke: color,
-      'stroke-width': S * 0.1, 'stroke-linecap': 'round'
-    }, linksG);
+      'stroke-width': f.S * 0.1, 'stroke-linecap': 'round'
+    }, f.layer);
   }
 
-  function spawnAmbient(opts) {
+  function spawnAmbient(f, opts) {
     opts = opts || {};
+    if (!f.layer || !f.dots) return null;
     const kind = opts.kind || (Math.random() < LINK_RATIO ? 'link' : 'ring');
-    const spot = claimSpot(kind);
+    const spot = claimSpot(f, kind);
     if (!spot) return null;
-    const p = makeShape(kind, spot, pick(COLORS));
+    const p = makeShape(f, kind, spot, pick(COLORS));
     const item = { p, spot, dead: false };
-    population.push(item);
+    f.population.push(item);
     if (!opts.instant) {
       preparePath(p);
       drawPath(p, opts.drawDur || rand(750, 1100));
     }
-    item.timer = setTimeout(() => retireAmbient(item), opts.life || rand(3800, 8200));
+    item.timer = setTimeout(() => retireAmbient(f, item), opts.life || rand(3800, 8200));
     return item;
   }
 
-  function retireAmbient(item) {
+  function retireAmbient(f, item) {
     if (item.dead) return;
     item.dead = true;
     clearTimeout(item.timer);
@@ -218,21 +239,27 @@
     undrawPath(item.p, dur);
     setTimeout(() => {
       item.p.remove();
-      item.spot.cells.forEach(k2 => usedCells.delete(k2));
-      const i = population.indexOf(item);
-      if (i > -1) population.splice(i, 1);
+      item.spot.cells.forEach(k2 => f.used.delete(k2));
+      const i = f.population.indexOf(item);
+      if (i > -1) f.population.splice(i, 1);
     }, dur + 60);
   }
 
-  function startAmbient() {
-    if (ambientTimer || !SPLASH) return;                  /* respect reduced motion */
-    ambientTimer = setInterval(() => {
+  function startAmbient(f) {
+    if (f.timer || !SPLASH) return;                       /* respect reduced motion */
+    f.timer = setInterval(() => {
       if (document.hidden) return;                        /* don't churn in a background tab */
-      const alive = population.filter(i => !i.dead).length;
-      if (alive < MAX_AMBIENT) spawnAmbient();
-      if (alive < MAX_AMBIENT - 3) spawnAmbient();
-      if (alive < MAX_AMBIENT - 8) spawnAmbient();
+      const alive = f.population.filter(i => !i.dead).length;
+      if (alive < f.cap) spawnAmbient(f);
+      if (alive < f.cap - 3) spawnAmbient(f);
+      if (alive < f.cap - 8) spawnAmbient(f);
     }, 550);
+  }
+
+  function stopAmbient(f) {
+    clearInterval(f.timer);
+    f.timer = null;
+    f.population.forEach(i => clearTimeout(i.timer));
   }
 
   /* ---------- align the mark to the slot CSS reserved for it ---------------
@@ -269,7 +296,8 @@
   /* ---------- build the scene --------------------------------------------- */
   function build(instant) {
     svg.innerHTML = '';
-    population = [];
+    stopAmbient(heroField);
+    heroField.population = [];
     usedCells = new Set();
     excluded = new Set();
 
@@ -291,6 +319,16 @@
     gridG  = el('g', { id: 'splash-grid' }, svg);
     linksG = el('g', { id: 'splash-links' }, svg);
     logoG  = el('g', { id: 'splash-logo' }, svg);
+
+    /* Hand the freshly-computed grid to the shared field driver. dotCells is
+       assigned below and filled in place, so the reference stays valid. */
+    heroField.layer = linksG;
+    heroField.S = S; heroField.R = R;
+    heroField.cols = cols; heroField.rows = rows;
+    heroField.x0 = x0; heroField.y0 = y0;
+    heroField.used = usedCells;
+    heroField.excluded = excluded;
+    heroField.cap = Math.round(cols * rows * AMBIENT_DENSITY);
 
     /* Publish the nav height and the mark's own height so CSS can reserve the
        mark's slot and centre the whole group in the area below the nav.
@@ -317,6 +355,7 @@
 
     /* dot field: uniform black dots, random cells left empty */
     dotCells = new Set();
+    heroField.dots = dotCells;
     for (let c = 0; c < cols; c++) {
       for (let r = 0; r < rows; r++) {
         if (Math.random() < DOT_SKIP && !forced.has(key(c, r))) continue;
@@ -370,8 +409,8 @@
       logoG.style.transition = 'none';
       logoG.style.transform = 'translateY(' + (-logoShift) + 'px)';
       hero.classList.add('is-dim');
-      for (let i = 0; i < Math.round(24 / (SCALE * SCALE)); i++) {
-        spawnAmbient({ instant: true, life: SPLASH ? rand(2000, 9000) : 86400000 });
+      for (let i = 0; i < Math.round(heroField.cap * 0.75); i++) {
+        spawnAmbient(heroField, { instant: true, life: SPLASH ? rand(2000, 9000) : 86400000 });
       }
     }
   }
@@ -392,7 +431,7 @@
     });
     if (ballEl) { ballEl.style.opacity = 1; ballEl.style.transform = 'scale(1)'; }
     if (dimpleG) dimpleG.querySelectorAll('circle').forEach(d => d.style.opacity = 1);
-    startAmbient();
+    startAmbient(heroField);
   }
 
   /* ---------- run ---------------------------------------------------------- */
@@ -421,14 +460,14 @@
     /* STEP 2 — links and rings draw in */
     t(600, () => {
       let i = 0;
-      const seed = Math.round(30 / (SCALE * SCALE));
+      const seed = Math.round(heroField.cap * 0.95);
       (function spawnNext() {
         if (splashDone || i++ >= seed) return;
-        spawnAmbient({ drawDur: rand(600, 850), life: rand(3000, 9000) });
+        spawnAmbient(heroField, { drawDur: rand(600, 850), life: rand(3000, 9000) });
         setTimeout(spawnNext, 65);
       })();
     });
-    t(2400, startAmbient);                                /* hand off to the loop */
+    t(2400, () => startAmbient(heroField));               /* hand off to the loop */
 
     /* STEP 3 — the mark draws in at center */
     t(1500, () => {
@@ -466,128 +505,62 @@
   }
 
   /* ---------- ecosystem field ----------------------------------------------
-     The dot grid and links carry on below the hero. State is entirely local so
-     it can never disturb the hero's intro, and it reuses the geometry helpers
-     and the same grid step, so the pattern reads as one continuous field. */
+     The dot grid and links carry on below the hero. It owns its own field but
+     runs through the same driver as the hero's, so the shapes, the density and
+     every timing are identical by construction rather than by coincidence. */
+  const ecoField = createField();
+
   function startEcosystemField() {
     const surface = document.getElementById('eco-field');
     const host = surface && surface.parentElement;
     if (!surface || !host) return;
 
-    let s, rr, cols, rows, fx0, fy0, dots, used, linkG;
-    let pop = [], timer = null;
-
-    const cell = (c, r) => [fx0 + c * s, fy0 + r * s];
-    const k = (c, r) => c + ',' + r;
-    const cap = () => Math.round(
-      (host.clientWidth * host.clientHeight) / (260 * 260) / (SCALE * SCALE));
-
-    function build() {
-      pop.forEach(i => clearTimeout(i.timer));
-      pop = []; used = new Set(); dots = new Set();
+    function buildEco() {
+      stopAmbient(ecoField);
+      ecoField.population = [];
       surface.innerHTML = '';
 
       const w = host.clientWidth, h = host.clientHeight;
-      if (!w || !h) return;
+      if (!w || !h) return false;
       surface.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
 
-      s = Math.max(48, Math.min(78, w / 19)) * SCALE;      /* same step as the hero */
-      rr = s * 0.5;
-      cols = Math.ceil(w / s) + 2;
-      rows = Math.ceil(h / s) + 2;
-      fx0 = (w - (cols - 1) * s) / 2;
-      fy0 = (h - (rows - 1) * s) / 2;
+      /* same step as the hero, so the two grids line up column for column */
+      const s = Math.max(48, Math.min(78, w / 19)) * SCALE;
+      const cols = Math.ceil(w / s) + 2;
+      const rows = Math.ceil(h / s) + 2;
+
+      ecoField.S = s;
+      ecoField.R = s * 0.5;
+      ecoField.cols = cols;
+      ecoField.rows = rows;
+      ecoField.x0 = (w - (cols - 1) * s) / 2;
+      ecoField.y0 = (h - (rows - 1) * s) / 2;
+      ecoField.used = new Set();
+      ecoField.excluded = new Set();
+      ecoField.dots = new Set();
+      ecoField.cap = Math.round(cols * rows * AMBIENT_DENSITY);
 
       const gridG = el('g', { class: 'eco-grid' }, surface);
-      linkG = el('g', { class: 'eco-links' }, surface);
+      ecoField.layer = el('g', { class: 'eco-links' }, surface);
 
       for (let c = 0; c < cols; c++) {
         for (let r = 0; r < rows; r++) {
           if (Math.random() < DOT_SKIP) continue;
-          dots.add(k(c, r));
-          const [x, y] = cell(c, r);
+          ecoField.dots.add(key(c, r));
+          const [x, y] = cellOf(ecoField, c, r);
           el('circle', { cx: x, cy: y, r: s * DOT_RADIUS, fill: '#0B0B0B' }, gridG);
         }
       }
-    }
-
-    /* Same no-touching rule as the hero: a shape reserves its orthogonal
-       neighbours so shapes never collide or chain. */
-    function claim(kind) {
-      for (let i = 0; i < 60; i++) {
-        const c = 1 + Math.floor(Math.random() * (cols - 3));
-        const r = 1 + Math.floor(Math.random() * (rows - 3));
-        let cells;
-        if (kind === 'link') {
-          const dir = Math.random() < 0.5 ? 1 : -1;
-          if (!dots.has(k(c, r)) || !dots.has(k(c + 1, r + dir))) continue;
-          cells = [];
-          [[c, r], [c + 1, r + dir]].forEach(([a, b]) => {
-            cells.push(k(a, b), k(a + 1, b), k(a - 1, b), k(a, b + 1), k(a, b - 1));
-          });
-          cells = [...new Set(cells)];
-          if (cells.some(x => used.has(x))) continue;
-          cells.forEach(x => used.add(x));
-          return { c, r, dir, cells };
-        }
-        if (!dots.has(k(c, r))) continue;
-        cells = [k(c, r), k(c + 1, r), k(c - 1, r), k(c, r + 1), k(c, r - 1)];
-        if (cells.some(x => used.has(x))) continue;
-        cells.forEach(x => used.add(x));
-        return { c, r, cells };
-      }
-      return null;
-    }
-
-    function spawn(instant) {
-      if (!linkG) return;
-      const kind = Math.random() < LINK_RATIO ? 'link' : 'ring';
-      const spot = claim(kind);
-      if (!spot) return;
-      const d = kind === 'link'
-        ? linkPath(cell(spot.c, spot.r), cell(spot.c + 1, spot.r + spot.dir), rr)
-        : ringPath(cell(spot.c, spot.r), rr);
-      const p = el('path', {
-        d, fill: 'none', stroke: pick(COLORS),
-        'stroke-width': s * 0.1, 'stroke-linecap': 'round'
-      }, linkG);
-      const item = { p, spot, dead: false };
-      pop.push(item);
-      if (!instant) { preparePath(p); drawPath(p, rand(750, 1100)); }
-      item.timer = setTimeout(() => retire(item), rand(4000, 9000));
-    }
-
-    function retire(item) {
-      if (item.dead) return;
-      item.dead = true;
-      clearTimeout(item.timer);
-      undrawPath(item.p, 700);
-      setTimeout(() => {
-        item.p.remove();
-        item.spot.cells.forEach(x => used.delete(x));
-        const i = pop.indexOf(item);
-        if (i > -1) pop.splice(i, 1);
-      }, 760);
-    }
-
-    function loop() {
-      clearInterval(timer);
-      if (!SPLASH) return;                              /* respect reduced motion */
-      timer = setInterval(() => {
-        if (document.hidden) return;
-        const alive = pop.filter(i => !i.dead).length;
-        const max = cap();
-        if (alive < max) spawn();
-        if (alive < max - 4) spawn();
-      }, 600);
+      return true;
     }
 
     function reset() {
-      clearInterval(timer);
-      build();
-      const seed = Math.round(cap() * 0.6);
-      for (let i = 0; i < seed; i++) spawn(true);
-      loop();
+      if (!buildEco()) return;
+      /* Seeded at rest like the hero's instant build, then handed to the loop. */
+      for (let i = 0; i < Math.round(ecoField.cap * 0.75); i++) {
+        spawnAmbient(ecoField, { instant: true, life: SPLASH ? rand(2000, 9000) : 86400000 });
+      }
+      startAmbient(ecoField);
     }
 
     reset();
@@ -622,10 +595,8 @@
     if (!splashDone) return;
     clearTimeout(rT);
     rT = setTimeout(() => {
-      clearInterval(ambientTimer); ambientTimer = null;
-      population.forEach(i => clearTimeout(i.timer));
-      build(true);
-      startAmbient();
+      build(true);                                        /* stops the field itself */
+      startAmbient(heroField);
     }, 250);
   });
 })();
