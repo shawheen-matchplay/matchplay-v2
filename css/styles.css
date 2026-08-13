@@ -823,8 +823,10 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   grid-template-columns: 1fr 1fr;
   align-items: stretch;
 }
+/* Symmetric padding on both columns, so the two cards come out the same
+   width and sit an equal distance from the centre line. */
 .eco-col { padding: var(--eco-pad); }
-.eco-col--left { padding-left: 0; padding-bottom: var(--section-y); }
+.eco-col--left { padding-bottom: var(--section-y); }
 
 /* White panel: bleeds past the right edge (the section clips it) and runs to
    the section's bottom. The top-left corner is a normal radius, so the white
@@ -863,6 +865,8 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   display: flex;
   flex-direction: column;
   min-height: 400px;
+  max-width: 460px;              /* both cards the same, narrower width */
+  margin-inline: auto;
   background: var(--surface-glass);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
