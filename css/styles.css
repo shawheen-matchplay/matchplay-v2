@@ -683,6 +683,60 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   color: var(--cyan);
 }
 
+/* 7a. Mission --------------------------------------------------------------
+   Sits inside the stage between the hero and the ecosystem, so the dot field
+   runs behind it. Centred, no background of its own. */
+.mission {
+  position: relative;
+  z-index: 1;
+  padding-block: clamp(4rem, 9vw, 8rem);
+  text-align: center;
+}
+.mission__inner { max-width: 940px; }
+
+.mission__eyebrow {
+  display: inline-block;
+  margin-bottom: clamp(1.25rem, 2.5vw, 2rem);
+  padding: 0.5em 1.1em;
+  border: 1px solid rgba(30, 210, 244, 0.5);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+
+.mission__title {
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 4.6vw, 3.9rem);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  color: #fff;
+  text-wrap: balance;
+}
+.mission__title em { font-style: italic; color: var(--cyan); }
+
+.mission__body {
+  max-width: 760px;
+  margin: clamp(1.5rem, 3vw, 2.25rem) auto 0;
+  font-family: var(--font-ui);
+  font-size: clamp(1rem, 1.3vw, 1.125rem);
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.72);
+  text-wrap: pretty;
+}
+.mission__body strong { color: #fff; font-weight: 500; }
+
+.mission__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1.25rem, 3vw, 2.25rem);
+  margin-top: clamp(2rem, 4vw, 3rem);
+}
+
 /* 7b. Ecosystem ------------------------------------------------------------
    The dot field carries on down the left; the right half is a white panel
    that bleeds to the viewport edge with a rounded top-left corner. */
