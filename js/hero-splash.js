@@ -39,8 +39,11 @@
      These are ratios, so they hold at any SCALE.
    ============================================================ */
 (function () {
-  const svg  = document.getElementById('splash-svg');
-  const hero = document.getElementById('hero');
+  const svg   = document.getElementById('splash-svg');
+  const hero  = document.getElementById('hero');
+  /* The field spans the stage (hero + ecosystem); the hero is still what the
+     mark's placement is measured against, and its layout is untouched. */
+  const stage = document.getElementById('stage') || hero;
   if (!svg || !hero) return;
 
   const NS = 'http://www.w3.org/2000/svg';
@@ -59,8 +62,6 @@
                                  0.5 = neighbouring dots exactly touch */
   const LINK_RATIO = 0.62;    /* chance a new shape is a link vs a ring */
 
-  /* Concurrent colored shapes. Scaled by area so a smaller grid (which fits
-     more cells on screen) keeps a similar visual density. */
   /* Concurrent shapes per grid cell. Every field derives its own cap from this,
      so the hero and the ecosystem section hold the same density whatever their
      heights, and one number tunes both. */
@@ -129,9 +130,8 @@
 
   /* ---------- fields -------------------------------------------------------
      A field is one dot grid plus the coloured shapes that come and go on it.
-     The hero and the ecosystem section each own one and drive it through the
-     same functions below, which is what keeps their shapes, density and
-     timings identical rather than merely similar. */
+     There is exactly one, spanning the stage, so the hero and the ecosystem
+     section share the same dots, links, density and timings by definition. */
   function createField() {
     return {
       layer: null,                 /* <g> the shapes are drawn into */
@@ -275,7 +275,7 @@
     let centre;                                     /* hero-relative y */
     if (spacer) {
       const r = spacer.getBoundingClientRect();
-      centre = (r.top - hero.getBoundingClientRect().top) + r.height / 2;
+      centre = (r.top - stage.getBoundingClientRect().top) + r.height / 2;
     } else {
       centre = Math.max(H * 0.26, 150 * SCALE);     /* fallback: fixed position */
     }
@@ -301,12 +301,15 @@
     usedCells = new Set();
     excluded = new Set();
 
-    /* viewBox is the hero plus MARGIN bleed on all four sides. H tracks the
-       viewport (matching the CSS 136vh) rather than the hero's own height, so
-       copy reflow can never desync the viewBox from the element box. */
-    W = hero.clientWidth; H = Math.max(window.innerHeight, 560);
-    OX = W * MARGIN; OY = H * MARGIN;
-    TW = W * (1 + 2 * MARGIN); TH = H * (1 + 2 * MARGIN);
+    /* viewBox mirrors the SVG's own box exactly (left:-18%, width:136%,
+       top:-18vh, height:100% + 36vh of the stage), so the scale stays 1:1 in
+       both axes and one viewBox unit is one px. H stays the viewport height —
+       the vertical bleed is in vh — while the field's length follows the
+       stage, which is what carries it down into the second section. */
+    W = stage.clientWidth; H = Math.max(window.innerHeight, 560);
+    OX = W * MARGIN; OY = window.innerHeight * MARGIN;
+    TW = W * (1 + 2 * MARGIN);
+    TH = stage.clientHeight + 2 * MARGIN * window.innerHeight;
     svg.setAttribute('viewBox', '0 0 ' + TW + ' ' + TH);
 
     S = Math.max(48, Math.min(78, W / 19)) * SCALE;       /* grid step */
@@ -408,7 +411,7 @@
     if (instant) {                                        /* resting state, no intro */
       logoG.style.transition = 'none';
       logoG.style.transform = 'translateY(' + (-logoShift) + 'px)';
-      hero.classList.add('is-dim');
+      stage.classList.add('is-dim');
       for (let i = 0; i < Math.round(heroField.cap * 0.75); i++) {
         spawnAmbient(heroField, { instant: true, life: SPLASH ? rand(2000, 9000) : 86400000 });
       }
@@ -420,7 +423,7 @@
     if (splashDone) return;
     splashDone = true;
     document.querySelectorAll('[data-reveal]').forEach(e => e.classList.add('shown'));
-    hero.classList.add('is-dim');
+    stage.classList.add('is-dim');
     if (logoG) {
       resolveShift();                                     /* against the settled layout */
       logoG.style.transform = 'translateY(' + (-logoShift) + 'px)';
@@ -432,6 +435,7 @@
     if (ballEl) { ballEl.style.opacity = 1; ballEl.style.transform = 'scale(1)'; }
     if (dimpleG) dimpleG.querySelectorAll('circle').forEach(d => d.style.opacity = 1);
     startAmbient(heroField);
+    if (pendingRebuild) { pendingRebuild = false; rebuildField(); }
   }
 
   /* ---------- run ---------------------------------------------------------- */
@@ -485,7 +489,7 @@
     });
 
     /* STEP 4 — everything dims except the mark */
-    t(3100, () => hero.classList.add('is-dim'));
+    t(3100, () => stage.classList.add('is-dim'));
 
     /* STEP 5 — mark shifts up into its resting position */
     t(3450, () => {
@@ -504,76 +508,25 @@
     window.addEventListener('keydown', finish, { once: true });
   }
 
-  /* ---------- ecosystem field ----------------------------------------------
-     The dot grid and links carry on below the hero. It owns its own field but
-     runs through the same driver as the hero's, so the shapes, the density and
-     every timing are identical by construction rather than by coincidence. */
-  const ecoField = createField();
-
-  function startEcosystemField() {
-    const surface = document.getElementById('eco-field');
-    const host = surface && surface.parentElement;
-    if (!surface || !host) return;
-
-    function buildEco() {
-      stopAmbient(ecoField);
-      ecoField.population = [];
-      surface.innerHTML = '';
-
-      const w = host.clientWidth, h = host.clientHeight;
-      if (!w || !h) return false;
-      surface.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
-
-      /* same step as the hero, so the two grids line up column for column */
-      const s = Math.max(48, Math.min(78, w / 19)) * SCALE;
-      const cols = Math.ceil(w / s) + 2;
-      const rows = Math.ceil(h / s) + 2;
-
-      ecoField.S = s;
-      ecoField.R = s * 0.5;
-      ecoField.cols = cols;
-      ecoField.rows = rows;
-      ecoField.x0 = (w - (cols - 1) * s) / 2;
-      ecoField.y0 = (h - (rows - 1) * s) / 2;
-      ecoField.used = new Set();
-      ecoField.excluded = new Set();
-      ecoField.dots = new Set();
-      ecoField.cap = Math.round(cols * rows * AMBIENT_DENSITY);
-
-      const gridG = el('g', { class: 'eco-grid' }, surface);
-      ecoField.layer = el('g', { class: 'eco-links' }, surface);
-
-      for (let c = 0; c < cols; c++) {
-        for (let r = 0; r < rows; r++) {
-          if (Math.random() < DOT_SKIP) continue;
-          ecoField.dots.add(key(c, r));
-          const [x, y] = cellOf(ecoField, c, r);
-          el('circle', { cx: x, cy: y, r: s * DOT_RADIUS, fill: '#0B0B0B' }, gridG);
-        }
-      }
-      return true;
-    }
-
-    function reset() {
-      if (!buildEco()) return;
-      /* Seeded at rest like the hero's instant build, then handed to the loop. */
-      for (let i = 0; i < Math.round(ecoField.cap * 0.75); i++) {
-        spawnAmbient(ecoField, { instant: true, life: SPLASH ? rand(2000, 9000) : 86400000 });
-      }
-      startAmbient(ecoField);
-    }
-
-    reset();
-
-    /* The section's height changes when its copy reflows, so rebuild the grid
-       to fit rather than leaving a bare strip. */
-    let ecoT;
-    if (window.ResizeObserver) {
-      new ResizeObserver(() => {
-        clearTimeout(ecoT);
-        ecoT = setTimeout(reset, 250);
-      }).observe(host);
-    }
+  /* The stage's height changes when the ecosystem copy reflows. The viewBox is
+     matched to the SVG's box, so a stale height would break the 1:1 mapping and
+     drift the mark — rebuild instead. Deferred while the intro is running so it
+     is never interrupted. */
+  let pendingRebuild = false, stageT;
+  function rebuildField() {
+    if (!splashDone) { pendingRebuild = true; return; }
+    build(true);
+    startAmbient(heroField);
+  }
+  if (window.ResizeObserver) {
+    let lastH = 0;
+    new ResizeObserver(() => {
+      const h = stage.clientHeight;
+      if (Math.abs(h - lastH) < 4) return;
+      lastH = h;
+      clearTimeout(stageT);
+      stageT = setTimeout(rebuildField, 200);
+    }).observe(stage);
   }
 
   /* The slot moves whenever the hero copy reflows — most notably when the
@@ -586,7 +539,6 @@
   }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(realignMark);
 
-  startEcosystemField();
 
   /* Rebuild on resize, final state only. The 18% bleed plus slice scaling
      keeps the field full while the drag is in progress. */
