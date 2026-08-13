@@ -726,6 +726,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 
 .ecosystem__split {
   --eco-pad: clamp(1.5rem, 3.5vw, 3rem);
+  --eco-radius: clamp(24px, 4vw, 56px);
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: stretch;
@@ -734,7 +735,9 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 .eco-col--left { padding-left: 0; padding-bottom: var(--section-y); }
 
 /* White panel: bleeds past the right edge (the section clips it) and runs to
-   the section's bottom, so only its top-left corner is rounded. */
+   the section's bottom. The top-left corner is a normal radius, so the white
+   starts inset and widens as it descends; the bottom-left is an inverted
+   corner that carries on widening, cutting into the dark side. */
 .eco-col--right { position: relative; }
 .eco-col--right::before {
   content: "";
@@ -744,8 +747,20 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   left: 0;
   right: -50vw;
   background: var(--surface-light);
-  border-top-left-radius: clamp(24px, 4vw, 56px);
-  border-bottom-left-radius: clamp(24px, 4vw, 56px);
+  border-top-left-radius: var(--eco-radius);
+}
+/* Inverted corner: white everywhere except a quarter-disc centred on this
+   box's top-left, which leaves the dark side a rounded outer corner. */
+.eco-col--right::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: calc(-1 * var(--eco-radius));
+  width: var(--eco-radius);
+  height: var(--eco-radius);
+  background: radial-gradient(circle at 0 0,
+              rgba(0, 0, 0, 0) 0 var(--eco-radius),
+              var(--surface-light) var(--eco-radius));
 }
 .eco-col--right > * { position: relative; z-index: 1; }
 
@@ -755,11 +770,11 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  min-height: 420px;
+  min-height: 400px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
-  padding: 36px 32px 32px;
+  padding: clamp(1.75rem, 3.1vw, 2.5rem);
   transition: transform 0.4s var(--ease), background-color 0.4s var(--ease),
               border-color 0.4s var(--ease);
 }
@@ -805,27 +820,27 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 .eco-card__name {
   position: relative;
   font-family: var(--font-display);
-  font-size: clamp(1.6rem, 2.4vw, 2rem);
-  line-height: 1;
+  font-size: clamp(1.9rem, 3.1vw, 2.5rem);
+  line-height: 1.05;
   letter-spacing: -0.02em;
   color: #fff;
-  margin-bottom: 8px;
+  margin-bottom: 0.2em;
 }
 .eco-card__tagline {
   position: relative;
   font-family: var(--font-display);
   font-style: italic;
-  font-size: 18px;
+  font-size: clamp(1.15rem, 1.7vw, 1.375rem);
   color: var(--eco-accent);
-  margin-bottom: 24px;
+  margin-bottom: 1.25em;
 }
 .eco-card__body {
   position: relative;
   font-family: var(--font-ui);
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: clamp(1rem, 1.5vw, 1.1875rem);
+  line-height: 1.65;
   color: rgba(255, 255, 255, 0.72);
-  margin-bottom: auto;            /* pins the foot to the bottom */
+  margin-bottom: auto;            /* pins the link to the bottom */
 }
 .eco-card__link {
   position: relative;
@@ -835,7 +850,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   align-self: flex-end;
   margin-top: clamp(1.25rem, 2.5vw, 1.75rem);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: clamp(0.7rem, 0.95vw, 0.8125rem);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--eco-accent);
@@ -1190,9 +1205,11 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   .eco-col--left { padding-bottom: var(--eco-pad); }
   .eco-col--right::before {
     left: -50vw;
-    border-top-right-radius: clamp(24px, 4vw, 56px);
-    border-bottom-right-radius: clamp(24px, 4vw, 56px);
+    border-top-right-radius: var(--eco-radius);
   }
+  /* Stacked, the panel bleeds left too, so the inverted corner would punch a
+     dark notch out of it. */
+  .eco-col--right::after { display: none; }
 
   .offer__row,
   .offer__row--navigator { grid-template-columns: 1fr; gap: var(--space-lg); }
