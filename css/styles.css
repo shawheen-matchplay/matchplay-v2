@@ -25,7 +25,7 @@
 /* 1. Fonts ---------------------------------------------------------------- */
 /* Display face is self-hosted on the original CDN. Only the weights actually
    used on this page are loaded (down from 15 files to 4). Sora, Geist,
-   JetBrains Mono, Inter and Libre Baskerville come from Google Fonts
+   Share Tech Mono, Inter and Libre Baskerville come from Google Fonts
    (see <head>). */
 @font-face {
   font-family: "BW Gradual";
@@ -80,7 +80,7 @@
   /* Typography */
   --font-display: "BW Gradual", "Segoe UI", sans-serif;
   /* One mono across the whole site, always set uppercase. */
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-mono: "Share Tech Mono", ui-monospace, monospace;
   /* MatchPlay Ventures faces, used by the hero lockup and copy */
   --font-wordmark: "Sora", "Helvetica Neue", Arial, sans-serif;
   --font-ui: "Geist", -apple-system, system-ui, sans-serif;

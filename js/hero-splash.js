@@ -315,9 +315,13 @@
     S = Math.max(48, Math.min(78, W / 19)) * SCALE;       /* grid step */
     R = S * 0.5;                                          /* ring radius */
     cols = Math.ceil(TW / S) + 2;
-    rows = Math.ceil(TH / S) + 2;
     x0 = (TW - (cols - 1) * S) / 2;
-    y0 = (TH - (rows - 1) * S) / 2;
+    /* Anchor the grid to the top instead of centring it vertically. The stage
+       grows when the ecosystem copy reflows, and a y0 derived from TH would
+       move every dot, link and the mark's row with it — which is what forced a
+       full rebuild before. Fixed y0 means growth only ever appends rows. */
+    y0 = -S;
+    rows = Math.ceil((TH - y0) / S) + 2;
 
     gridG  = el('g', { id: 'splash-grid' }, svg);
     linksG = el('g', { id: 'splash-links' }, svg);
@@ -435,7 +439,6 @@
     if (ballEl) { ballEl.style.opacity = 1; ballEl.style.transform = 'scale(1)'; }
     if (dimpleG) dimpleG.querySelectorAll('circle').forEach(d => d.style.opacity = 1);
     startAmbient(heroField);
-    if (pendingRebuild) { pendingRebuild = false; rebuildField(); }
   }
 
   /* ---------- run ---------------------------------------------------------- */
@@ -508,15 +511,31 @@
     window.addEventListener('keydown', finish, { once: true });
   }
 
-  /* The stage's height changes when the ecosystem copy reflows. The viewBox is
-     matched to the SVG's box, so a stale height would break the 1:1 mapping and
-     drift the mark — rebuild instead. Deferred while the intro is running so it
-     is never interrupted. */
-  let pendingRebuild = false, stageT;
-  function rebuildField() {
-    if (!splashDone) { pendingRebuild = true; return; }
-    build(true);
-    startAmbient(heroField);
+  /* The stage's height changes when the ecosystem copy reflows, and the viewBox
+     is matched to the SVG's box, so a stale height would break the 1:1 mapping.
+     Because y0 is anchored, the fix is to grow the field in place: stretch the
+     viewBox and append rows of dots. Nothing already on screen moves, so the
+     existing dots and links are left exactly as they are. */
+  let stageT;
+  function extendField() {
+    if (!gridG) return;
+    const newTH = stage.clientHeight + 2 * MARGIN * window.innerHeight;
+    if (newTH <= TH + 1) return;                          /* only ever grow */
+    TH = newTH;
+    svg.setAttribute('viewBox', '0 0 ' + TW + ' ' + TH);
+
+    const newRows = Math.ceil((TH - y0) / S) + 2;
+    for (let r = rows; r < newRows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (Math.random() < DOT_SKIP) continue;
+        dotCells.add(key(c, r));
+        const [x, y] = cellXY(c, r);
+        el('circle', { cx: x, cy: y, r: S * DOT_RADIUS, fill: '#0B0B0B' }, gridG);
+      }
+    }
+    rows = newRows;
+    heroField.rows = rows;
+    heroField.cap = Math.round(cols * rows * AMBIENT_DENSITY);
   }
   if (window.ResizeObserver) {
     let lastH = 0;
@@ -525,7 +544,7 @@
       if (Math.abs(h - lastH) < 4) return;
       lastH = h;
       clearTimeout(stageT);
-      stageT = setTimeout(rebuildField, 200);
+      stageT = setTimeout(extendField, 200);
     }).observe(stage);
   }
 
