@@ -10,16 +10,13 @@
    5.  Buttons
    6.  Header / navigation
    7.  Hero
+   7c. Process
+   7d. Diligence value
    8.  Partners
    9.  Testimonials (marquee)
-   10. "Founders get funded" headline
-   11. Why MatchPlay (+ video)
-   12. What We Offer (Investment / Navigator)
-   13. How To Get Started (steps)
-   14. Triple feature
-   15. Subscribe
-   16. Footer
-   17. Motion utilities (scroll-reveal)
+   10. Subscribe
+   11. Footer
+   12. Motion utilities (scroll-reveal)
    ========================================================================== */
 
 /* 1. Fonts ---------------------------------------------------------------- */
@@ -95,8 +92,6 @@
   --font-serif: "Libre Baskerville", Georgia, serif;
 
   /* Fluid type scale */
-  --fs-display-xl: clamp(3rem, 8vw, 6rem);     /* "Get Started" */
-  --fs-display-lg: clamp(2.5rem, 6vw, 5rem);   /* "founders get funded" */
   --fs-h1: clamp(2rem, 4vw, 3rem);             /* section headers */
   --fs-h2: clamp(1.75rem, 3vw, 3rem);          /* card titles */
   --fs-h3: clamp(1.5rem, 2.4vw, 2.2rem);
@@ -967,6 +962,114 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 .eco-card--light .eco-card__name { color: var(--text-on-light); }
 .eco-card--light .eco-card__body { color: rgba(10, 10, 10, 0.72); }
 
+/* 7c. Process ---------------------------------------------------------------
+   Readiness before the first meeting, then the four stages. The order is the
+   flow, so there is no separate diagram. */
+.process__head {
+  max-width: 820px;
+  margin: 0 auto clamp(2.5rem, 5vw, 4rem);
+  text-align: center;
+}
+.process__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 3.8vw, 3.1rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+.process__lead {
+  margin-top: clamp(1rem, 2vw, 1.5rem);
+  font-family: var(--font-ui);
+  font-size: clamp(1rem, 1.2vw, 1.0625rem);
+  line-height: 1.6;
+  color: rgba(10, 10, 10, 0.6);
+  text-wrap: pretty;
+}
+
+.process__steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(1rem, 1.8vw, 1.5rem);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: none;
+}
+.process__step {
+  padding: clamp(1.5rem, 2.4vw, 2rem);
+  background: var(--surface-glass-ink);
+  border: 1px solid rgba(10, 10, 10, 0.1);
+  border-radius: 20px;
+  border-top: 3px solid var(--cyan);
+}
+.process__num {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  color: var(--cyan);
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
+}
+.process__name {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 1.8vw, 1.5rem);
+  letter-spacing: -0.015em;
+  margin-bottom: 0.4em;
+}
+.process__text {
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(10, 10, 10, 0.62);
+}
+
+/* 7d. Diligence value ------------------------------------------------------ */
+.values__head {
+  max-width: 900px;
+  margin: 0 auto clamp(2.5rem, 5vw, 4rem);
+  text-align: center;
+}
+.values__title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.4vw, 3.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+.values__title em { font-style: italic; color: var(--cyan); }
+
+.values__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(1rem, 2vw, 1.75rem);
+}
+.value {
+  padding: clamp(1.75rem, 2.8vw, 2.5rem);
+  background: var(--surface-glass);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+}
+.value__num {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  color: var(--cyan);
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
+}
+.value__name {
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 1.9vw, 1.6rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin-bottom: 0.5em;
+}
+.value__text {
+  font-family: var(--font-ui);
+  font-size: 0.975rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
+}
+
 /* 8. Partners ------------------------------------------------------------- */
 .partners__grid {
   display: flex;
@@ -1035,171 +1138,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 .testimonial__role { color: var(--text-muted); font-size: var(--fs-sm); line-height: 1.4; }
 .testimonial__role em { color: var(--accent-testimonial); font-style: italic; }
 
-/* 10. Founders get funded ------------------------------------------------- */
-.funded {
-  background: #fff;
-  color: var(--text-on-light);
-  padding-block: clamp(4.5rem, 9vw, 8rem);
-}
-.funded__title {
-  text-align: center;
-  font-size: var(--fs-display-lg);
-  font-style: italic;
-  letter-spacing: -0.02em;
-  line-height: 1.08;
-  text-wrap: balance;
-}
-.funded__title .serif { font-family: var(--font-serif); font-style: italic; }
-
-/* 11. Why MatchPlay ------------------------------------------------------- */
-.why { text-align: center; }
-.why__lead {
-  max-width: 640px;
-  margin: 0 auto var(--space-xl);
-  font-size: var(--fs-lead);
-  font-weight: 300;
-  line-height: 1.7;
-}
-.why__lead strong { font-weight: 600; }
-.why__video {
-  max-width: 900px;
-  margin-inline: auto;
-  aspect-ratio: 16 / 9;
-  border-radius: var(--radius-img);
-  overflow: hidden;
-}
-.why__video iframe { width: 100%; height: 100%; border: 0; display: block; }
-
-/* 12. What We Offer ------------------------------------------------------- */
-.offer__row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-  gap: 0;
-  margin-bottom: var(--space-xl);
-}
-.offer__panel {
-  border-radius: var(--radius-card);
-  padding: clamp(2rem, 4vw, 4rem);
-  box-shadow: var(--shadow-card);
-  color: #fff;
-}
-.offer__panel h3 { font-size: var(--fs-h2); margin-bottom: var(--space-md); }
-.offer__panel p { font-size: 1.05rem; line-height: 1.75; }
-.offer__panel--investment { background: var(--orange); text-align: right; }
-.offer__panel--navigator { background: var(--cyan); }
-
-.offer__media {
-  border-radius: var(--radius-img);
-  box-shadow: var(--shadow-card);
-  background: #fff;
-}
-.offer__media--investment {
-  border: var(--border-accent) solid var(--orange);
-  padding: var(--space-md);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  place-items: center;
-  gap: var(--space-md);
-  margin-right: -20px; /* tuck under the panel */
-  position: relative;
-  z-index: 1;
-}
-.offer__media--investment img { max-height: 70px; width: auto; }
-.offer__media--navigator {
-  border: var(--border-accent) solid var(--cyan);
-  margin-left: -60px; /* overlap the panel */
-  position: relative;
-  z-index: 1;
-}
-/* Investment row: media left, panel right; Navigator row: panel left, media right */
-.offer__row--navigator { grid-template-columns: 1fr 1fr; }
-.offer__cta { text-align: center; }
-
-/* 13. How To Get Started -------------------------------------------------- */
-.steps__panel {
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  gap: var(--space-md);
-  background: var(--bg-darker);
-  border-radius: var(--radius-card);
-  padding: var(--space-lg);
-}
-.step {
-  flex: 1 1 0;
-  max-width: 380px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: var(--space-2xs);
-  border-radius: var(--radius-card);
-  padding: var(--space-lg);
-  box-shadow: var(--shadow-card-light);
-}
-.step--1 { background: var(--cyan); }
-.step--2 { background: var(--mint); }
-.step--3 { background: var(--purple); }
-.step__num { font-family: var(--font-body); font-weight: 300; opacity: 0.9; }
-.step__title { font-size: var(--fs-h3); }
-.step__text { font-family: var(--font-body); font-size: 1.05rem; line-height: 1.5; }
-.steps__arrow {
-  align-self: center;
-  flex: 0 0 auto;
-  width: 34px;
-  filter: brightness(0) invert(1);
-}
-
-/* Refine / Ready loop row */
-.loop {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-md);
-  margin: var(--space-lg) 0;
-}
-.loop__label { font-size: 1.5rem; font-style: italic; font-family: var(--font-body); }
-.loop__label--refine { color: var(--cyan); }
-.loop__label--ready { color: var(--orange); }
-.loop__arrow { width: 28px; filter: brightness(0) invert(1); }
-.loop__arrow--down { transform: rotate(90deg); }
-
-.steps__panel--outcome .step--nav { background: var(--cyan); }
-.steps__panel--outcome .step--inv { background: var(--orange); }
-.step__title--big { font-size: clamp(1.8rem, 3vw, 3rem); }
-
-/* 14. Triple feature ------------------------------------------------------ */
-.features__grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-lg);
-}
-.feature {
-  background: var(--cyan);
-  border-radius: var(--radius-card);
-  padding: var(--space-lg);
-  text-align: center;
-  box-shadow: var(--shadow-card);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-sm);
-  transition: transform var(--dur), box-shadow var(--dur);
-}
-.feature:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
-}
-.feature__icon { height: 70px; width: auto; }
-.feature__title {
-  font-family: var(--font-mono);
-  font-size: 1.5rem;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-.feature__text { font-size: 1rem; line-height: 1.6; }
-
-/* 15. Subscribe ----------------------------------------------------------- */
+/* 10. Subscribe ----------------------------------------------------------- */
 .subscribe { text-align: center; }
 .subscribe__form {
   display: flex;
@@ -1229,7 +1168,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 }
 .subscribe__form.is-done + .subscribe__success { display: block; }
 
-/* 16. Footer -------------------------------------------------------------- */
+/* 11. Footer -------------------------------------------------------------- */
 .site-footer {
   background: var(--bg-dark);
   padding: var(--space-xl) var(--space-md) var(--space-lg);
@@ -1264,7 +1203,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 .footer__legal a { font-weight: 300; color: rgba(255, 255, 255, 0.85); }
 .footer__legal a:hover { text-decoration: underline; }
 
-/* 17. Motion utilities ---------------------------------------------------- */
+/* 12. Motion utilities ---------------------------------------------------- */
 /* Hidden only when JS is present (html.js), so content never disappears
    if the script fails to load. */
 .js .reveal {
@@ -1295,6 +1234,9 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 @media (max-width: 991px) {
   /* Stack the split; the white panel then bleeds both sides and rounds both
      top corners instead of just the one. */
+  .process__steps { grid-template-columns: repeat(2, 1fr); }
+  .values__grid { grid-template-columns: 1fr; }
+
   .ecosystem__split { grid-template-columns: 1fr; }
   .eco-card { min-height: 0; padding: 32px 26px 28px; }
   .eco-col { padding-inline: 0; }
@@ -1307,23 +1249,13 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
      dark notch out of it. */
   .eco-col--right::after { display: none; }
 
-  .offer__row,
-  .offer__row--navigator { grid-template-columns: 1fr; gap: var(--space-lg); }
-  .offer__panel--investment { text-align: center; }
-  .offer__media--investment { margin-right: 0; }
-  .offer__media--navigator { margin-left: 0; }
-
-  .steps__panel { flex-direction: column; align-items: center; }
-  .step { width: 100%; max-width: 440px; }
-  .steps__arrow { transform: rotate(90deg); }
-
-  .features__grid { grid-template-columns: 1fr; max-width: 440px; margin-inline: auto; }
 }
 
 @media (max-width: 600px) {
+  .process__steps { grid-template-columns: 1fr; }
+
   .footer__top { flex-direction: column; align-items: flex-start; gap: var(--space-md); }
   .footer__bottom { flex-direction: column; align-items: flex-start; }
-  .loop__label { font-size: 1.2rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
