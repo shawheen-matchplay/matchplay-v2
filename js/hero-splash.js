@@ -465,6 +465,144 @@
     window.addEventListener('keydown', finish, { once: true });
   }
 
+  /* ---------- ecosystem field ----------------------------------------------
+     The dot grid and links carry on below the hero. State is entirely local so
+     it can never disturb the hero's intro, and it reuses the geometry helpers
+     and the same grid step, so the pattern reads as one continuous field. */
+  function startEcosystemField() {
+    const surface = document.getElementById('eco-field');
+    const host = surface && surface.parentElement;
+    if (!surface || !host) return;
+
+    let s, rr, cols, rows, fx0, fy0, dots, used, linkG;
+    let pop = [], timer = null;
+
+    const cell = (c, r) => [fx0 + c * s, fy0 + r * s];
+    const k = (c, r) => c + ',' + r;
+    const cap = () => Math.round(
+      (host.clientWidth * host.clientHeight) / (260 * 260) / (SCALE * SCALE));
+
+    function build() {
+      pop.forEach(i => clearTimeout(i.timer));
+      pop = []; used = new Set(); dots = new Set();
+      surface.innerHTML = '';
+
+      const w = host.clientWidth, h = host.clientHeight;
+      if (!w || !h) return;
+      surface.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+
+      s = Math.max(48, Math.min(78, w / 19)) * SCALE;      /* same step as the hero */
+      rr = s * 0.5;
+      cols = Math.ceil(w / s) + 2;
+      rows = Math.ceil(h / s) + 2;
+      fx0 = (w - (cols - 1) * s) / 2;
+      fy0 = (h - (rows - 1) * s) / 2;
+
+      const gridG = el('g', { class: 'eco-grid' }, surface);
+      linkG = el('g', { class: 'eco-links' }, surface);
+
+      for (let c = 0; c < cols; c++) {
+        for (let r = 0; r < rows; r++) {
+          if (Math.random() < DOT_SKIP) continue;
+          dots.add(k(c, r));
+          const [x, y] = cell(c, r);
+          el('circle', { cx: x, cy: y, r: s * DOT_RADIUS, fill: '#0B0B0B' }, gridG);
+        }
+      }
+    }
+
+    /* Same no-touching rule as the hero: a shape reserves its orthogonal
+       neighbours so shapes never collide or chain. */
+    function claim(kind) {
+      for (let i = 0; i < 60; i++) {
+        const c = 1 + Math.floor(Math.random() * (cols - 3));
+        const r = 1 + Math.floor(Math.random() * (rows - 3));
+        let cells;
+        if (kind === 'link') {
+          const dir = Math.random() < 0.5 ? 1 : -1;
+          if (!dots.has(k(c, r)) || !dots.has(k(c + 1, r + dir))) continue;
+          cells = [];
+          [[c, r], [c + 1, r + dir]].forEach(([a, b]) => {
+            cells.push(k(a, b), k(a + 1, b), k(a - 1, b), k(a, b + 1), k(a, b - 1));
+          });
+          cells = [...new Set(cells)];
+          if (cells.some(x => used.has(x))) continue;
+          cells.forEach(x => used.add(x));
+          return { c, r, dir, cells };
+        }
+        if (!dots.has(k(c, r))) continue;
+        cells = [k(c, r), k(c + 1, r), k(c - 1, r), k(c, r + 1), k(c, r - 1)];
+        if (cells.some(x => used.has(x))) continue;
+        cells.forEach(x => used.add(x));
+        return { c, r, cells };
+      }
+      return null;
+    }
+
+    function spawn(instant) {
+      if (!linkG) return;
+      const kind = Math.random() < LINK_RATIO ? 'link' : 'ring';
+      const spot = claim(kind);
+      if (!spot) return;
+      const d = kind === 'link'
+        ? linkPath(cell(spot.c, spot.r), cell(spot.c + 1, spot.r + spot.dir), rr)
+        : ringPath(cell(spot.c, spot.r), rr);
+      const p = el('path', {
+        d, fill: 'none', stroke: pick(COLORS),
+        'stroke-width': s * 0.1, 'stroke-linecap': 'round'
+      }, linkG);
+      const item = { p, spot, dead: false };
+      pop.push(item);
+      if (!instant) { preparePath(p); drawPath(p, rand(750, 1100)); }
+      item.timer = setTimeout(() => retire(item), rand(4000, 9000));
+    }
+
+    function retire(item) {
+      if (item.dead) return;
+      item.dead = true;
+      clearTimeout(item.timer);
+      undrawPath(item.p, 700);
+      setTimeout(() => {
+        item.p.remove();
+        item.spot.cells.forEach(x => used.delete(x));
+        const i = pop.indexOf(item);
+        if (i > -1) pop.splice(i, 1);
+      }, 760);
+    }
+
+    function loop() {
+      clearInterval(timer);
+      if (!SPLASH) return;                              /* respect reduced motion */
+      timer = setInterval(() => {
+        if (document.hidden) return;
+        const alive = pop.filter(i => !i.dead).length;
+        const max = cap();
+        if (alive < max) spawn();
+        if (alive < max - 4) spawn();
+      }, 600);
+    }
+
+    function reset() {
+      clearInterval(timer);
+      build();
+      const seed = Math.round(cap() * 0.6);
+      for (let i = 0; i < seed; i++) spawn(true);
+      loop();
+    }
+
+    reset();
+
+    /* The section's height changes when its copy reflows, so rebuild the grid
+       to fit rather than leaving a bare strip. */
+    let ecoT;
+    if (window.ResizeObserver) {
+      new ResizeObserver(() => {
+        clearTimeout(ecoT);
+        ecoT = setTimeout(reset, 250);
+      }).observe(host);
+    }
+  }
+
   /* The slot moves whenever the hero copy reflows — most notably when the
      webfonts land and the paragraph re-wraps. Watch the content box and
      re-align, rather than trying to guess when the layout has settled.
@@ -474,6 +612,8 @@
     if (contentEl) new ResizeObserver(realignMark).observe(contentEl);
   }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(realignMark);
+
+  startEcosystemField();
 
   /* Rebuild on resize, final state only. The 18% bleed plus slice scaling
      keeps the field full while the drag is in progress. */
