@@ -1104,6 +1104,11 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   color: rgba(255, 255, 255, 0.7);
 }
 
+.values__actions {
+  margin-top: clamp(2rem, 4vw, 3rem);
+  text-align: center;
+}
+
 /* 8. Partners ------------------------------------------------------------- */
 .partners__grid {
   display: flex;
