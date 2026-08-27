@@ -174,9 +174,11 @@ button { font: inherit; cursor: pointer; }
 .container--wide { --container-max: var(--container-wide); }
 
 .section { padding-block: var(--section-y); }
-.section--dark { background-color: var(--bg-dark); }
-.section--darker { background-color: var(--bg-darker); }
-.section--alt { background-color: var(--bg-dark-alt); }
+/* The dark sections sit on the stage, so they stay transparent and the
+   animated field reads through them. Only the light ones paint over it. */
+.section--dark,
+.section--darker,
+.section--alt { background-color: transparent; }
 .section--light { background-color: var(--surface-light); color: var(--text-on-light); }
 
 /* Shared section heading */
@@ -1178,69 +1180,160 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 .testimonial__role em { color: var(--accent-testimonial); font-style: italic; }
 
 /* 10. Subscribe ----------------------------------------------------------- */
-.subscribe { text-align: center; }
+.subscribe__panel {
+  position: relative;
+  overflow: hidden;
+  max-width: 1000px;
+  margin-inline: auto;
+  padding: clamp(2rem, 4vw, 3.5rem);
+  background: var(--surface-glass);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: clamp(24px, 3vw, 36px);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 3rem);
+}
+.subscribe__label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 0.9em;
+}
+.subscribe__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.subscribe__title em { font-style: italic; color: var(--cyan); }
+.subscribe__text {
+  margin-top: 0.7em;
+  font-family: var(--font-ui);
+  font-size: clamp(0.95rem, 1.1vw, 1.0625rem);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 40ch;
+}
+
 .subscribe__form {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  gap: var(--space-md);
-  max-width: 720px;
-  margin-inline: auto;
+  gap: var(--space-sm);
 }
+.subscribe__field { display: block; flex: 1 1 260px; }
 .subscribe__input {
-  flex: 1 1 320px;
-  background: transparent;
-  border: 2px solid #fff;
-  border-radius: var(--radius-btn);
+  width: 100%;
+  padding: 0.95em 1.25em;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
   color: #fff;
-  font-family: var(--font-body);
+  font-family: var(--font-ui);
   font-size: 1rem;
-  padding: 1.1em 1.25em;
+  transition: border-color var(--dur), background-color var(--dur);
 }
-.subscribe__input::placeholder { color: rgba(255, 255, 255, 0.6); }
+.subscribe__input::placeholder { color: rgba(255, 255, 255, 0.4); }
+.subscribe__input:focus {
+  outline: none;
+  border-color: var(--cyan);
+  background: rgba(255, 255, 255, 0.07);
+}
 .subscribe__success {
   display: none;
-  margin-top: var(--space-md);
-  color: var(--mint);
-  font-weight: 500;
+  grid-column: 1 / -1;
+  margin-top: var(--space-sm);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cyan);
 }
-.subscribe__form.is-done + .subscribe__success { display: block; }
+.subscribe__form.is-done ~ .subscribe__success { display: block; }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
 /* 11. Footer -------------------------------------------------------------- */
 .site-footer {
-  background: var(--bg-dark);
-  padding: var(--space-xl) var(--space-md) var(--space-lg);
+  background: var(--splash-bg-dim);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: clamp(3rem, 6vw, 5rem) var(--space-md) clamp(2rem, 3vw, 2.5rem);
 }
-.site-footer .container { --container-max: 1000px; }
 .footer__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
-  padding-bottom: var(--space-lg);
-  border-bottom: 1px solid #6e6e6e;
-  margin-bottom: var(--space-lg);
+  display: grid;
+  grid-template-columns: 1.4fr 2fr;
+  gap: clamp(2.5rem, 6vw, 5rem);
+  padding-bottom: clamp(2.5rem, 5vw, 4rem);
 }
 .footer__brand img { width: 210px; }
-.footer__nav { display: flex; gap: var(--space-lg); }
-.footer__nav a {
-  font-family: var(--font-mono);
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
+.footer__tagline {
+  margin-top: var(--space-md);
+  max-width: 42ch;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.6);
 }
-.footer__nav a:hover { text-decoration: underline; }
+.footer__cta { margin-top: clamp(1.5rem, 3vw, 2rem); }
+
+.footer__cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+}
+.footer__col-title {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: var(--space-md);
+}
+.footer__col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.footer__col a {
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.82);
+  transition: color var(--dur);
+}
+.footer__col a:hover { color: var(--cyan); }
+
 .footer__bottom {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-md);
   flex-wrap: wrap;
+  padding-top: clamp(1.5rem, 3vw, 2rem);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
 }
-.footer__copyright { font-weight: 300; color: rgba(255, 255, 255, 0.85); }
 .footer__legal { display: flex; gap: var(--space-md); }
-.footer__legal a { font-weight: 300; color: rgba(255, 255, 255, 0.85); }
-.footer__legal a:hover { text-decoration: underline; }
+.footer__legal a { transition: color var(--dur); }
+.footer__legal a:hover { color: #fff; }
 
 /* 12. Motion utilities ---------------------------------------------------- */
 /* Hidden only when JS is present (html.js), so content never disappears
@@ -1274,6 +1367,8 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   /* Stack the split; the white panel then bleeds both sides and rounds both
      top corners instead of just the one. */
   .mission__beats { grid-template-columns: 1fr; }
+  .subscribe__panel { grid-template-columns: 1fr; }
+  .footer__top { grid-template-columns: 1fr; }
   .process__steps { grid-template-columns: repeat(2, 1fr); }
   .values__grid { grid-template-columns: 1fr; }
 
@@ -1293,6 +1388,8 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 
 @media (max-width: 600px) {
   .process__steps { grid-template-columns: 1fr; }
+  .footer__cols { grid-template-columns: 1fr 1fr; }
+  .footer__bottom { flex-direction: column; align-items: flex-start; }
 
   .footer__top { flex-direction: column; align-items: flex-start; gap: var(--space-md); }
   .footer__bottom { flex-direction: column; align-items: flex-start; }

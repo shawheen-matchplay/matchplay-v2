@@ -176,10 +176,29 @@
        - shapes reserve their orthogonal neighbours, so they never touch,
          cross, or chain into each other
      ---------------------------------------------------------------------- */
+  /* The field now spans the whole page, so working across every row would mean
+     hundreds of concurrent shapes with nearly all of them off screen. Confine
+     spawning to the rows around the viewport, and size the cap to that band —
+     which keeps the on-screen density identical to before, at a fraction of
+     the work. */
+  function bandOf(f) {
+    if (!f.rows || !f.S) return [1, 2];
+    const top = OY - stage.getBoundingClientRect().top;
+    const r0 = Math.max(1, Math.floor((top - f.y0) / f.S) - 2);
+    const r1 = Math.min(f.rows - 3, Math.ceil((top + window.innerHeight - f.y0) / f.S) + 2);
+    return [r0, Math.max(r0 + 1, r1)];
+  }
+  function capOf(f) {
+    const b = bandOf(f);
+    return Math.round(f.cols * (b[1] - b[0]) * AMBIENT_DENSITY);
+  }
+
   function claimSpot(f, kind) {
+    const band = bandOf(f);
+    const span = band[1] - band[0];
     for (let i = 0; i < 70; i++) {
       const c = 1 + Math.floor(Math.random() * (f.cols - 3));
-      const r = 1 + Math.floor(Math.random() * (f.rows - 3));
+      const r = band[0] + Math.floor(Math.random() * span);
       let cells;
 
       if (kind === 'link') {
@@ -250,9 +269,10 @@
     f.timer = setInterval(() => {
       if (document.hidden) return;                        /* don't churn in a background tab */
       const alive = f.population.filter(i => !i.dead).length;
-      if (alive < f.cap) spawnAmbient(f);
-      if (alive < f.cap - 3) spawnAmbient(f);
-      if (alive < f.cap - 8) spawnAmbient(f);
+      const cap = capOf(f);
+      if (alive < cap) spawnAmbient(f);
+      if (alive < cap - 3) spawnAmbient(f);
+      if (alive < cap - 8) spawnAmbient(f);
     }, 550);
   }
 
@@ -335,7 +355,6 @@
     heroField.x0 = x0; heroField.y0 = y0;
     heroField.used = usedCells;
     heroField.excluded = excluded;
-    heroField.cap = Math.round(cols * rows * AMBIENT_DENSITY);
 
     /* Publish the nav height and the mark's own height so CSS can reserve the
        mark's slot and centre the whole group in the area below the nav.
@@ -369,7 +388,7 @@
         dotCells.add(key(c, r));
         const [x, y] = cellXY(c, r);
         const dot = el('circle', { cx: x, cy: y, r: S * DOT_RADIUS, fill: '#0B0B0B' }, gridG);
-        if (!instant) {
+        if (!instant && y < OY + window.innerHeight) {
           dot.style.opacity = 0;
           dot.style.transform = 'scale(.45)';
           dot.style.transitionDelay = Math.floor(rand(0, 750)) + 'ms';
@@ -416,7 +435,7 @@
       logoG.style.transition = 'none';
       logoG.style.transform = 'translateY(' + (-logoShift) + 'px)';
       stage.classList.add('is-dim');
-      for (let i = 0; i < Math.round(heroField.cap * 0.75); i++) {
+      for (let i = 0; i < Math.round(capOf(heroField) * 0.75); i++) {
         spawnAmbient(heroField, { instant: true, life: SPLASH ? rand(2000, 9000) : 86400000 });
       }
     }
@@ -467,7 +486,7 @@
     /* STEP 2 — links and rings draw in */
     t(600, () => {
       let i = 0;
-      const seed = Math.round(heroField.cap * 0.95);
+      const seed = Math.round(capOf(heroField) * 0.95);
       (function spawnNext() {
         if (splashDone || i++ >= seed) return;
         spawnAmbient(heroField, { drawDur: rand(600, 850), life: rand(3000, 9000) });
@@ -535,7 +554,6 @@
     }
     rows = newRows;
     heroField.rows = rows;
-    heroField.cap = Math.round(cols * rows * AMBIENT_DENSITY);
   }
   if (window.ResizeObserver) {
     let lastH = 0;
