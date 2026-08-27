@@ -727,17 +727,13 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 }
 .mission__inner > * { position: relative; z-index: 1; }
 
-.mission__eyebrow {
-  display: inline-block;
-  margin-bottom: clamp(1.25rem, 2.5vw, 2rem);
-  padding: 0.5em 1.1em;
-  border: 1px solid rgba(30, 210, 244, 0.5);
-  border-radius: 999px;
+.mission__label {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--cyan);
+  margin-bottom: clamp(0.75rem, 1.5vw, 1.15rem);
 }
 
 .mission__title {
@@ -760,6 +756,44 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   text-wrap: pretty;
 }
 .mission__body strong { color: #fff; font-weight: 500; }
+
+/* Problem and Mission sit side by side under the vision, left-aligned so the
+   longer copy stays readable against the centred lead. */
+.mission__beats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1.75rem, 4vw, 3.5rem);
+  margin-top: clamp(2rem, 4vw, 3rem);
+  padding-top: clamp(2rem, 4vw, 3rem);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: left;
+}
+.mission__beat-lead {
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 1.7vw, 1.4rem);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: #fff;
+  margin-bottom: 0.6em;
+}
+.mission__beat-text {
+  font-family: var(--font-ui);
+  font-size: clamp(0.95rem, 1.15vw, 1.0625rem);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* The path forward, closing the section before the CTAs. */
+.mission__path {
+  max-width: 780px;
+  margin: clamp(1.75rem, 3.5vw, 2.5rem) auto 0;
+  font-family: var(--font-ui);
+  font-size: clamp(0.95rem, 1.15vw, 1.0625rem);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.62);
+  text-wrap: pretty;
+}
+.mission__path strong { color: #fff; font-weight: 500; }
 
 .mission__actions {
   display: flex;
@@ -1234,6 +1268,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 @media (max-width: 991px) {
   /* Stack the split; the white panel then bleeds both sides and rounds both
      top corners instead of just the one. */
+  .mission__beats { grid-template-columns: 1fr; }
   .process__steps { grid-template-columns: repeat(2, 1fr); }
   .values__grid { grid-template-columns: 1fr; }
 
