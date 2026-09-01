@@ -1120,6 +1120,217 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   text-align: center;
 }
 
+/* 7e. Interior pages -------------------------------------------------------
+   Pages other than the homepage do not run the splash, so they get a static
+   dot field in the same language for continuity. Light sections paint over it. */
+.dotfield {
+  position: relative;
+  background-color: var(--splash-bg-dim);
+}
+.dotfield::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: radial-gradient(circle at center, #0B0B0B 46%, transparent 47%);
+  background-size: 38px 38px;
+  opacity: 0.55;
+  pointer-events: none;
+}
+.dotfield > * { position: relative; z-index: 1; }
+
+/* Page hero — the homepage's animated lockup would be wrong here. */
+.page-hero {
+  padding-top: calc(var(--nav-h, 96px) + clamp(3rem, 7vw, 6rem));
+  padding-bottom: clamp(2.5rem, 5vw, 4rem);
+  text-align: center;
+}
+.page-hero__inner { max-width: 940px; }
+.page-hero__title {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5vw, 4.2rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: #fff;
+  text-wrap: balance;
+}
+.page-hero__title em { font-style: italic; color: var(--cyan); }
+.page-hero__sub {
+  max-width: 720px;
+  margin: clamp(1.25rem, 2.5vw, 1.75rem) auto 0;
+  font-family: var(--font-ui);
+  font-size: clamp(1rem, 1.3vw, 1.125rem);
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.72);
+  text-wrap: pretty;
+}
+.page-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1.25rem, 3vw, 2.25rem);
+  margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
+}
+
+.carousel-band { padding-block: clamp(1.5rem, 3vw, 2.5rem); }
+
+/* Who it's for */
+.audience {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: clamp(1.75rem, 4vw, 3.5rem);
+  padding: clamp(2rem, 4vw, 3.5rem);
+  background: var(--surface-glass);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: clamp(24px, 3vw, 36px);
+}
+.audience__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  color: #fff;
+}
+.audience__title em { font-style: italic; color: var(--cyan); }
+.audience__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.85rem; }
+.audience__list li {
+  position: relative;
+  padding-left: 1.9rem;
+  font-family: var(--font-ui);
+  font-size: clamp(1rem, 1.2vw, 1.0625rem);
+  color: rgba(255, 255, 255, 0.82);
+}
+.audience__list li::before {
+  content: "\2713";
+  position: absolute;
+  left: 0;
+  color: var(--cyan);
+}
+
+/* Founder stories — video beside the quote, alternating sides */
+.story {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: clamp(1.75rem, 4vw, 3.5rem);
+  padding-block: clamp(1.75rem, 3.5vw, 3rem);
+}
+.story + .story { border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.story--flip .story__video { order: 2; }
+
+.story__video {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: var(--surface-glass);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.story__play {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--cyan);
+  color: #0E0E11;
+  font-size: 1.1rem;
+  padding-left: 3px;
+}
+.story__video-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.story__quote p {
+  font-family: var(--font-ui);
+  font-size: clamp(1rem, 1.35vw, 1.175rem);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.82);
+}
+.story__quote strong { color: #fff; font-weight: 500; }
+.story__by {
+  margin-top: clamp(1.25rem, 2.5vw, 1.75rem);
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.55);
+}
+.story__name { display: block; color: #fff; font-weight: 500; }
+.story__by em { font-style: italic; color: var(--cyan); }
+
+/* Featured quote on the light band */
+.feature-quote { margin: 0; max-width: 880px; margin-inline: auto; text-align: center; }
+.feature-quote blockquote { margin: 0; }
+.feature-quote blockquote p {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2.2vw, 1.85rem);
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  color: var(--text-on-light);
+}
+.feature-quote blockquote p + p { margin-top: 1em; }
+.feature-quote blockquote em { font-style: italic; color: #0E7C93; }
+.feature-quote__by {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: left;
+  color: rgba(10, 10, 10, 0.6);
+}
+.feature-quote__by img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; }
+.feature-quote__name { display: block; color: var(--text-on-light); font-weight: 500; }
+.feature-quote__by em { font-style: italic; color: #0E7C93; }
+
+/* Closing CTA */
+.cta-band {
+  text-align: center;
+  padding: clamp(2.5rem, 5vw, 4.5rem) clamp(1.5rem, 4vw, 3.5rem);
+  background: var(--surface-glass);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: clamp(24px, 3vw, 36px);
+}
+.cta-band__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 4vw, 3.2rem);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  color: #fff;
+  text-wrap: balance;
+}
+.cta-band__title em { font-style: italic; color: var(--cyan); }
+.cta-band__text {
+  max-width: 620px;
+  margin: clamp(1rem, 2vw, 1.5rem) auto 0;
+  font-family: var(--font-ui);
+  font-size: clamp(0.975rem, 1.2vw, 1.0625rem);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.68);
+}
+.cta-band__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1.25rem, 3vw, 2.25rem);
+  margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
+}
+
 /* 8. Partners ------------------------------------------------------------- */
 .partners__grid {
   display: flex;
@@ -1376,6 +1587,9 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   /* Stack the split; the white panel then bleeds both sides and rounds both
      top corners instead of just the one. */
   .mission__beats { grid-template-columns: 1fr; }
+  .audience { grid-template-columns: 1fr; }
+  .story { grid-template-columns: 1fr; }
+  .story--flip .story__video { order: 0; }
   .subscribe__panel { grid-template-columns: 1fr; }
   .footer__top { grid-template-columns: 1fr; }
   .process__steps { grid-template-columns: repeat(2, 1fr); }
