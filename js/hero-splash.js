@@ -14,8 +14,8 @@
 
    LOAD SEQUENCE
      1. black dot grid fades in (random cells left empty)
-     2. colored links + rings draw themselves in around the field
-     3. MatchPlay mark draws in at center (ball -> links -> dimples)
+     2. MatchPlay mark draws in at centre (ball -> links -> dimples)
+     3. colored links + rings then draw themselves in around the field
      4. field dims, mark stays bright
      5. mark shifts up into its resting position
      ... then colored shapes keep drawing in and out forever.
@@ -123,7 +123,7 @@
   let cols, rows, x0, y0, rowTop;
   let gridG, linksG, logoG, logoPaths, ballEl, dimpleG;
   let usedCells, excluded, dotCells;
-  let logoShift = 0, splashDone = false;
+  let logoShift = 0, logoDX = 0, splashDone = false;
 
   const cellXY = (c, r) => [x0 + c * S, y0 + r * S];
   const key = (c, r) => c + ',' + r;
@@ -302,6 +302,13 @@
     logoShift = (y0 + (rowTop + 0.5) * S) - (OY + centre);
   }
 
+  /* The mark's cells are grid-snapped, so its centre column can sit up to half
+     a cell off true centre. Carry that remainder as a horizontal nudge: the
+     cell bookkeeping stays on the grid while the mark reads dead centre. */
+  function markTransform() {
+    return 'translate(' + logoDX + 'px, ' + (-logoShift) + 'px)';
+  }
+
   /* Re-resolve against the settled layout and move the mark if it has already
      travelled. Needed because webfonts (and the reveal) change the text height
      after build(), which shifts where the slot lands. */
@@ -309,7 +316,7 @@
     if (!logoG || rowTop === undefined) return;
     resolveShift();
     if (splashDone || logoG.style.transform) {
-      logoG.style.transform = 'translateY(' + (-logoShift) + 'px)';
+      logoG.style.transform = markTransform();
     }
   }
 
@@ -369,6 +376,7 @@
     /* logo placement is resolved first, so its cells are guaranteed dots */
     const logoY0 = OY + H * 0.46;                         /* start: optical center */
     const midC   = Math.round((OX + W / 2 - x0) / S);
+    logoDX = (OX + W / 2) - (x0 + midC * S);   /* sub-cell centring remainder */
     rowTop = Math.round((logoY0 - y0) / S - 0.5);
     const rowBot = rowTop + 1;
     resolveShift();                                       /* sets logoShift */
@@ -433,7 +441,7 @@
 
     if (instant) {                                        /* resting state, no intro */
       logoG.style.transition = 'none';
-      logoG.style.transform = 'translateY(' + (-logoShift) + 'px)';
+      logoG.style.transform = markTransform();
       stage.classList.add('is-dim');
       for (let i = 0; i < Math.round(capOf(heroField) * 0.75); i++) {
         spawnAmbient(heroField, { instant: true, life: SPLASH ? rand(2000, 9000) : 86400000 });
@@ -449,7 +457,7 @@
     stage.classList.add('is-dim');
     if (logoG) {
       resolveShift();                                     /* against the settled layout */
-      logoG.style.transform = 'translateY(' + (-logoShift) + 'px)';
+      logoG.style.transform = markTransform();
     }
     if (logoPaths) logoPaths.forEach(p => {               /* finish a skipped draw */
       p.style.transition = 'stroke-dashoffset .5s ease';
@@ -483,20 +491,8 @@
       });
     }));
 
-    /* STEP 2 — links and rings draw in */
-    t(600, () => {
-      let i = 0;
-      const seed = Math.round(capOf(heroField) * 0.95);
-      (function spawnNext() {
-        if (splashDone || i++ >= seed) return;
-        spawnAmbient(heroField, { drawDur: rand(600, 850), life: rand(3000, 9000) });
-        setTimeout(spawnNext, 65);
-      })();
-    });
-    t(2400, () => startAmbient(heroField));               /* hand off to the loop */
-
-    /* STEP 3 — the mark draws in at center */
-    t(1500, () => {
+    /* STEP 2 — the mark draws in at centre, first thing after the dots */
+    t(800, () => {
       ballEl.getBoundingClientRect();
       ballEl.style.opacity = 1;
       ballEl.style.transform = 'scale(1)';
@@ -510,20 +506,32 @@
       });
     });
 
+    /* STEP 3 — the coloured links and rings follow the mark in */
+    t(2200, () => {
+      let i = 0;
+      const seed = Math.round(capOf(heroField) * 0.95);
+      (function spawnNext() {
+        if (splashDone || i++ >= seed) return;
+        spawnAmbient(heroField, { drawDur: rand(600, 850), life: rand(3000, 9000) });
+        setTimeout(spawnNext, 65);
+      })();
+    });
+    t(4000, () => startAmbient(heroField));               /* hand off to the loop */
+
     /* STEP 4 — everything dims except the mark */
-    t(3100, () => stage.classList.add('is-dim'));
+    t(3400, () => stage.classList.add('is-dim'));
 
     /* STEP 5 — mark shifts up into its resting position */
-    t(3450, () => {
+    t(3700, () => {
       resolveShift();                                     /* against the settled layout */
-      logoG.style.transform = 'translateY(' + (-logoShift) + 'px)';
+      logoG.style.transform = markTransform();
     });
 
     /* STEP 6 — page content cascades in behind the settled mark. */
-    t(3700, () => show('.site-header'));
-    t(3850, () => show('.hero__lockup'));
-    t(4050, () => show('.hero__copy'));
-    t(4400, finish);
+    t(3950, () => show('.site-header'));
+    t(4100, () => show('.hero__lockup'));
+    t(4300, () => show('.hero__copy'));
+    t(4700, finish);
 
     setTimeout(finish, 9000);                             /* watchdog */
     window.addEventListener('pointerdown', finish, { once: true });   /* skip */
