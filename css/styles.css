@@ -51,8 +51,15 @@
   --cyan: #1ED2F4;
   --cyan-hover: #2FBEDB;
   --orange: #F97D4A;
+  --orange-hover: #E2673A;
   --mint: #79E8C9;
   --purple: #D25AFF;
+
+  /* Page accent. Defaults to the MatchPlay Group cyan; a page can retint its
+     whole surface — headings, buttons, links, footer — by redefining these two
+     on a wrapper, which is how the investors page runs Ventures orange. */
+  --accent: var(--cyan);
+  --accent-hover: var(--cyan-hover);
 
   /* Match-category accents */
   --accent-investor: #63D6B6;
@@ -164,7 +171,7 @@ p { margin: 0; }
 
 button { font: inherit; cursor: pointer; }
 
-:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 4px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 
 /* 4. Layout primitives ---------------------------------------------------- */
 .container {
@@ -190,7 +197,7 @@ button { font: inherit; cursor: pointer; }
   margin-bottom: clamp(2.25rem, 4vw, 3.5rem);
   text-wrap: balance;
 }
-.section-title--blue { color: var(--cyan); }
+.section-title--blue { color: var(--accent); }
 .section-title--light { color: var(--text-on-dark); }
 .eyebrow {
   font-family: var(--font-mono);
@@ -216,14 +223,14 @@ button { font: inherit; cursor: pointer; }
 }
 
 .btn--primary {
-  background-color: var(--cyan);
-  border-color: var(--cyan);
+  background-color: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
 .btn--primary:hover {
   background-color: #fff;
   border-color: #fff;
-  color: var(--cyan);
+  color: var(--accent);
 }
 
 /* Fully-rounded CTA with a trailing arrow (matches the nav Apply pill). */
@@ -262,8 +269,8 @@ button { font: inherit; cursor: pointer; }
   padding: 9px 18px;
   margin-left: 4px;
   border-radius: 999px;
-  background-color: var(--cyan);
-  border-color: var(--cyan);
+  background-color: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
 .btn--nav::after {
@@ -274,7 +281,7 @@ button { font: inherit; cursor: pointer; }
 .btn--nav:hover {
   background-color: #fff;
   border-color: #fff;
-  color: var(--cyan);
+  color: var(--accent);
 }
 
 /* 6. Header / navigation -------------------------------------------------- */
@@ -516,11 +523,11 @@ button { font: inherit; cursor: pointer; }
 .nav__mobile-cta {
   margin-top: 10px;
   text-align: center;
-  background: var(--cyan);
+  background: var(--accent);
   color: #fff;
   border-radius: 999px;
 }
-.nav__mobile-cta:hover { background: var(--cyan-hover); color: #fff; }
+.nav__mobile-cta:hover { background: var(--accent-hover); color: #fff; }
 
 /* 7. Hero ----------------------------------------------------------------- */
 /* Animation only — the black dot grid, the colored links and rings, and the
@@ -654,7 +661,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   font-size: clamp(0.8rem, 1.75vw, 1.6rem);
   line-height: 1.2;
   text-transform: uppercase;
-  color: var(--cyan);
+  color: var(--accent);
   white-space: nowrap;
 }
 
@@ -680,7 +687,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
   padding: 16px 28px;
   border-radius: 999px;
-  background: var(--cyan);
+  background: var(--accent);
   color: #fff;
   font-family: var(--font-mono);
   font-size: 14px;
@@ -693,7 +700,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 }
 .hero__cta:hover {
   background: #fff;
-  color: var(--cyan);
+  color: var(--accent);
 }
 
 /* 7a. Mission --------------------------------------------------------------
@@ -731,7 +738,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   width: 460px;
   height: 460px;
   border-radius: 50%;
-  background: var(--cyan);
+  background: var(--accent);
   filter: blur(110px);
   opacity: 0.07;
   pointer-events: none;
@@ -743,7 +750,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   font-size: 0.72rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--cyan);
+  color: var(--accent);
   margin-bottom: clamp(0.75rem, 1.5vw, 1.15rem);
 }
 
@@ -755,7 +762,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   color: #fff;
   text-wrap: balance;
 }
-.mission__title em { font-style: italic; color: var(--cyan); }
+.mission__title em { font-style: italic; color: var(--accent); }
 
 .mission__body {
   max-width: 760px;
@@ -853,7 +860,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 }
 .ecosystem__title em {
   font-style: italic;
-  color: var(--cyan);
+  color: var(--accent);
 }
 
 .ecosystem__split {
@@ -1045,13 +1052,13 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   background: var(--surface-glass-ink);
   border: 1px solid rgba(10, 10, 10, 0.1);
   border-radius: 20px;
-  border-top: 3px solid var(--cyan);
+  border-top: 3px solid var(--accent);
 }
 .process__num {
   font-family: var(--font-mono);
   font-size: 0.7rem;
   letter-spacing: 0.16em;
-  color: var(--cyan);
+  color: var(--accent);
   margin-bottom: clamp(1rem, 2vw, 1.5rem);
 }
 .process__name {
@@ -1080,7 +1087,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   letter-spacing: -0.03em;
   color: #fff;
 }
-.values__title em { font-style: italic; color: var(--cyan); }
+.values__title em { font-style: italic; color: var(--accent); }
 
 .values__grid {
   display: grid;
@@ -1097,7 +1104,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   font-family: var(--font-mono);
   font-size: 0.7rem;
   letter-spacing: 0.16em;
-  color: var(--cyan);
+  color: var(--accent);
   margin-bottom: clamp(1rem, 2vw, 1.5rem);
 }
 .value__name {
@@ -1121,23 +1128,19 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 }
 
 /* 7e. Interior pages -------------------------------------------------------
-   Pages other than the homepage do not run the splash, so they get a static
-   dot field in the same language for continuity. Light sections paint over it. */
+   Pages other than the homepage do not run the splash. They sit on the same
+   dark ground, plain — the type and the panels carry the page on their own. */
 .dotfield {
   position: relative;
   background-color: var(--splash-bg-dim);
 }
-.dotfield::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background-image: radial-gradient(circle at center, #0B0B0B 46%, transparent 47%);
-  background-size: 38px 38px;
-  opacity: 0.55;
-  pointer-events: none;
-}
 .dotfield > * { position: relative; z-index: 1; }
+
+/* Retint a whole page to the Ventures orange. */
+.page--ventures {
+  --accent: var(--orange);
+  --accent-hover: var(--orange-hover);
+}
 
 /* Page hero — the homepage's animated lockup would be wrong here. */
 .page-hero {
@@ -1154,7 +1157,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   color: #fff;
   text-wrap: balance;
 }
-.page-hero__title em { font-style: italic; color: var(--cyan); }
+.page-hero__title em { font-style: italic; color: var(--accent); }
 .page-hero__sub {
   max-width: 720px;
   margin: clamp(1.25rem, 2.5vw, 1.75rem) auto 0;
@@ -1193,7 +1196,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   letter-spacing: -0.025em;
   color: #fff;
 }
-.audience__title em { font-style: italic; color: var(--cyan); }
+.audience__title em { font-style: italic; color: var(--accent); }
 .audience__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.85rem; }
 .audience__list li {
   position: relative;
@@ -1206,7 +1209,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   content: "\2713";
   position: absolute;
   left: 0;
-  color: var(--cyan);
+  color: var(--accent);
 }
 
 /* Founder stories — video beside the quote, alternating sides */
@@ -1239,7 +1242,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--cyan);
+  background: var(--accent);
   color: #0E0E11;
   font-size: 1.1rem;
   padding-left: 3px;
@@ -1267,7 +1270,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   color: rgba(255, 255, 255, 0.55);
 }
 .story__name { display: block; color: #fff; font-weight: 500; }
-.story__by em { font-style: italic; color: var(--cyan); }
+.story__by em { font-style: italic; color: var(--accent); }
 
 /* Featured quote on the light band */
 .feature-quote { margin: 0; max-width: 880px; margin-inline: auto; text-align: center; }
@@ -1313,7 +1316,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   color: #fff;
   text-wrap: balance;
 }
-.cta-band__title em { font-style: italic; color: var(--cyan); }
+.cta-band__title em { font-style: italic; color: var(--accent); }
 .cta-band__text {
   max-width: 620px;
   margin: clamp(1rem, 2vw, 1.5rem) auto 0;
@@ -1329,6 +1332,178 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   justify-content: center;
   gap: clamp(1.25rem, 3vw, 2.25rem);
   margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
+}
+
+/* 7f. Investors page --------------------------------------------------------
+   The offering pair reuses the ecosystem cards, but standalone in a plain
+   two-up grid rather than inside the split panel. */
+.offer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.25rem, 3vw, 2.25rem);
+  align-items: stretch;
+}
+.offer-grid .eco-card { max-width: none; min-height: 340px; }
+
+/* Sector row — what the syndicate actually looks at. */
+.sectors {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+  max-width: 760px;
+  margin: clamp(2.5rem, 5vw, 4rem) auto 0;
+  padding: clamp(1.25rem, 2.5vw, 1.75rem);
+  background: var(--surface-glass);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+}
+.sectors__label {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  color: rgba(255, 255, 255, 0.72);
+}
+.sectors__tags { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; }
+.sectors__tag {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  color: #fff;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+}
+
+/* Investor roster. Names rather than marks until the logo files are exported;
+   swap an <img> into each tile and the grid takes it unchanged. */
+.roster {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: clamp(0.75rem, 1.6vw, 1.1rem);
+}
+.roster__tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 92px;
+  padding: 1rem;
+  text-align: center;
+  background: var(--surface-light);
+  border-radius: 14px;
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  color: var(--text-on-light);
+  transition: transform 0.3s var(--ease);
+}
+.roster__tile:hover { transform: translateY(-3px); }
+.roster__tile img { max-width: 100%; max-height: 56px; object-fit: contain; }
+.roster__note {
+  margin-top: clamp(1.5rem, 3vw, 2rem);
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+  color: var(--accent);
+}
+
+/* 7g. Press ----------------------------------------------------------------
+   An index of releases, and the release pages themselves. */
+.press-list { display: grid; gap: clamp(1rem, 2vw, 1.5rem); }
+.press-item {
+  display: block;
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+  background: var(--surface-glass);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  transition: transform 0.35s var(--ease), background-color 0.35s var(--ease),
+              border-color 0.35s var(--ease);
+}
+.press-item:hover {
+  transform: translateY(-3px);
+  background: var(--surface-glass-hover);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.press-item__date {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+.press-item__title {
+  margin-top: 0.65rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.4vw, 1.9rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #fff;
+  text-wrap: balance;
+}
+.press-item__excerpt {
+  margin-top: 0.9rem;
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.72);
+}
+.press-item__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1.1rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+/* Release page: a single readable column. */
+.release { max-width: 760px; margin-inline: auto; }
+.release__title { text-align: left; margin-top: 0.75rem; }
+.release__body > * + * { margin-top: 1.35rem; }
+.release__body p {
+  font-family: var(--font-ui);
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.78);
+}
+.release__body strong { color: #fff; font-weight: 500; }
+.release__body a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.release__body h2 {
+  margin-top: clamp(2.5rem, 5vw, 3.5rem);
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.release__body blockquote {
+  margin-inline: 0;
+  padding-left: clamp(1rem, 2vw, 1.5rem);
+  border-left: 2px solid var(--accent);
+}
+.release__body blockquote p {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.88);
+}
+.release__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: clamp(2.5rem, 5vw, 3.5rem);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+@media (max-width: 760px) {
+  .offer-grid { grid-template-columns: 1fr; }
 }
 
 /* 8. Partners ------------------------------------------------------------- */
@@ -1419,7 +1594,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   font-size: 0.72rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--cyan);
+  color: var(--accent);
   margin-bottom: 0.9em;
 }
 .subscribe__title {
@@ -1429,7 +1604,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   letter-spacing: -0.02em;
   color: #fff;
 }
-.subscribe__title em { font-style: italic; color: var(--cyan); }
+.subscribe__title em { font-style: italic; color: var(--accent); }
 .subscribe__text {
   margin-top: 0.7em;
   font-family: var(--font-ui);
@@ -1460,7 +1635,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 .subscribe__input::placeholder { color: rgba(255, 255, 255, 0.4); }
 .subscribe__input:focus {
   outline: none;
-  border-color: var(--cyan);
+  border-color: var(--accent);
   background: rgba(255, 255, 255, 0.07);
 }
 .subscribe__success {
@@ -1471,7 +1646,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   font-size: 0.75rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--cyan);
+  color: var(--accent);
 }
 .subscribe__form.is-done ~ .subscribe__success { display: block; }
 
@@ -1535,7 +1710,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   color: rgba(255, 255, 255, 0.82);
   transition: color var(--dur);
 }
-.footer__col a:hover { color: var(--cyan); }
+.footer__col a:hover { color: var(--accent); }
 
 .footer__bottom {
   display: flex;
