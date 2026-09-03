@@ -778,133 +778,51 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 
 /* Problem and Mission sit side by side under the vision, left-aligned so the
    longer copy stays readable against the centred lead. */
-.mission__beats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: clamp(1.75rem, 4vw, 3.5rem);
-  margin-top: clamp(2rem, 4vw, 3rem);
-  padding-top: clamp(2rem, 4vw, 3rem);
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  text-align: left;
-}
-.mission__beat-lead {
-  font-family: var(--font-display);
-  font-size: clamp(1.15rem, 1.7vw, 1.4rem);
-  line-height: 1.25;
-  letter-spacing: -0.015em;
-  color: #fff;
-  margin-bottom: 0.6em;
-}
-.mission__beat-text {
-  font-family: var(--font-ui);
-  font-size: clamp(0.95rem, 1.15vw, 1.0625rem);
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.7);
-}
 
 /* The path forward, closing the section before the CTAs. */
-.mission__path {
-  max-width: 780px;
-  margin: clamp(1.75rem, 3.5vw, 2.5rem) auto 0;
-  font-family: var(--font-ui);
-  font-size: clamp(0.95rem, 1.15vw, 1.0625rem);
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.62);
-  text-wrap: pretty;
-}
-.mission__path strong { color: #fff; font-weight: 500; }
 
-.mission__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(1.25rem, 3vw, 2.25rem);
-  margin-top: clamp(2rem, 4vw, 3rem);
-}
 
 /* 7b. Ecosystem ------------------------------------------------------------
-   The dot field carries on down the left; the right half is a white panel
-   that bleeds to the viewport edge with a rounded top-left corner. */
+   A flat dark band. Unlike the other dark sections this one is opaque, so the
+   hero's animated field ends at the hero and the cards sit on a plain ground. */
 .ecosystem {
   position: relative;
-  overflow: hidden;               /* clips the white panel's bleed */
-  min-height: 80vh;               /* the stage's field shows through */
-  /* The split row absorbs any slack from min-height, rather than the section
-     centring its content — that keeps the white panel on the bottom edge. */
-  display: flex;
-  flex-direction: column;
-  padding-top: var(--section-y);
-  padding-bottom: 0;              /* lets the white panel run to the bottom edge */
-}
-.ecosystem__split { flex: 1 0 auto; }
-.ecosystem__inner {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  flex: 1 0 auto;
+  background: var(--splash-bg-dim);
+  padding-block: var(--section-y);
 }
 
-/* Centred header — no eyebrow, no lead. */
+/* Title left, lead right — the lead sits on the title's baseline block rather
+   than centred, which is what gives the band its editorial feel. */
 .ecosystem__head {
-  max-width: 1000px;
-  margin: 0 auto clamp(2.5rem, 5vw, 4rem);
-  text-align: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  margin-bottom: clamp(2.5rem, 5vw, 4rem);
 }
 .ecosystem__title {
   font-family: var(--font-display);
-  font-size: clamp(40px, 5.5vw, 72px);
-  line-height: 0.96;
+  font-size: clamp(2.25rem, 5vw, 4rem);
+  line-height: 0.98;
   letter-spacing: -0.03em;
   color: #fff;
 }
-.ecosystem__title em {
-  font-style: italic;
-  color: var(--accent);
+.ecosystem__title em { font-style: italic; color: var(--accent); }
+.ecosystem__lead {
+  padding-top: 0.4em;
+  font-family: var(--font-ui);
+  font-size: clamp(1rem, 1.3vw, 1.125rem);
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.68);
+  text-wrap: pretty;
 }
 
-.ecosystem__split {
-  --eco-pad: clamp(1.5rem, 3.5vw, 3rem);
-  --eco-radius: clamp(24px, 4vw, 56px);
+.eco-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1rem, 2vw, 1.75rem);
   align-items: stretch;
 }
-/* Symmetric padding on both columns, so the two cards come out the same
-   width and sit an equal distance from the centre line. */
-.eco-col { padding: var(--eco-pad); }
-.eco-col--left { padding-bottom: var(--section-y); }
-
-/* White panel: bleeds past the right edge (the section clips it) and runs to
-   the section's bottom. The top-left corner is a normal radius, so the white
-   starts inset and widens as it descends; the bottom-left is an inverted
-   corner that carries on widening, cutting into the dark side. */
-.eco-col--right { position: relative; }
-.eco-col--right::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: -50vw;
-  background: var(--surface-light);
-  border-top-left-radius: var(--eco-radius);
-}
-/* Inverted corner: white everywhere except a quarter-disc centred on this
-   box's top-left, which leaves the dark side a rounded outer corner. */
-.eco-col--right::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: calc(-1 * var(--eco-radius));
-  width: var(--eco-radius);
-  height: var(--eco-radius);
-  background: radial-gradient(circle at 0 0,
-              rgba(0, 0, 0, 0) 0 var(--eco-radius),
-              var(--surface-light) var(--eco-radius));
-}
-.eco-col--right > * { position: relative; z-index: 1; }
 
 /* Cards ------------------------------------------------------------------- */
 .eco-card {
@@ -913,8 +831,6 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   display: flex;
   flex-direction: column;
   min-height: 400px;
-  max-width: 460px;              /* both cards the same, narrower width */
-  margin-inline: auto;
   background: var(--surface-glass);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px;
@@ -960,6 +876,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 
 .eco-card--group { --eco-accent: var(--cyan); }
 .eco-card--ventures { --eco-accent: var(--orange); }
+.eco-card--capital  { --eco-accent: var(--orange); }
 
 .eco-card__name {
   position: relative;
@@ -1003,17 +920,6 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   transition: opacity var(--dur);
 }
 .eco-card__link:hover { opacity: 0.7; }
-/* Light variant — same design inverted for the white panel. */
-.eco-card--light {
-  background: var(--surface-glass-ink);
-  border-color: rgba(10, 10, 10, 0.1);
-}
-.eco-card--light:hover {
-  background: var(--surface-glass-ink-hover);
-  border-color: rgba(10, 10, 10, 0.18);
-}
-.eco-card--light .eco-card__name { color: var(--text-on-light); }
-.eco-card--light .eco-card__body { color: rgba(10, 10, 10, 0.72); }
 
 /* 7c. Process ---------------------------------------------------------------
    Readiness before the first meeting, then the four stages. The order is the
@@ -1926,8 +1832,7 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 @media (max-width: 991px) {
   /* Stack the split; the white panel then bleeds both sides and rounds both
      top corners instead of just the one. */
-  .mission__beats { grid-template-columns: 1fr; }
-  .audience { grid-template-columns: 1fr; }
+    .audience { grid-template-columns: 1fr; }
   .story { grid-template-columns: 1fr; }
   .story--flip .story__video { order: 0; }
   .subscribe__panel { grid-template-columns: 1fr; }
@@ -1935,17 +1840,9 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
   .process__steps { grid-template-columns: repeat(2, 1fr); }
   .values__grid { grid-template-columns: 1fr; }
 
-  .ecosystem__split { grid-template-columns: 1fr; }
+  .ecosystem__head { grid-template-columns: 1fr; }
+  .eco-grid { grid-template-columns: 1fr; }
   .eco-card { min-height: 0; padding: 32px 26px 28px; }
-  .eco-col { padding-inline: 0; }
-  .eco-col--left { padding-bottom: var(--eco-pad); }
-  .eco-col--right::before {
-    left: -50vw;
-    border-top-right-radius: var(--eco-radius);
-  }
-  /* Stacked, the panel bleeds left too, so the inverted corner would punch a
-     dark notch out of it. */
-  .eco-col--right::after { display: none; }
 
 }
 
