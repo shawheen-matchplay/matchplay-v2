@@ -54,6 +54,7 @@
   --orange-hover: #E2673A;
   --mint: #79E8C9;
   --purple: #D25AFF;
+  --purple-hover: #BE47E8;
 
   /* Page accent. Defaults to the MatchPlay Group cyan; a page can retint its
      whole surface — headings, buttons, links, footer — by redefining these two
@@ -1136,11 +1137,10 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 }
 .dotfield > * { position: relative; z-index: 1; }
 
-/* Retint a whole page to the Ventures orange. */
-.page--ventures {
-  --accent: var(--orange);
-  --accent-hover: var(--orange-hover);
-}
+/* Retint a whole page. The accent cascades to headings, buttons, links and
+   the footer, so a page only has to name its colour once. */
+.page--ventures { --accent: var(--orange); --accent-hover: var(--orange-hover); }
+.page--purple   { --accent: var(--purple); --accent-hover: var(--purple-hover); }
 
 /* Page hero — the homepage's animated lockup would be wrong here. */
 .page-hero {
@@ -1464,28 +1464,35 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 /* Release page: a single readable column. */
 .release { max-width: 760px; margin-inline: auto; }
 .release__title { text-align: left; margin-top: 0.75rem; }
-.release__body > * + * { margin-top: 1.35rem; }
-.release__body p {
+.release__body > * + *,
+.prose > * + * { margin-top: 1.35rem; }
+.release__body p,
+.prose p {
   font-family: var(--font-ui);
   font-size: 1.0625rem;
   line-height: 1.75;
   color: rgba(255, 255, 255, 0.78);
 }
-.release__body strong { color: #fff; font-weight: 500; }
-.release__body a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
-.release__body h2 {
+.release__body strong,
+.prose strong { color: #fff; font-weight: 500; }
+.release__body a,
+.prose a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.release__body h2,
+.prose h2 {
   margin-top: clamp(2.5rem, 5vw, 3.5rem);
   font-family: var(--font-display);
   font-size: clamp(1.35rem, 2.2vw, 1.75rem);
   letter-spacing: -0.02em;
   color: #fff;
 }
-.release__body blockquote {
+.release__body blockquote,
+.prose blockquote {
   margin-inline: 0;
   padding-left: clamp(1rem, 2vw, 1.5rem);
   border-left: 2px solid var(--accent);
 }
-.release__body blockquote p {
+.release__body blockquote p,
+.prose blockquote p {
   font-family: var(--font-serif);
   font-style: italic;
   color: rgba(255, 255, 255, 0.88);
@@ -1504,6 +1511,161 @@ html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px)
 
 @media (max-width: 760px) {
   .offer-grid { grid-template-columns: 1fr; }
+}
+
+/* 7h. Summit recaps ---------------------------------------------------------
+   Event pages: a banner lockup, sponsor rows, an agenda, panel slides and a
+   photo gallery. Each summit sets its own --accent on <body>. */
+.summit-hero {
+  padding-top: calc(var(--nav-h, 96px) + clamp(2rem, 4vw, 3.5rem));
+  padding-bottom: clamp(2rem, 4vw, 3rem);
+}
+/* The banner art already carries its own dark ground, so it needs no panel
+   behind it — just room to breathe and a radius to match the cards. */
+.summit-hero__banner {
+  max-width: 1000px;
+  margin-inline: auto;
+  border-radius: clamp(12px, 2vw, 20px);
+  overflow: hidden;
+}
+.summit-hero__banner img { width: 100%; }
+
+.summit-title {
+  margin-top: clamp(2rem, 4vw, 3rem);
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.4vw, 3.4rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+.summit-title em { display: block; font-style: normal; color: var(--accent); }
+.summit-meta {
+  margin-top: clamp(0.75rem, 1.5vw, 1rem);
+  text-align: center;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Sponsor rows. The marks are dark-on-transparent, so each sits on a white
+   tile rather than being inverted. */
+.sponsors { margin-top: clamp(2.5rem, 5vw, 3.5rem); text-align: center; }
+.sponsors + .sponsors { margin-top: clamp(1.75rem, 3.5vw, 2.5rem); }
+.sponsors__label {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.6);
+}
+.sponsors__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+  margin-top: clamp(1rem, 2vw, 1.5rem);
+}
+.sponsor-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 160px;
+  min-height: 76px;
+  padding: 0.9rem 1.4rem;
+  background: var(--surface-light);
+  border-radius: 12px;
+  transition: transform 0.3s var(--ease);
+}
+.sponsor-tile:hover { transform: translateY(-3px); }
+/* Cap both axes: the marks range from square-ish to very wide, and without a
+   width cap a wide one stretches its tile far past the others. */
+.sponsor-tile img { max-height: 44px; max-width: 190px; width: auto; object-fit: contain; }
+
+/* Photo gallery */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: clamp(0.75rem, 1.6vw, 1.25rem);
+}
+.gallery__item {
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--surface-glass);
+}
+.gallery__item img {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  transition: transform 0.5s var(--ease);
+}
+.gallery__item:hover img { transform: scale(1.04); }
+.gallery__actions { margin-top: clamp(1.75rem, 3.5vw, 2.5rem); text-align: center; }
+
+/* A session: kicker, title, prose, then the panel slide. */
+.highlight + .highlight { margin-top: clamp(3rem, 6vw, 5rem); }
+.highlight__kicker {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+.highlight__title {
+  margin-top: 0.6rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.8vw, 2.25rem);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: #fff;
+  text-wrap: balance;
+}
+.highlight__body { margin-top: clamp(1rem, 2vw, 1.5rem); }
+.highlight__slide {
+  margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.highlight__slide img { width: 100%; }
+
+/* Two slides side by side (the 2024 panels). */
+.slide-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: clamp(1rem, 2vw, 1.5rem);
+  margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
+}
+.slide-pair figure { margin: 0; border-radius: 14px; overflow: hidden; }
+
+/* Agenda: a day's running order. */
+.agenda { margin-top: clamp(1.25rem, 2.5vw, 1.75rem); padding: 0; list-style: none; }
+.agenda li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: var(--font-ui);
+  color: rgba(255, 255, 255, 0.78);
+}
+.agenda li:last-child { border-bottom: 0; }
+.agenda__time {
+  min-width: 6.5rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+.day-label {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.08em;
+  color: var(--accent);
 }
 
 /* 8. Partners ------------------------------------------------------------- */
