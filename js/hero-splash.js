@@ -123,7 +123,7 @@
   let cols, rows, x0, y0, rowTop;
   let gridG, linksG, logoG, logoPaths, ballEl, dimpleG;
   let usedCells, excluded, dotCells;
-  let logoShift = 0, logoDX = 0, splashDone = false;
+  let logoShift = 0, splashDone = false;
 
   const cellXY = (c, r) => [x0 + c * S, y0 + r * S];
   const key = (c, r) => c + ',' + r;
@@ -302,11 +302,10 @@
     logoShift = (y0 + (rowTop + 0.5) * S) - (OY + centre);
   }
 
-  /* The mark's cells are grid-snapped, so its centre column can sit up to half
-     a cell off true centre. Carry that remainder as a horizontal nudge: the
-     cell bookkeeping stays on the grid while the mark reads dead centre. */
+  /* The mark only ever moves vertically: the grid is aligned to true centre in
+     build(), so it is already horizontally centred where it is drawn. */
   function markTransform() {
-    return 'translate(' + logoDX + 'px, ' + (-logoShift) + 'px)';
+    return 'translateY(' + (-logoShift) + 'px)';
   }
 
   /* Re-resolve against the settled layout and move the mark if it has already
@@ -343,6 +342,14 @@
     R = S * 0.5;                                          /* ring radius */
     cols = Math.ceil(TW / S) + 2;
     x0 = (TW - (cols - 1) * S) / 2;
+    /* The mark hangs off a whole-numbered centre column, so unless the column
+       count happens to fall right, that column sits up to half a cell off true
+       centre. Slide the whole field over by the remainder before anything is
+       laid out: the dots are a uniform repeating field, so moving them is
+       invisible, and the mark then draws dead centre from its first frame
+       rather than correcting itself when it shifts up. */
+    const midC = Math.round((OX + W / 2 - x0) / S);
+    x0 += (OX + W / 2) - (x0 + midC * S);
     /* Anchor the grid to the top instead of centring it vertically. The stage
        grows when the ecosystem copy reflows, and a y0 derived from TH would
        move every dot, link and the mark's row with it — which is what forced a
@@ -375,8 +382,6 @@
 
     /* logo placement is resolved first, so its cells are guaranteed dots */
     const logoY0 = OY + H * 0.46;                         /* start: optical center */
-    const midC   = Math.round((OX + W / 2 - x0) / S);
-    logoDX = (OX + W / 2) - (x0 + midC * S);   /* sub-cell centring remainder */
     rowTop = Math.round((logoY0 - y0) / S - 0.5);
     const rowBot = rowTop + 1;
     resolveShift();                                       /* sets logoShift */
