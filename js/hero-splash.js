@@ -48,6 +48,8 @@
 
   const NS = 'http://www.w3.org/2000/svg';
   const SPLASH = document.documentElement.classList.contains('splash');
+  /* Here in the last 24h: skip the load sequence, keep the moving field. */
+  const RETURNING = document.documentElement.classList.contains('splash--returning');
 
   /* ---- tunables ---------------------------------------------------------
      SCALE is the master size control. 1 = original, 0.75 = three quarters.
@@ -474,13 +476,28 @@
   }
 
   /* ---------- run ---------------------------------------------------------- */
+  const t = (ms, fn) => setTimeout(fn, ms);
+  const show = sel => { const n = document.querySelector(sel); if (n) n.classList.add('shown'); };
+
   if (!SPLASH) {
     build(true);                                          /* reduced motion: done */
     splashDone = true;
+  } else if (RETURNING) {
+    /* Field starts in its resting state — dots up, mark placed, shapes already
+       drawn — and the ambient loop takes over from there, so the movement is
+       the same as always. The only thing animated is the page arriving. */
+    build(true);
+    /* Timers rather than rAF: a tab opened in the background gets no animation
+       frames at all, and the cascade would sit unstarted until the watchdog.
+       The first delay only has to outlast the initial style pass so the
+       transition has a hidden state to move from. */
+    t(60, () => show('.site-header'));
+    t(150, () => show('.hero__lockup'));
+    t(250, () => show('.hero__copy'));
+    t(380, finish);                                       /* reveals the rest, starts ambient */
+    setTimeout(finish, 2000);                             /* watchdog */
   } else {
     build(false);
-    const t = (ms, fn) => setTimeout(fn, ms);
-    const show = sel => { const n = document.querySelector(sel); if (n) n.classList.add('shown'); };
 
     /* mark starts hidden, revealed in step 3 */
     ballEl.style.opacity = 0;
@@ -589,6 +606,19 @@
   }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(realignMark);
 
+
+  /* A hidden tab stops spawning (see startAmbient) while the shapes already on
+     screen keep expiring, so a page left in the background comes back to an
+     empty field that refills a couple of shapes per second. Top it up on
+     return instead — drawn in place, since nobody watched it happen. */
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden || !splashDone) return;
+    const target = Math.round(capOf(heroField) * 0.75);
+    let alive = heroField.population.filter(i => !i.dead).length;
+    while (alive++ < target) {
+      spawnAmbient(heroField, { instant: true, life: rand(2000, 9000) });
+    }
+  });
 
   /* Rebuild on resize, final state only. The 18% bleed plus slice scaling
      keeps the field full while the drag is in progress. */

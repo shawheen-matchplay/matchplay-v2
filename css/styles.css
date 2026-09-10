@@ -612,6 +612,11 @@ html.splash [data-reveal]:not(.shown) {
 }
 /* The fixed header drops in from above instead. */
 html.splash .site-header[data-reveal]:not(.shown) { transform: translateY(-14px); }
+/* A returning visitor is not watching an intro, so the arrival is brisk — the
+   long easing reads as sluggishness once the field is already settled. */
+html.splash--returning [data-reveal] {
+  transition-duration: 0.5s;
+}
 
 /* --- Hero content: lockup + copy, stacked under the animated mark --------- */
 .hero__content {

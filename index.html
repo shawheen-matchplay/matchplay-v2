@@ -5,10 +5,23 @@
     document.documentElement.classList.add("js");
     /* Gate the hero intro. Adds html.splash only when motion is allowed, so a
        no-JS or reduced-motion visitor never sees hidden content. Must run
-       before first paint. */
+       before first paint.
+
+       html.splash--returning marks someone who was here in the last 24 hours:
+       they skip the long load sequence and just get the page fading in, with
+       the field already at rest and still moving. The stamp is refreshed every
+       visit, so the window slides. Storage can throw (private mode, blocked
+       cookies) — that just means every visit looks like the first. */
     try {
       if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         document.documentElement.classList.add("splash");
+        try {
+          var last = window.localStorage.getItem("mp:introSeen");
+          if (last && Date.now() - Number(last) < 864e5) {
+            document.documentElement.classList.add("splash--returning");
+          }
+          window.localStorage.setItem("mp:introSeen", String(Date.now()));
+        } catch (e) {}
       }
     } catch (e) {}
   </script>
