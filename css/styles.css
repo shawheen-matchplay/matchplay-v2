@@ -188,6 +188,9 @@ button { font: inherit; cursor: pointer; }
 .section--darker,
 .section--alt { background-color: transparent; }
 .section--light { background-color: var(--surface-light); color: var(--text-on-light); }
+/* First section on a page with no .page-hero: clear the fixed nav, matching
+   the offset .page-hero uses, so the two kinds of page start at the same height. */
+.section--top { padding-top: calc(var(--nav-h, 96px) + clamp(3rem, 7vw, 6rem)); }
 
 /* Shared section heading */
 .section-title {
@@ -1376,14 +1379,14 @@ html.splash--returning [data-reveal] {
 }
 
 /* Release page: a single readable column. */
-.release { max-width: 760px; margin-inline: auto; }
+.release { max-width: 880px; margin-inline: auto; }
 .release__title { text-align: left; margin-top: 0.75rem; }
 .release__body > * + *,
 .prose > * + * { margin-top: 1.35rem; }
 .release__body p,
 .prose p {
   font-family: var(--font-ui);
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
   line-height: 1.75;
   color: rgba(255, 255, 255, 0.78);
 }
