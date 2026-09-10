@@ -1814,8 +1814,11 @@ html.splash--returning [data-reveal] {
    if the script fails to load. */
 .js .reveal {
   opacity: 0;
-  transform: translateY(24px);
+  transform: translateY(18px);
   transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+  /* main.js indexes siblings so a row of cards cascades instead of popping in
+     together. Capped there, so a long list never runs up a visible delay. */
+  transition-delay: calc(var(--i, 0) * 70ms);
 }
 .js .reveal.is-visible { opacity: 1; transform: none; }
 

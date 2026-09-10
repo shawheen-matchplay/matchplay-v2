@@ -85,15 +85,39 @@
   /* ---- Scroll reveal ------------------------------------------------ */
   var reveals = document.querySelectorAll(".reveal");
   if ("IntersectionObserver" in window && reveals.length) {
+    // Index each element among its revealed siblings. CSS turns that into a
+    // transition-delay, so a row of cards cascades rather than popping in at
+    // once. Capped so a long grid never ends up waiting on a visible delay.
+    var counts = [];
+    var parents = [];
+    Array.prototype.forEach.call(reveals, function (el) {
+      var p = el.parentElement;
+      var k = parents.indexOf(p);
+      if (k === -1) { k = parents.push(p) - 1; counts[k] = 0; }
+      el.style.setProperty("--i", Math.min(counts[k]++, 6));
+    });
+
+    var observed = false;
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
+          observed = true;
           entry.target.classList.add("is-visible");
           io.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.15 });
+      // A percentage threshold never fires for an element taller than the
+      // viewport, so trigger on first contact and pull the line up instead.
+    }, { threshold: 0, rootMargin: "0px 0px -8% 0px" });
     reveals.forEach(function (el) { io.observe(el); });
+
+    // The CSS hides every .reveal, so if the observer never reports anything —
+    // a tab loaded in the background is the common case — the page would sit
+    // blank. Show it all rather than let that happen.
+    setTimeout(function () {
+      if (observed) return;
+      reveals.forEach(function (el) { el.classList.add("is-visible"); });
+    }, 1500);
   } else {
     reveals.forEach(function (el) { el.classList.add("is-visible"); });
   }
