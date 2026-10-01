@@ -1230,50 +1230,9 @@ html.splash--returning [data-reveal] {
   margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
 }
 
-/* 7f. Investors page --------------------------------------------------------
-   The offering pair reuses the ecosystem cards, but standalone in a plain
-   two-up grid rather than inside the split panel. */
-.offer-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(1.25rem, 3vw, 2.25rem);
-  align-items: stretch;
-}
-.offer-grid .eco-card { max-width: none; min-height: 340px; }
-
-/* Sector row — what the syndicate actually looks at. */
-.sectors {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(0.75rem, 2vw, 1.25rem);
-  max-width: 760px;
-  margin: clamp(2.5rem, 5vw, 4rem) auto 0;
-  padding: clamp(1.25rem, 2.5vw, 1.75rem);
-  background: var(--surface-glass);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-}
-.sectors__label {
-  font-family: var(--font-ui);
-  font-size: var(--fs-sm);
-  color: rgba(255, 255, 255, 0.72);
-}
-.sectors__tags { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; }
-.sectors__tag {
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  font-size: 0.8rem;
-  letter-spacing: 0.04em;
-  color: #fff;
-  padding: 0.4rem 0.85rem;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 999px;
-}
-
-/* Investor roster. Names rather than marks until the logo files are exported;
-   swap an <img> into each tile and the grid takes it unchanged. */
+/* 7f. Logo roster ----------------------------------------------------------
+   Names rather than marks until the logo files are exported; swap an <img>
+   into each tile and the grid takes it unchanged. Used by the Partners page. */
 .roster {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -1405,9 +1364,6 @@ html.splash--returning [data-reveal] {
   color: var(--accent);
 }
 
-@media (max-width: 760px) {
-  .offer-grid { grid-template-columns: 1fr; }
-}
 
 /* 7h. Summit recaps ---------------------------------------------------------
    Event pages: a banner lockup, sponsor rows, an agenda, panel slides and a
@@ -2044,6 +2000,72 @@ html.splash--returning [data-reveal] {
 .voice figcaption img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
 .voice__name { display: block; color: var(--ink); font-weight: 500; }
 
+.cards--5 { --cols: 5; }
+
+/* A step with its working detail: the explanation on the left, the list it
+   produces on the right. */
+.how { display: grid; gap: clamp(1rem, 2vw, 1.5rem); margin: 0; padding: 0; list-style: none; }
+.how-step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  align-items: start;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  padding: clamp(1.75rem, 3.5vw, 2.75rem);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--accent);
+  border-radius: 24px;
+}
+.how-step__num {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  color: var(--accent-ink);
+}
+.how-step__title {
+  margin-top: clamp(0.9rem, 1.8vw, 1.25rem);
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.how-step__main p {
+  margin-top: 0.9rem;
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.how-step__main .how-step__key { color: var(--ink); font-weight: 500; }
+.how-step .notice { margin-top: 1.25rem; font-size: 0.95rem; }
+.how-step .pipeline { grid-template-columns: repeat(6, minmax(0, 1fr)); margin-top: 0.5rem; }
+
+/* Checked and crossed lists. */
+.marks { display: grid; gap: 0.8rem; margin: 0; padding: 0; list-style: none; }
+.marks li {
+  position: relative;
+  padding-left: 1.75rem;
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.marks li::before {
+  content: "\2713";
+  position: absolute;
+  left: 0;
+  font-weight: 600;
+  color: var(--accent-ink);
+}
+.marks--x li { color: var(--ink-2); }
+.marks--x li::before { content: "\2715"; color: var(--ink-3); }
+.panel .marks { margin-top: 1rem; }
+.card .grid-intro { margin: 1.25rem 0 0.75rem; font-size: 0.95rem; }
+
+/* A button in the Ventures colour, for the hand-off to the Ventures site. */
+.btn--ventures { --accent: var(--orange); }
+
 /* Hero: two actions side by side. */
 .hero__actions {
   display: flex;
@@ -2290,6 +2312,9 @@ html.splash--returning [data-reveal] {
 @media (max-width: 1180px) {
   .steps,
   .cards--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cards--5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* Half a step is too narrow for a six-stage track; stack the step. */
+  .how-step { grid-template-columns: 1fr; }
   .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   /* In two columns the third stage starts a new row, so its arrow would
      point back across the gap at nothing. */
@@ -2333,6 +2358,7 @@ html.splash--returning [data-reveal] {
 
 @media (max-width: 760px) {
   .row { grid-template-columns: 1fr; gap: 0.4rem; }
+  .how-step .pipeline { grid-template-columns: 1fr; }
   /* Seven stages will not fit across a phone: run the track down the side. */
   .pipeline { grid-template-columns: 1fr; }
   .pipeline li { padding: 0 0 1.15rem 2.1rem; text-align: left; }
@@ -2349,7 +2375,8 @@ html.splash--returning [data-reveal] {
 @media (max-width: 600px) {
   .steps,
   .cards,
-  .cards--4 { grid-template-columns: 1fr; }
+  .cards--4,
+  .cards--5 { grid-template-columns: 1fr; }
   .process__steps { grid-template-columns: 1fr; }
   .footer__cols { grid-template-columns: 1fr 1fr; }
   .footer__bottom { flex-direction: column; align-items: flex-start; }
