@@ -153,14 +153,15 @@
     p.style.strokeDashoffset = L;
     return L;
   }
-  function drawPath(p, dur) {
+  function drawPath(p, dur, delay) {
+    delay = delay || 0;
     p.getBoundingClientRect();                    /* flush before transition */
-    p.style.transition = 'stroke-dashoffset ' + dur + 'ms cubic-bezier(.45,0,.25,1)';
+    p.style.transition = 'stroke-dashoffset ' + dur + 'ms cubic-bezier(.45,0,.25,1) ' + delay + 'ms';
     p.style.strokeDashoffset = 0;
     /* drop the dash once drawn so no seam artifact remains at the join */
     setTimeout(() => {
       if (parseFloat(p.style.strokeDashoffset) === 0) p.style.strokeDasharray = 'none';
-    }, dur + 80);
+    }, delay + dur + 80);
   }
   function undrawPath(p, dur) {
     const L = p.getTotalLength();
@@ -193,6 +194,13 @@
   function capOf(f) {
     const b = bandOf(f);
     return Math.round(f.cols * (b[1] - b[0]) * AMBIENT_DENSITY);
+  }
+  /* Only shapes in the current band count toward the cap. Counting the whole
+     population let shapes stranded above the fold use up the allowance, so a
+     newly scrolled-to section sat empty until they expired. */
+  function aliveInBand(f) {
+    const b = bandOf(f);
+    return f.population.filter(i => !i.dead && i.spot.r >= b[0] - 1 && i.spot.r <= b[1] + 1).length;
   }
 
   function claimSpot(f, kind) {
@@ -246,9 +254,9 @@
     f.population.push(item);
     if (!opts.instant) {
       preparePath(p);
-      drawPath(p, opts.drawDur || rand(750, 1100));
+      drawPath(p, opts.drawDur || rand(750, 1100), opts.delay);
     }
-    item.timer = setTimeout(() => retireAmbient(f, item), opts.life || rand(3800, 8200));
+    item.timer = setTimeout(() => retireAmbient(f, item), (opts.life || rand(3800, 8200)) + (opts.delay || 0));
     return item;
   }
 
@@ -257,10 +265,13 @@
     item.dead = true;
     clearTimeout(item.timer);
     const dur = 700;
+    /* Hold on to this shape's own grid: a rebuild in the meantime swaps in a
+       new one, and releasing these cells there would free another shape's. */
+    const used = f.used;
     undrawPath(item.p, dur);
     setTimeout(() => {
       item.p.remove();
-      item.spot.cells.forEach(k2 => f.used.delete(k2));
+      item.spot.cells.forEach(k2 => used.delete(k2));
       const i = f.population.indexOf(item);
       if (i > -1) f.population.splice(i, 1);
     }, dur + 60);
@@ -270,7 +281,7 @@
     if (f.timer || !SPLASH) return;                       /* respect reduced motion */
     f.timer = setInterval(() => {
       if (document.hidden) return;                        /* don't churn in a background tab */
-      const alive = f.population.filter(i => !i.dead).length;
+      const alive = aliveInBand(f);
       const cap = capOf(f);
       if (alive < cap) spawnAmbient(f);
       if (alive < cap - 3) spawnAmbient(f);
@@ -329,16 +340,21 @@
     usedCells = new Set();
     excluded = new Set();
 
-    /* viewBox mirrors the SVG's own box exactly (left:-18%, width:136%,
-       top:-18vh, height:100% + 36vh of the stage), so the scale stays 1:1 in
-       both axes and one viewBox unit is one px. H stays the viewport height —
-       the vertical bleed is in vh — while the field's length follows the
-       stage, which is what carries it down into the second section. */
+    /* The SVG's box and its viewBox are set from the same numbers, so the
+       scale is 1:1 and one viewBox unit is one px — the mark's placement maths
+       depends on that. The box used to be sized in CSS (vh and %), but on
+       phones 100vh is not innerHeight, which left the two disagreeing. The
+       field runs the full length of the stage plus an 18% bleed on each side;
+       the stage clips whatever hangs over. */
     W = stage.clientWidth; H = Math.max(window.innerHeight, 560);
     OX = W * MARGIN; OY = window.innerHeight * MARGIN;
     TW = W * (1 + 2 * MARGIN);
     TH = stage.clientHeight + 2 * MARGIN * window.innerHeight;
     svg.setAttribute('viewBox', '0 0 ' + TW + ' ' + TH);
+    svg.style.left = -OX + 'px';
+    svg.style.top = -OY + 'px';
+    svg.style.width = TW + 'px';
+    svg.style.height = TH + 'px';
 
     S = Math.max(48, Math.min(78, W / 19)) * SCALE;       /* grid step */
     R = S * 0.5;                                          /* ring radius */
@@ -556,15 +572,17 @@
     t(4700, finish);
 
     setTimeout(finish, 9000);                             /* watchdog */
-    window.addEventListener('pointerdown', finish, { once: true });   /* skip */
-    window.addEventListener('keydown', finish, { once: true });
+    /* Skip on any interaction, scrolling included — otherwise someone who
+       scrolls straight past the hero browses the page with the nav still
+       hidden. 'scroll' also covers a reload that restores a mid-page position. */
+    ['pointerdown', 'keydown', 'wheel', 'touchmove', 'scroll'].forEach(ev =>
+      window.addEventListener(ev, finish, { once: true, passive: true }));
   }
 
-  /* The stage's height changes when the ecosystem copy reflows, and the viewBox
-     is matched to the SVG's box, so a stale height would break the 1:1 mapping.
-     Because y0 is anchored, the fix is to grow the field in place: stretch the
-     viewBox and append rows of dots. Nothing already on screen moves, so the
-     existing dots and links are left exactly as they are. */
+  /* The stage grows when text reflows (webfonts landing, mostly). Because y0
+     is anchored, the field grows in place: stretch the box and viewBox
+     together and append rows of dots. Nothing already on screen moves. A
+     shrinking stage needs nothing — the stage clips the overhang. */
   let stageT;
   function extendField() {
     if (!gridG) return;
@@ -572,6 +590,7 @@
     if (newTH <= TH + 1) return;                          /* only ever grow */
     TH = newTH;
     svg.setAttribute('viewBox', '0 0 ' + TW + ' ' + TH);
+    svg.style.height = TH + 'px';
 
     const newRows = Math.ceil((TH - y0) / S) + 2;
     for (let r = rows; r < newRows; r++) {
@@ -614,17 +633,41 @@
   document.addEventListener('visibilitychange', () => {
     if (document.hidden || !splashDone) return;
     const target = Math.round(capOf(heroField) * 0.75);
-    let alive = heroField.population.filter(i => !i.dead).length;
+    let alive = aliveInBand(heroField);
     while (alive++ < target) {
       spawnAmbient(heroField, { instant: true, life: rand(2000, 9000) });
     }
   });
 
-  /* Rebuild on resize, final state only. The 18% bleed plus slice scaling
-     keeps the field full while the drag is in progress. */
+  /* The loop adds a few shapes per tick, which keeps a band topped up but
+     takes ten seconds or more to fill one from empty. When scrolling settles
+     somewhere new, draw the band up to strength straight away. The whole batch
+     is created at once and the drawing staggered in CSS, rather than one shape
+     per timer: browsers throttle chained timers, which stretched the fill out
+     again. */
+  let topUpT;
+  function topUp(f) {
+    if (!f.timer || document.hidden) return;              /* loop not running yet */
+    const need = Math.round(capOf(f) * 0.9) - aliveInBand(f);
+    for (let k = 0; k < need; k++) {
+      const item = spawnAmbient(f, { drawDur: rand(600, 850), life: rand(3000, 9000), delay: k * 35 });
+      if (!item) break;                                   /* no free spot left */
+    }
+  }
+  window.addEventListener('scroll', () => {
+    clearTimeout(topUpT);
+    topUpT = setTimeout(() => topUp(heroField), 120);
+  }, { passive: true });
+
+  /* Rebuild on resize, final state only, and only when the width changes.
+     Phones resize the window whenever the URL bar shows or hides — so on
+     every change of scroll direction — and rebuilding then reshuffled the
+     whole field mid-scroll. The box is sized in px, so a height change alone
+     needs nothing. The 18% bleed keeps the field full while a drag is in
+     progress. */
   let rT;
   window.addEventListener('resize', () => {
-    if (!splashDone) return;
+    if (!splashDone || stage.clientWidth === W) return;
     clearTimeout(rT);
     rT = setTimeout(() => {
       build(true);                                        /* stops the field itself */

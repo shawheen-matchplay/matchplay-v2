@@ -122,6 +122,154 @@
     reveals.forEach(function (el) { el.classList.add("is-visible"); });
   }
 
+  /* ---- Pipeline: a golf ball rolls the stages ----------------------- */
+  // The ball travels node to node, rotating by the distance it covers, and
+  // lights each stage on arrival; at the last it drops into the cup. It runs
+  // only while the track is on screen, and restarts from the top each time
+  // it comes back. Timers rather than rAF, so a background tab cannot leave
+  // it stranded part-way.
+  var DIMPLES = [[0.77, -0.32], [0.43, 0.03], [0.77, 0.03], [0.08, 0.37], [0.43, 0.37],
+                 [0.77, 0.37], [-0.26, 0.72], [0.08, 0.71], [0.43, 0.71]];  // the brand mark's wedge
+  var SEG = 560, PAUSE = 200, HOLD = 2200;
+  var EASE = "cubic-bezier(0.45, 0.05, 0.3, 1)";
+  var stillMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  Array.prototype.forEach.call(document.querySelectorAll(".pipeline-run[data-ball]"), function (wrap) {
+    var list = wrap.querySelector(".pipeline");
+    var stages = list ? list.querySelectorAll("li") : [];
+    if (stillMotion || stages.length < 2 || !("IntersectionObserver" in window)) return;
+
+    var NS = "http://www.w3.org/2000/svg";
+    var ball = document.createElement("span");
+    ball.className = "pipeline__ball";
+    ball.setAttribute("aria-hidden", "true");
+    var svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "-1 -1 2 2");
+    var body = document.createElementNS(NS, "circle");
+    body.setAttribute("r", "1");
+    body.setAttribute("class", "pipeline__ball-body");
+    svg.appendChild(body);
+    DIMPLES.forEach(function (d) {
+      var c = document.createElementNS(NS, "circle");
+      c.setAttribute("cx", d[0]);
+      c.setAttribute("cy", d[1]);
+      c.setAttribute("r", "0.118");
+      c.setAttribute("class", "pipeline__ball-dimple");
+      svg.appendChild(c);
+    });
+    ball.appendChild(svg);
+    var fill = document.createElement("span");
+    fill.className = "pipeline__fill";
+    fill.setAttribute("aria-hidden", "true");
+    wrap.appendChild(fill);
+    wrap.appendChild(ball);
+    ball.style.opacity = "0";
+
+    var pts, vertical, x, y, roll, scale, run = 0, timers = [], onScreen = false;
+
+    // Node centres, read off the rendered track so the ball follows whichever
+    // layout is showing: across on desktop, down the side on a phone.
+    function measure() {
+      vertical = stages[1].offsetTop > stages[0].offsetTop + 2;
+      pts = Array.prototype.map.call(stages, function (li) {
+        var node = getComputedStyle(li, "::after");
+        var r = parseFloat(node.width) / 2 || 9;
+        var top = parseFloat(node.top) || 0;
+        return [li.offsetLeft + (vertical ? r : li.offsetWidth / 2), li.offsetTop + top + r];
+      });
+      // the filled track starts at the first node and grows along one axis
+      fill.style.left = (pts[0][0] - (vertical ? 1 : 0)) + "px";
+      fill.style.top = (pts[0][1] - (vertical ? 0 : 1)) + "px";
+      fill.style.width = vertical ? "2px" : "0px";
+      fill.style.height = vertical ? "0px" : "2px";
+    }
+
+    function paint(ms) {
+      var r = ball.offsetWidth / 2;
+      ball.style.transition = ms
+        ? "transform " + ms + "ms " + EASE + ", opacity 0.35s ease"
+        : "opacity 0.35s ease";
+      ball.style.transform = "translate(" + (x - r) + "px," + (y - r) + "px) rotate(" + roll + "deg) scale(" + scale + ")";
+    }
+    function grow(i, ms) {
+      var len = vertical ? pts[i][1] - pts[0][1] : pts[i][0] - pts[0][0];
+      fill.style.transition = ms ? (vertical ? "height " : "width ") + ms + "ms " + EASE + ", opacity 0.5s ease" : "opacity 0.5s ease";
+      fill.style[vertical ? "height" : "width"] = len + "px";
+    }
+    function later(ms, fn) {
+      var me = run;
+      timers.push(setTimeout(function () { if (me === run) fn(); }, ms));
+    }
+    function stop() {
+      run++;
+      timers.forEach(clearTimeout);
+      timers = [];
+    }
+    function reach(i, on) { stages[i].classList.toggle("is-reached", on); }
+
+    function cycle() {
+      stop();
+      measure();
+      list.classList.add("is-live");
+      for (var k = 0; k < stages.length; k++) { reach(k, false); stages[k].classList.remove("is-cup"); }
+      fill.style.opacity = "1";
+      x = pts[0][0]; y = pts[0][1]; roll = 0; scale = 0.6;
+      ball.style.opacity = "0";
+      paint(0);
+      grow(0, 0);
+      ball.getBoundingClientRect();                  // commit the start before moving
+
+      later(60, function () { scale = 1; ball.style.opacity = "1"; paint(350); reach(0, true); });
+
+      var t = 600, last = stages.length - 1;
+      var circumference = Math.PI * ball.offsetWidth;
+      for (var i = 1; i <= last; i++) {
+        (function (i, at) {
+          later(at, function () {
+            var d = Math.hypot(pts[i][0] - x, pts[i][1] - y);
+            x = pts[i][0]; y = pts[i][1];
+            roll += d / circumference * 360;         // rotate by distance: it rolls
+            paint(SEG);
+            grow(i, SEG);
+          });
+          later(at + SEG, function () {
+            reach(i, true);
+            if (i !== last) return;
+            scale = 0.3;                             // into the cup
+            ball.style.opacity = "0";
+            paint(350);
+            stages[i].classList.add("is-cup");
+            later(420, function () { stages[i].classList.remove("is-cup"); });
+          });
+        })(i, t);
+        t += SEG + PAUSE;
+      }
+      later(t + HOLD, function () {                  // clear the board and go again
+        for (var k = 0; k < stages.length; k++) reach(k, false);
+        fill.style.opacity = "0";
+      });
+      later(t + HOLD + 700, cycle);
+    }
+
+    new IntersectionObserver(function (entries) {
+      var now = entries[entries.length - 1].isIntersecting;
+      if (now === onScreen) return;
+      onScreen = now;
+      if (onScreen) cycle();
+      else stop();
+    }, { threshold: 0.4 }).observe(wrap);
+
+    // Width only: phones fire resize whenever the URL bar shows or hides,
+    // which would otherwise restart the run on every scroll.
+    var resizeT, lastW = window.innerWidth;
+    window.addEventListener("resize", function () {
+      if (window.innerWidth === lastW) return;
+      lastW = window.innerWidth;
+      clearTimeout(resizeT);
+      resizeT = setTimeout(function () { if (onScreen) cycle(); }, 200);
+    });
+  });
+
   /* ---- Subscribe form ---------------------------------------------- */
   // No backend yet — show the success state locally. Wire up a real
   // endpoint (fetch POST) where indicated when a backend exists.

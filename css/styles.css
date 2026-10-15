@@ -449,8 +449,11 @@ button { font: inherit; cursor: pointer; }
   display: flex;
   flex-direction: column;
   gap: 2px;
+  /* dvh tracks the toolbar, so the last items are never hidden behind it. */
   max-height: calc(100vh - 104px);
+  max-height: calc(100dvh - 104px);
   overflow: auto;
+  overscroll-behavior: contain;   /* reaching the end does not scroll the page */
   opacity: 0;
   visibility: hidden;
   transform: translateY(-14px) scale(0.96);
@@ -537,6 +540,9 @@ button { font: inherit; cursor: pointer; }
 .hero {
   position: relative;
   min-height: 100vh;
+  /* On phones 100vh is the height with the toolbar hidden, so the hero would
+     run past the screen it loads on; svh is the height with it showing. */
+  min-height: 100svh;
   /* Centre the content in the area below the fixed nav, not the whole
      viewport. --nav-h is published by hero-splash.js. */
   display: flex;
@@ -545,10 +551,10 @@ button { font: inherit; cursor: pointer; }
   padding-top: var(--nav-h, 90px);
 }
 
-/* Oversized and slice-scaled so no bare edge shows while the window is being
-   dragged larger. It spans the whole stage plus an 18vh bleed top and bottom;
-   the script matches the viewBox to that exactly, so the 1:1 pixel mapping the
-   mark's placement maths depends on always holds. */
+/* Spans the whole stage plus an 18% bleed on every side. hero-splash.js sets
+   the box in px from the same numbers as the viewBox, so the 1:1 mapping the
+   mark's placement depends on holds on phones too; these values are only the
+   starting point. */
 .hero-splash {
   position: absolute;
   left: -18%;
@@ -1622,7 +1628,6 @@ html.splash--returning [data-reveal] {
   margin-top: clamp(2rem, 4vw, 3rem);
 }
 .sec-actions--center { justify-content: center; }
-.sec-actions__lead { font-family: var(--font-ui); color: var(--ink-2); }
 
 /* Numbered steps */
 .steps {
@@ -1886,6 +1891,45 @@ html.splash--returning [data-reveal] {
 .pipeline li:last-child { color: var(--ink); }
 .pipeline li:last-child::after { background: var(--accent-ink); }
 
+/* A golf ball rolls the stages (main.js). Without JS or with reduced motion
+   the static track above is the whole story. The wrapper is the stacking
+   context that lets the filled track run between the line and the nodes. */
+.pipeline-run { position: relative; z-index: 0; }
+.pipeline-run .pipeline li::before { z-index: 0; }
+.pipeline-run .pipeline li::after  { z-index: 2; }
+.pipeline__fill {
+  position: absolute;
+  z-index: 1;
+  border-radius: 2px;
+  background: var(--accent-ink);
+  pointer-events: none;
+}
+.pipeline__ball {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  width: 1.6rem;
+  height: 1.6rem;
+  color: var(--ink);                /* dark ball on white, white ball on dark */
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.22));
+  pointer-events: none;
+  will-change: transform;
+}
+.pipeline__ball svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.pipeline__ball-body   { fill: currentColor; }
+.pipeline__ball-dimple { fill: var(--ground); }
+
+/* While it runs, a stage stays unlit until the ball reaches it. */
+.pipeline.is-live li { color: var(--ink-3); transition: color 0.3s ease; }
+.pipeline.is-live li::after {
+  background: var(--ground);
+  transition: background-color 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.pipeline.is-live li.is-reached { color: var(--ink); }
+.pipeline.is-live li.is-reached::after { background: var(--accent-ink); }
+.pipeline.is-live li.is-cup::after { transform: scale(1.45); }   /* the drop into the cup */
+
 /* Connected flow: four stages, each feeding the next. */
 .flow {
   --flow-gap: clamp(1.75rem, 3vw, 2.75rem);
@@ -2086,12 +2130,15 @@ html.splash--returning [data-reveal] {
 }
 .marquee__track {
   display: flex;
-  gap: var(--space-md);
   list-style: none;
   margin: 0;
-  padding: var(--space-2xs) var(--space-sm);
+  /* No gap and no side padding: the loop moves the track by -50%, which only
+     lands exactly on the copy if the track is two identical halves. A gap
+     leaves it one gap short of that, so it jumped a few px every loop. */
+  padding: var(--space-2xs) 0;
   animation: marquee 60s linear infinite;
 }
+.marquee__track > * { margin-right: var(--space-md); }
 .marquee:hover .marquee__track { animation-play-state: paused; }
 @keyframes marquee {
   from { transform: translateX(0); }
