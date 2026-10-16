@@ -1164,6 +1164,7 @@ html.splash--returning [data-reveal] {
 .story-card__text { align-self: stretch; }
 .story-card__text > blockquote { margin-top: auto; }
 .story__site { align-self: flex-start; margin-top: auto; }
+.story-card:nth-child(odd) .story__site { align-self: flex-end; }   /* text on the right: link bottom right */
 .story-card:nth-child(even) .story-card__text { padding-right: 0; padding-left: clamp(0.5rem, 1.35vw, 1.25rem); }
 .story-card blockquote { margin: 0; }
 .story-card blockquote p {
@@ -1178,6 +1179,7 @@ html.splash--returning [data-reveal] {
 @media (max-width: 760px) {
   .story-card { grid-template-columns: 1fr; }
   .story-card:nth-child(even) .story__video { order: 0; }
+  .story-card:nth-child(odd) .story__site { align-self: flex-start; }   /* stacked: always bottom left */
   .story-card__text,
   .story-card:nth-child(even) .story-card__text { padding: 0 0.35rem 0.5rem; }
 }
