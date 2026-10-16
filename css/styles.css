@@ -1655,9 +1655,11 @@ html.splash--returning [data-reveal] {
    Any box with data-tilt. main.js gives it a decorative .fx layer and, for a
    mouse or pen, tilts the box toward the pointer and sets --mx/--my to where
    the pointer is. The layer carries a short accent rule along the top that
-   draws across on hover, and a blurred glow that rests low right and follows
-   the pointer while it is over the box. The layer sits at z-index -1 inside
-   the box's own stacking context: above its background, below its text. */
+   draws across on hover, and two blurred glows: one resting low right, and
+   one under the pointer. When the pointer comes in, the resting glow fades
+   out and the pointer's fades in where it is, then follows it; when it
+   leaves, the reverse. The layer sits at z-index -1 inside the box's own
+   stacking context: above its background, below its text. */
 [data-tilt] {
   --fx-accent: var(--accent);
   --fx-rest: 0.08;        /* glow opacity at rest, on hover, while tracking */
@@ -1690,21 +1692,31 @@ html.splash--returning [data-reveal] {
 [data-tilt]:hover > .fx::before { transform: scaleX(1); }
 .fx__orb {
   position: absolute;
-  left: var(--mx, calc(100% - 54px));
-  top: var(--my, 100%);
   width: 216px;
   height: 216px;
   border-radius: 50%;
   background: var(--fx-accent);
   filter: blur(80px);
-  opacity: var(--fx-rest);
   transform: translate(-50%, -50%);
-  transition: opacity 0.4s var(--ease), left 0.6s var(--ease), top 0.6s var(--ease);
+  transition: opacity 0.4s var(--ease);
 }
-[data-tilt]:hover .fx__orb { opacity: var(--fx-hover); }
-[data-tilt].is-tracking .fx__orb {
+.fx__orb--rest {
+  left: calc(100% - 54px);
+  top: 100%;
+  opacity: var(--fx-rest);
+}
+/* Starts dark; it only moves while showing, so it never slides in from
+   wherever it last was. */
+.fx__orb--pointer {
+  left: var(--mx, 50%);
+  top: var(--my, 50%);
+  opacity: 0;
+}
+[data-tilt]:hover .fx__orb--rest { opacity: var(--fx-hover); }   /* touch: no tracking */
+[data-tilt].is-tracking .fx__orb--rest { opacity: 0; }
+[data-tilt].is-tracking .fx__orb--pointer {
   opacity: var(--fx-track);
-  transition: opacity 0.3s var(--ease), left 0.12s ease-out, top 0.12s ease-out;
+  transition: opacity 0.4s var(--ease), left 0.12s ease-out, top 0.12s ease-out;
 }
 /* On white a glass box has nothing to glow against: the glow runs stronger
    and the lift reads through a soft shadow and a firmer edge. */

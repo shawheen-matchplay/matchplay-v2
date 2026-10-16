@@ -323,7 +323,7 @@
     var fx = document.createElement("span");
     fx.className = "fx";
     fx.setAttribute("aria-hidden", "true");
-    fx.innerHTML = '<span class="fx__orb"></span>';
+    fx.innerHTML = '<span class="fx__orb fx__orb--rest"></span><span class="fx__orb fx__orb--pointer"></span>';
     card.insertBefore(fx, card.firstChild);
   });
   var canTilt = window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
@@ -335,19 +335,27 @@
       var settle;
       // data-tilt="2" allows 2 degrees either way; bare data-tilt means 1
       var TILT = 2 * (parseFloat(card.getAttribute("data-tilt")) || 1);
-      card.addEventListener("pointerenter", function (e) {
-        if (e.pointerType === "touch") return;
-        clearTimeout(settle);
-        card.classList.add("is-tracking");
-        card.style.transition = "transform 0.15s ease-out, background-color 0.4s, border-color 0.4s, box-shadow 0.4s";
-      });
-      card.addEventListener("pointermove", function (e) {
-        if (e.pointerType === "touch") return;
+      function place(e) {
         var r = card.getBoundingClientRect();
         var x = Math.min(Math.max((e.clientX - r.left) / r.width, 0), 1);   // 0 at left, 1 at right
         var y = Math.min(Math.max((e.clientY - r.top) / r.height, 0), 1);   // 0 at top, 1 at bottom
         card.style.setProperty("--mx", (x * 100).toFixed(1) + "%");
         card.style.setProperty("--my", (y * 100).toFixed(1) + "%");
+        return [x, y];
+      }
+      card.addEventListener("pointerenter", function (e) {
+        if (e.pointerType === "touch") return;
+        clearTimeout(settle);
+        // Put the pointer's glow under the pointer before it starts showing,
+        // so it appears there rather than travelling from its last spot.
+        place(e);
+        card.getBoundingClientRect();
+        card.classList.add("is-tracking");
+        card.style.transition = "transform 0.15s ease-out, background-color 0.4s, border-color 0.4s, box-shadow 0.4s";
+      });
+      card.addEventListener("pointermove", function (e) {
+        if (e.pointerType === "touch") return;
+        var xy = place(e), x = xy[0], y = xy[1];
         // the edge under the pointer comes toward the viewer
         card.style.transform = "perspective(900px)" +
           " rotateX(" + ((y - 0.5) * TILT).toFixed(2) + "deg)" +
@@ -358,8 +366,7 @@
         card.classList.remove("is-tracking");
         card.style.transition = "transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.4s, border-color 0.4s, box-shadow 0.4s";
         card.style.transform = "";
-        card.style.removeProperty("--mx");
-        card.style.removeProperty("--my");
+        // --mx/--my stay put, so the pointer's glow fades out where it was
         // once it has eased back, hand the transition back to the stylesheet
         settle = setTimeout(function () { card.style.transition = ""; }, 650);
       });
