@@ -1803,6 +1803,7 @@ html.splash--returning [data-reveal] {
   margin: 0;
   padding: 0;
 }
+.steps--5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }   /* narrower screens fall back to .steps' columns */
 .step {
   position: relative;
   display: flex;
