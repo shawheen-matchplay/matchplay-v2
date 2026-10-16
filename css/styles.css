@@ -1740,9 +1740,8 @@ html.splash--returning [data-reveal] {
 /* Every section fills one screen. The fixed nav sits over the top of a
    section scrolled into view, so the top padding clears it (--nav-clear:
    its height plus a little room under it, set by main.js) and the content
-   centres in the space below. On the homepage the closing call to action
-   and the newsletter share one screen. min-height, so a section with more
-   than a screen of content still grows. */
+   centres in the space below. min-height, so a section with more than a
+   screen of content still grows. */
 .page--screens .ecosystem,
 .page--screens .page-hero,
 .page--screens .section {
@@ -1755,17 +1754,21 @@ html.splash--returning [data-reveal] {
   padding-top: calc(var(--nav-clear, 5.5rem) + clamp(0.25rem, 1vh, 0.75rem));
   padding-bottom: clamp(2.5rem, 6vh, 4.5rem);
 }
+/* The homepage's closing call to action and newsletter: three-quarters of
+   a screen each, their boxes one size (the same width, and a shared minimum
+   height taller than either's content), content centred. */
 .page--screens #start,
 .page--screens #subscribe {
-  min-height: 50vh;
-  min-height: 50svh;
-  padding-bottom: clamp(1rem, 2.5vh, 2rem);
+  min-height: 75vh;
+  min-height: 75svh;
 }
-/* Half a screen each: #start clears the nav and no more, and the
-   newsletter, below it, has no nav to clear. */
-.page--screens #start { padding-top: var(--nav-clear, 6rem); }
-.page--screens #subscribe { padding-top: clamp(1rem, 2.5vh, 2rem); }
-.page--screens #start .cta-band { padding-block: clamp(1.5rem, 3.5vh, 2.75rem); }
+.page--screens #start .cta-band,
+.page--screens .subscribe__panel {
+  width: 100%;
+  max-width: none;
+  min-height: clamp(18rem, 40vh, 24rem);
+}
+.page--screens #start .cta-band { display: flex; flex-direction: column; justify-content: center; }
 .page--screens .sec-head { margin-bottom: clamp(2rem, 4vh, 3rem); }
 .page--screens .panel { padding: clamp(1.5rem, 2.16vw, 2rem); }
 /* Every call to action sits centred. */

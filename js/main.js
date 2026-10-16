@@ -309,6 +309,29 @@
     });
   });
 
+  /* ---- Matched heights ---------------------------------------------- */
+  // Boxes that share a data-match name are kept at one height, the tallest
+  // one's. For boxes in different sections, which a grid can't line up: the
+  // homepage's closing call to action and newsletter.
+  var matchGroups = {};
+  Array.prototype.forEach.call(document.querySelectorAll("[data-match]"), function (el) {
+    var name = el.getAttribute("data-match");
+    (matchGroups[name] = matchGroups[name] || []).push(el);
+  });
+  function matchHeights() {
+    Object.keys(matchGroups).forEach(function (name) {
+      var els = matchGroups[name];
+      els.forEach(function (el) { el.style.minHeight = ""; });
+      var tallest = Math.max.apply(null, els.map(function (el) { return el.offsetHeight; }));
+      els.forEach(function (el) { el.style.minHeight = tallest + "px"; });
+    });
+  }
+  if (Object.keys(matchGroups).length) {
+    matchHeights();
+    window.addEventListener("resize", matchHeights);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(matchHeights);
+  }
+
   /* ---- Pointer cards (data-tilt) ------------------------------------ */
   // Every data-tilt box gets a decorative .fx layer: the accent rule along its
   // top and the glow (styles.css, "Pointer cards"). For a mouse or pen the box
