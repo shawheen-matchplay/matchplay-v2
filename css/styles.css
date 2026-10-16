@@ -229,11 +229,11 @@ button { font: inherit; cursor: pointer; }
 .btn--quiet {
   background: none;
   border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 0;
   box-shadow: none;
   padding: 0.5em 0;
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.9);
 }
 .btn--quiet:hover {
   color: #fff;
@@ -685,9 +685,9 @@ html.splash--returning [data-reveal] {
   background: var(--accent);
   color: #fff;
   font-family: var(--font-mono);
-  font-size: 12.6px;
+  font-size: 1.05rem;                /* the same as .btn, so it matches the link beside it */
   font-weight: 500;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
   white-space: nowrap;
   /* Colour swap only, as on the Ventures site. */
