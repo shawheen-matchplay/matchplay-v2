@@ -1,0 +1,52 @@
+# Rebuild the blog pages whenever a post or the generator changes (the blog
+# editor commits new posts straight to main), commit the generated HTML, and
+# ask GitHub Pages to republish. Pushes made with GITHUB_TOKEN don't trigger
+# Pages on their own, hence the explicit build request.
+name: Build blog
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/blog/posts/**"
+      - "tools/blog/build.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: build-blog
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate the blog pages
+        run: python3 tools/blog/build.py
+
+      - name: Commit the generated pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add blog.html blog
+          if git diff --cached --quiet; then
+            echo "Pages already up to date."
+            exit 0
+          fi
+          git commit -m "Blog: rebuild pages"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Republish GitHub Pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds" || echo "Pages build request skipped."

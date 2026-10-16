@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Blog Editor — MatchPlay</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Internal tool: keep it out of search. -->
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="assets/favicon.png" type="image/png" sizes="512x512">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <!--
+    Blog editor. Fills in an article, previews it with the site's own styles,
+    and publishes it by committing the post (tools/blog/posts/<slug>.json) and
+    its images (assets/blog/) straight to the repo. The build-blog workflow
+    then generates the pages, and GitHub Pages serves them.
+
+    There is no login. The page holds a GitHub token encrypted with a shared
+    password (AES-GCM, key from PBKDF2-SHA256); the password decrypts it in
+    the browser. To set or change the password or token, run:
+
+        node tools/blog/editor-setup.mjs
+  -->
+  <style>
+    :root {
+      --bg: #F3F4F6; --card: #FFFFFF; --ink: #0A0A0A; --ink-2: #4B5160; --ink-3: #8A90A0;
+      --line: #E1E4EA; --accent: #1ED2F4; --accent-ink: #087E96; --danger: #C2362B; --ok: #1C7C46;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 Inter, system-ui, sans-serif; }
+    [hidden] { display: none !important; }
+    h1, h2 { font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+    label { display: block; font-weight: 500; font-size: 0.875rem; margin-bottom: 0.35rem; }
+    .hint { color: var(--ink-3); font-size: 0.8rem; font-weight: 400; }
+    input[type=text], input[type=password], input[type=date], select, textarea {
+      width: 100%; padding: 0.65rem 0.8rem; border: 1px solid var(--line); border-radius: 10px;
+      background: #fff; color: var(--ink); font: inherit;
+    }
+    input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+    textarea { resize: vertical; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+      padding: 0.7rem 1.3rem; border: 0; border-radius: 999px; cursor: pointer;
+      background: var(--accent); color: #062A33; font: 600 0.9rem Inter, sans-serif;
+    }
+    .btn:disabled { opacity: 0.55; cursor: progress; }
+    .btn--ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+    .err { color: var(--danger); font-size: 0.85rem; margin-top: 0.4rem; }
+    .err:empty { display: none; }
+
+    /* Lock screen */
+    .lock { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+    .lock__card { width: min(400px, 100%); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 2rem; display: grid; gap: 1rem; }
+    .lock__card p { margin: 0; color: var(--ink-2); }
+
+    /* Editor */
+    .bar {
+      position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 0.85rem max(16px, 2rem); background: rgba(243,244,246,0.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
+    }
+    .bar__title { font-size: 1.05rem; }
+    .bar__title span { color: var(--ink-3); font-weight: 400; }
+    .layout { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 1fr); gap: 1.5rem; padding: 1.5rem max(16px, 2rem) 3rem; }
+    .form { display: grid; gap: 1.1rem; align-content: start; }
+    .group { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.25rem; display: grid; gap: 1rem; }
+    .group > h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-3); font-weight: 500; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .slug { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+    .slug span { padding-left: 0.8rem; color: var(--ink-3); white-space: nowrap; }
+    .slug input { border: 0; padding-left: 0.2rem; }
+    .count { float: right; font-weight: 400; color: var(--ink-3); }
+    .count.is-off { color: var(--danger); }
+    .cover-drop { display: grid; gap: 0.6rem; }
+    .cover-drop img { width: 100%; aspect-ratio: 1200 / 630; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); }
+    .tools { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    .help { font-size: 0.8rem; color: var(--ink-2); background: var(--bg); border-radius: 10px; padding: 0.75rem 0.9rem; line-height: 1.7; }
+    .help code { font-family: "Share Tech Mono", ui-monospace, monospace; background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 0 0.3em; }
+    #body { min-height: 420px; font: 14px/1.6 "Share Tech Mono", ui-monospace, monospace; }
+    .publish { display: grid; gap: 0.6rem; }
+    .status { font-size: 0.9rem; color: var(--ink-2); }
+    .status.is-ok { color: var(--ok); }
+    .status.is-err { color: var(--danger); }
+    .status a { color: inherit; }
+    .preview { position: sticky; top: 72px; height: calc(100vh - 96px); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: #fff; }
+    .preview iframe { width: 100%; height: 100%; border: 0; display: block; }
+    @media (max-width: 1000px) {
+      .layout { grid-template-columns: 1fr; }
+      .preview { position: static; height: 80vh; }
+    }
+    @media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+  <!-- ===== Lock ===== -->
+  <main class="lock" id="lock">
+    <form class="lock__card" id="lock-form">
+      <h1>Blog editor</h1>
+      <p id="lock-note">Enter the editor password to write and publish an article.</p>
+      <div>
+        <label for="pw">Password</label>
+        <input type="password" id="pw" autocomplete="current-password" required>
+        <p class="err" id="lock-err" role="alert"></p>
+      </div>
+      <button class="btn" type="submit" id="unlock">Unlock</button>
+    </form>
+  </main>
+
+  <!-- ===== Editor ===== -->
+  <div id="app" hidden>
+    <header class="bar">
+      <h1 class="bar__title">New article <span id="draft-state"></span></h1>
+      <button class="btn btn--ghost" type="button" id="clear">Start over</button>
+    </header>
+
+    <div class="layout">
+      <form class="form" id="post" novalidate>
+        <section class="group">
+          <h2>Article</h2>
+          <div>
+            <label for="title">Title</label>
+            <input type="text" id="title" required>
+          </div>
+          <div>
+            <label for="slug">Web address <span class="hint">— set from the title; letters, numbers and dashes</span></label>
+            <div class="slug"><span>/blog/</span><input type="text" id="slug" required></div>
+          </div>
+          <div class="row2">
+            <div>
+              <label for="author">Author</label>
+              <select id="author">
+                <option>Mahesh Narayanan</option>
+                <option>Shawheen Attar</option>
+                <option value="">Someone else…</option>
+              </select>
+              <input type="text" id="author-other" placeholder="Full name" hidden>
+            </div>
+            <div>
+              <label for="date">Publish date</label>
+              <input type="date" id="date" required>
+            </div>
+          </div>
+        </section>
+
+        <section class="group">
+          <h2>Search and sharing</h2>
+          <div>
+            <label for="desc">Summary <span class="count" id="desc-count"></span><br><span class="hint">Shown in Google results and link previews. Aim for 140–160 characters.</span></label>
+            <textarea id="desc" rows="3" required></textarea>
+          </div>
+          <div>
+            <label for="seo">Search title <span class="hint">— optional; defaults to the title</span></label>
+            <input type="text" id="seo">
+          </div>
+          <div>
+            <label for="keywords">Keywords <span class="hint">— optional, comma-separated</span></label>
+            <input type="text" id="keywords" placeholder="startup funding, seed round, investor readiness">
+          </div>
+        </section>
+
+        <section class="group">
+          <h2>Cover image</h2>
+          <div class="cover-drop">
+            <label for="cover">Image <span class="hint">— cropped to 1200 × 630 from the centre</span></label>
+            <input type="file" id="cover" accept="image/*">
+            <img id="cover-img" alt="" hidden>
+          </div>
+          <div>
+            <label for="alt">Image description <span class="hint">— for screen readers; defaults to the title</span></label>
+            <input type="text" id="alt">
+          </div>
+        </section>
+
+        <section class="group">
+          <h2>Body</h2>
+          <div class="help">
+            Blank line between paragraphs. <code>## Heading</code> <code>### Subheading</code>
+            <code>**bold**</code> <code>*italic*</code> <code>[link text](https://…)</code>
+            <code>- bullet</code> <code>1. numbered</code> <code>&gt; quote</code>
+          </div>
+          <div class="tools">
+            <button class="btn btn--ghost" type="button" id="add-image">Insert image</button>
+            <input type="file" id="image-file" accept="image/*" hidden>
+            <span class="hint">Placed where the cursor is; edit the text in [ ] to describe it.</span>
+          </div>
+          <textarea id="body" required></textarea>
+        </section>
+
+        <section class="group publish">
+          <button class="btn" type="submit" id="publish">Publish article</button>
+          <p class="status" id="status" role="status"></p>
+        </section>
+      </form>
+
+      <div class="preview" aria-label="Preview">
+        <iframe id="preview" title="Article preview"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    "use strict";
+
+    /* Set by tools/blog/editor-setup.mjs. Never edit by hand. */
+    /* VAULT:start */ var VAULT = null; /* VAULT:end */
+
+    var AUTHORS = ["Mahesh Narayanan", "Shawheen Attar"];
+    var WPM = 200;                       // reading speed for "N min read"
+    var DRAFT_KEY = "mp:blog-draft";
+    var $ = function (id) { return document.getElementById(id); };
+    var cfg = null;                      // { token, owner, repo, branch } once unlocked
+
+    /* ---------- small helpers ------------------------------------------ */
+    function esc(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+    function b64ToBytes(s) {
+      var bin = atob(s), out = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out;
+    }
+    function blobToBase64(blob) {
+      return new Promise(function (resolve, reject) {
+        var r = new FileReader();
+        r.onload = function () { resolve(String(r.result).split(",")[1]); };
+        r.onerror = reject;
+        r.readAsDataURL(blob);
+      });
+    }
+    function textToBase64(s) {
+      return blobToBase64(new Blob([s], { type: "text/plain" }));
+    }
+    function slugify(s) {
+      return s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "")
+        .replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 90);
+    }
+    function today() {
+      var d = new Date();
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    }
+
+    /* ---------- unlock ---------------------------------------------------- */
+    async function decryptVault(password) {
+      var base = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+      var key = await crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: b64ToBytes(VAULT.salt), iterations: VAULT.iterations, hash: "SHA-256" },
+        base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+      var plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64ToBytes(VAULT.iv) }, key, b64ToBytes(VAULT.data));
+      return JSON.parse(new TextDecoder().decode(plain));
+    }
+
+    if (!VAULT) {
+      $("lock-note").textContent = "The editor isn’t set up yet. Run node tools/blog/editor-setup.mjs in the repo to set its password.";
+      $("pw").disabled = true;
+      $("unlock").disabled = true;
+    }
+    $("lock-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      $("lock-err").textContent = "";
+      $("unlock").disabled = true;
+      $("unlock").textContent = "Unlocking…";
+      try {
+        cfg = await decryptVault($("pw").value);
+        $("pw").value = "";
+        $("lock").hidden = true;
+        $("app").hidden = false;
+        startEditor();
+      } catch (err) {
+        $("lock-err").textContent = "That password didn’t work.";
+      }
+      $("unlock").disabled = false;
+      $("unlock").textContent = "Unlock";
+    });
+
+    /* ---------- images ---------------------------------------------------- */
+    // Encode a canvas, preferring WebP. Browsers that can't encode WebP hand
+    // back PNG, so check the type and fall back to JPEG.
+    function encode(canvas, type, quality) {
+      return new Promise(function (resolve) { canvas.toBlob(resolve, type, quality); });
+    }
+    async function bestEncoding(canvas) {
+      var webp = await encode(canvas, "image/webp", 0.82);
+      if (webp && webp.type === "image/webp") return { blob: webp, ext: "webp" };
+      return { blob: await encode(canvas, "image/jpeg", 0.86), ext: "jpg" };
+    }
+    function drawTo(bitmap, w, h, sx, sy, sw, sh) {
+      var c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      var g = c.getContext("2d");
+      g.fillStyle = "#fff";                                 // flatten any transparency
+      g.fillRect(0, 0, w, h);
+      g.drawImage(bitmap, sx, sy, sw, sh, 0, 0, w, h);
+      return c;
+    }
+    // Cover: centre-crop to 1200 x 630. Both a JPEG (social previews) and the
+    // lighter WebP the pages show.
+    async function makeCover(file) {
+      var bmp = await createImageBitmap(file);
+      var ratio = 1200 / 630, sw = bmp.width, sh = bmp.height;
+      if (sw / sh > ratio) sw = sh * ratio; else sh = sw / ratio;
+      var canvas = drawTo(bmp, 1200, 630, (bmp.width - sw) / 2, (bmp.height - sh) / 2, sw, sh);
+      var jpg = await encode(canvas, "image/jpeg", 0.86);
+      var best = await bestEncoding(canvas);
+      return { jpg: jpg, page: best.ext === "webp" ? best : { blob: jpg, ext: "jpg" }, url: URL.createObjectURL(jpg) };
+    }
+    // In-body image: at most 1600 wide, aspect kept.
+    async function makeBodyImage(file) {
+      var bmp = await createImageBitmap(file);
+      var w = Math.min(1600, bmp.width), h = Math.round(bmp.height * w / bmp.width);
+      var best = await bestEncoding(drawTo(bmp, w, h, 0, 0, bmp.width, bmp.height));
+      return { blob: best.blob, ext: best.ext, width: w, height: h, url: URL.createObjectURL(best.blob) };
+    }
+
+    /* ---------- Markdown to the article HTML the site uses ----------------- */
+    function inline(t) {
+      t = esc(t);
+      t = t.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (m, text, url) {
+        var external = /^https?:\/\//.test(url) && !/matchplaygroup\.com/.test(url);
+        return '<a href="' + url + '"' + (external ? ' target="_blank" rel="noopener"' : "") + ">" + text + "</a>";
+      });
+      t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      t = t.replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>");
+      return t;
+    }
+    // images: { "image-1": { url, file, width, height } }. src() picks the
+    // preview's object URL or the published path.
+    function toHtml(md, images, src) {
+      var out = [], para = [], list = null, quote = [];
+      function flushPara() { if (para.length) { out.push("<p>" + para.map(inline).join("<br>") + "</p>"); para = []; } }
+      function flushList() { if (list) { out.push("<" + list.tag + ">" + list.items.map(function (i) { return "<li>" + inline(i) + "</li>"; }).join("") + "</" + list.tag + ">"); list = null; } }
+      function flushQuote() { if (quote.length) { out.push("<blockquote><p>" + quote.map(inline).join("<br>") + "</p></blockquote>"); quote = []; } }
+      function flushAll() { flushPara(); flushList(); flushQuote(); }
+      md.replace(/\r\n?/g, "\n").split("\n").forEach(function (line) {
+        var m;
+        if (!line.trim()) { flushAll(); return; }
+        if ((m = line.match(/^(#{2,4})\s+(.*)$/))) { flushAll(); out.push("<h" + m[1].length + ">" + inline(m[2]) + "</h" + m[1].length + ">"); return; }
+        if ((m = line.match(/^!\[([^\]]*)\]\(([^)\s]+)\)\s*$/))) {
+          flushAll();
+          var img = images[m[2]];
+          if (img) out.push('<figure class="article__figure"><img src="' + src(m[2], img) + '" alt="' + esc(m[1]) + '" width="' + img.width + '" height="' + img.height + '" loading="lazy" decoding="async"></figure>');
+          return;
+        }
+        if ((m = line.match(/^\s*[-*]\s+(.*)$/))) { flushPara(); flushQuote(); if (!list || list.tag !== "ul") { flushList(); list = { tag: "ul", items: [] }; } list.items.push(m[1]); return; }
+        if ((m = line.match(/^\s*\d+[.)]\s+(.*)$/))) { flushPara(); flushQuote(); if (!list || list.tag !== "ol") { flushList(); list = { tag: "ol", items: [] }; } list.items.push(m[1]); return; }
+        if ((m = line.match(/^>\s?(.*)$/))) { flushPara(); flushList(); quote.push(m[1]); return; }
+        flushList(); flushQuote();
+        para.push(line.trim());
+      });
+      flushAll();
+      return out.join("");
+    }
+    function wordsIn(html) {
+      return (html.replace(/<[^>]+>/g, " ").match(/\S+/g) || []).length;
+    }
+
+    /* ---------- editor ---------------------------------------------------- */
+    var cover = null;                    // from makeCover()
+    var images = {};                     // "image-N" -> from makeBodyImage()
+    var imageCount = 0;
+    var slugTouched = false;
+    var previewDoc = null;
+
+    function author() {
+      return $("author").value || $("author-other").value.trim();
+    }
+    function fields() {
+      return {
+        title: $("title").value.trim(), slug: $("slug").value.trim(), author: author(), date: $("date").value,
+        desc: $("desc").value.trim(), seo: $("seo").value.trim(), keywords: $("keywords").value.trim(),
+        alt: $("alt").value.trim(), body: $("body").value
+      };
+    }
+
+    function saveDraft() {
+      var f = fields();
+      f.slugTouched = slugTouched;
+      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(f)); $("draft-state").textContent = "· draft saved on this computer"; } catch (e) {}
+    }
+    function loadDraft() {
+      var f = null;
+      try { f = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (e) {}
+      if (!f) return;
+      $("title").value = f.title || ""; $("slug").value = f.slug || ""; $("date").value = f.date || today();
+      $("desc").value = f.desc || ""; $("seo").value = f.seo || ""; $("keywords").value = f.keywords || "";
+      $("alt").value = f.alt || ""; $("body").value = f.body || "";
+      slugTouched = !!f.slugTouched;
+      if (f.author && AUTHORS.indexOf(f.author) < 0) { $("author").value = ""; $("author-other").hidden = false; $("author-other").value = f.author; }
+      else if (f.author) $("author").value = f.author;
+      $("draft-state").textContent = "· draft restored";
+    }
+
+    function setupPreview() {
+      // A same-origin document: relative URLs resolve against this page, so
+      // the site's stylesheet and the images' object URLs both load.
+      var frame = $("preview");
+      frame.srcdoc = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">' +
+        '<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Libre+Baskerville:ital@0;1&family=Sora:wght@600&display=swap" rel="stylesheet">' +
+        '<link rel="stylesheet" href="css/styles.css"><style>.article-head{padding-top:3rem}</style></head><body><main class="dotfield">' +
+        '<section class="section section--top article-head"><div class="container">' +
+        '<h1 class="article-head__title" id="p-title"></h1><p class="post-meta article-head__meta" id="p-meta"></p>' +
+        '<figure class="article-cover" id="p-cover-wrap" hidden><img id="p-cover" alt="" width="1200" height="630"></figure>' +
+        '</div></section><section class="section section--light"><div class="container"><article class="article" id="p-body"></article></div></section>' +
+        '</main></body></html>';
+      frame.addEventListener("load", function () { previewDoc = frame.contentDocument; renderPreview(); });
+    }
+    function renderPreview() {
+      if (!previewDoc) return;
+      var f = fields();
+      var html = toHtml(f.body, images, function (id, img) { return img.url; });
+      var mins = Math.max(1, Math.ceil(wordsIn(html) / WPM));
+      var date = f.date ? new Date(f.date + "T12:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "";
+      previewDoc.getElementById("p-title").textContent = f.title || "Your title";
+      previewDoc.getElementById("p-meta").innerHTML = "<span>" + esc(f.author || "Author") + "</span><time>" + esc(date) + "</time><span>" + mins + " min read</span>";
+      previewDoc.getElementById("p-cover-wrap").hidden = !cover;
+      if (cover) previewDoc.getElementById("p-cover").src = cover.url;
+      previewDoc.getElementById("p-body").innerHTML = html || "<p>Your article appears here as you write.</p>";
+    }
+
+    var pending;
+    function changed() {
+      clearTimeout(pending);
+      pending = setTimeout(function () { renderPreview(); saveDraft(); }, 150);
+      var n = $("desc").value.trim().length;
+      $("desc-count").textContent = n + " characters";
+      $("desc-count").classList.toggle("is-off", n > 0 && (n < 120 || n > 170));
+    }
+
+    function startEditor() {
+      $("date").value = today();
+      loadDraft();
+      setupPreview();
+      changed();
+
+      $("post").addEventListener("input", changed);
+      $("title").addEventListener("input", function () {
+        if (!slugTouched) $("slug").value = slugify($("title").value);
+      });
+      $("slug").addEventListener("input", function () {
+        slugTouched = true;
+        $("slug").value = $("slug").value.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+      });
+      $("author").addEventListener("change", function () {
+        $("author-other").hidden = $("author").value !== "";
+        changed();
+      });
+
+      $("cover").addEventListener("change", async function () {
+        var file = $("cover").files[0];
+        if (!file) return;
+        cover = await makeCover(file);
+        $("cover-img").src = cover.url;
+        $("cover-img").hidden = false;
+        renderPreview();
+      });
+
+      $("add-image").addEventListener("click", function () { $("image-file").click(); });
+      $("image-file").addEventListener("change", async function () {
+        var file = $("image-file").files[0];
+        if (!file) return;
+        var id = "image-" + (++imageCount);
+        images[id] = await makeBodyImage(file);
+        var ta = $("body"), at = ta.selectionStart;
+        var snippet = "\n\n![Describe this image](" + id + ")\n\n";
+        ta.value = ta.value.slice(0, at) + snippet + ta.value.slice(ta.selectionEnd);
+        ta.focus();
+        ta.selectionStart = at + 4;
+        ta.selectionEnd = at + 4 + "Describe this image".length;
+        $("image-file").value = "";
+        changed();
+      });
+
+      $("clear").addEventListener("click", function () {
+        if ($("clear").dataset.confirm !== "1") {
+          $("clear").dataset.confirm = "1";
+          $("clear").textContent = "Clear everything?";
+          setTimeout(function () { $("clear").dataset.confirm = ""; $("clear").textContent = "Start over"; }, 3000);
+          return;
+        }
+        try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+        location.reload();
+      });
+
+      $("post").addEventListener("submit", function (e) { e.preventDefault(); publish(); });
+    }
+
+    /* ---------- publish --------------------------------------------------- */
+    function status(msg, kind) {
+      $("status").className = "status" + (kind ? " is-" + kind : "");
+      $("status").innerHTML = msg;
+    }
+    async function gh(path, opts) {
+      opts = opts || {};
+      var res = await fetch("https://api.github.com/repos/" + cfg.owner + "/" + cfg.repo + path, {
+        method: opts.method || "GET",
+        headers: {
+          "Authorization": "Bearer " + cfg.token,
+          "Accept": "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28"
+        },
+        body: opts.body ? JSON.stringify(opts.body) : undefined
+      });
+      if (res.status === 404 && opts.allow404) return null;
+      if (!res.ok) {
+        var detail = "";
+        try { detail = (await res.json()).message || ""; } catch (e) {}
+        throw new Error("GitHub said " + res.status + (detail ? ": " + detail : ""));
+      }
+      return res.json();
+    }
+
+    function validate(f) {
+      if (!f.title) return "Add a title.";
+      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(f.slug)) return "The web address can only use lowercase letters, numbers and single dashes.";
+      if (!f.author) return "Add the author’s name.";
+      if (!f.date) return "Pick a publish date.";
+      if (!f.desc) return "Add a summary.";
+      if (!cover) return "Add a cover image.";
+      if (!f.body.trim()) return "Write the article body.";
+      var missing = (f.body.match(/\]\((image-\d+)\)/g) || []).map(function (m) { return m.slice(2, -1); })
+        .filter(function (id) { return !images[id]; });
+      if (missing.length) return "An image placeholder (" + missing[0] + ") has no picture. Re-insert it, or delete that line.";
+      return "";
+    }
+
+    async function publish() {
+      var f = fields();
+      var problem = validate(f);
+      if (problem) { status(problem, "err"); return; }
+      $("publish").disabled = true;
+      try {
+        status("Checking the web address…");
+        var postPath = "tools/blog/posts/" + f.slug + ".json";
+        if (await gh("/contents/" + postPath + "?ref=" + cfg.branch, { allow404: true })) {
+          throw new Error("An article already lives at /blog/" + f.slug + ". Change the web address.");
+        }
+
+        // Name every file after the slug, then write the body against those names.
+        var files = [];                                     // { path, base64 }
+        var coverPage = f.slug + "." + cover.page.ext, coverJpg = f.slug + ".jpg";
+        files.push({ path: "assets/blog/" + coverJpg, blob: cover.jpg });
+        if (coverPage !== coverJpg) files.push({ path: "assets/blog/" + coverPage, blob: cover.page.blob });
+        var used = {};
+        var body = toHtml(f.body, images, function (id, img) {
+          if (!used[id]) {
+            used[id] = f.slug + "-" + id.split("-")[1] + "." + img.ext;
+            files.push({ path: "assets/blog/" + used[id], blob: img.blob });
+          }
+          return "../assets/blog/" + used[id];
+        });
+        var words = wordsIn(body);
+        var post = {
+          slug: f.slug,
+          title: f.title,
+          seoTitle: f.seo || f.title,
+          description: f.desc,
+          ogTitle: f.seo || f.title,
+          author: f.author,
+          datePublished: f.date,
+          dateModified: new Date().toISOString(),
+          keywords: f.keywords,
+          cover: { webp: coverPage, jpg: coverJpg, alt: f.alt || f.title },
+          wordCount: words,
+          readingMinutes: Math.max(1, Math.ceil(words / WPM)),
+          source: "blog editor",
+          body: body
+        };
+        files.push({ path: postPath, text: JSON.stringify(post, null, 2) + "\n" });
+
+        status("Uploading " + files.length + " files…");
+        var tree = [];
+        for (var i = 0; i < files.length; i++) {
+          var content = files[i].blob ? await blobToBase64(files[i].blob) : await textToBase64(files[i].text);
+          var blob = await gh("/git/blobs", { method: "POST", body: { content: content, encoding: "base64" } });
+          tree.push({ path: files[i].path, mode: "100644", type: "blob", sha: blob.sha });
+        }
+
+        status("Publishing…");
+        var commitSha;
+        for (var attempt = 0; attempt < 2; attempt++) {    // retry once if main moved meanwhile
+          var head = await gh("/git/ref/heads/" + cfg.branch);
+          var base = await gh("/git/commits/" + head.object.sha);
+          var newTree = await gh("/git/trees", { method: "POST", body: { base_tree: base.tree.sha, tree: tree } });
+          var commit = await gh("/git/commits", { method: "POST", body: {
+            message: "Blog: publish “" + f.title + "”\n\nAdded with the blog editor by " + f.author + ".",
+            tree: newTree.sha, parents: [head.object.sha] } });
+          try {
+            await gh("/git/refs/heads/" + cfg.branch, { method: "PATCH", body: { sha: commit.sha } });
+            commitSha = commit.sha;
+            break;
+          } catch (err) {
+            if (attempt === 1) throw err;
+          }
+        }
+
+        try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+        $("draft-state").textContent = "· published";
+        status("Published. The site rebuilds in a minute or two, then the article is live at " +
+          '<a href="blog/' + f.slug + '.html" target="_blank" rel="noopener">/blog/' + esc(f.slug) + "</a>. " +
+          '<a href="https://github.com/' + cfg.owner + "/" + cfg.repo + "/commit/" + commitSha + '" target="_blank" rel="noopener">See the change</a>.', "ok");
+      } catch (err) {
+        status(esc(err.message || String(err)), "err");
+      }
+      $("publish").disabled = false;
+    }
+  })();
+  </script>
+</body>
+</html>
