@@ -452,7 +452,7 @@
       preparePath(p);
       drawPath(p, opts.drawDur || rand(750, 1100), opts.delay);
     }
-    item.timer = setTimeout(() => retireAmbient(f, item), (opts.life || rand(3800, 8200)) + (opts.delay || 0));
+    item.timer = setTimeout(() => retireAmbient(f, item), (opts.life || rand(3000, 5000)) + (opts.delay || 0));
     return item;
   }
 
@@ -496,9 +496,9 @@
         g.remove();
         item.p = p;
         item.merging = false;
-        item.timer = setTimeout(() => retireAmbient(f, item), opts.life || rand(3000, 7000));
+        item.timer = setTimeout(() => retireAmbient(f, item), Math.min(4000, opts.life || rand(2500, 4000)));
       }));
-    }, delay + 250 + draw + rand(250, 1200));
+    }, delay + 250 + draw + rand(100, 500));             /* the rings sit up to half a second */
     return item;
   }
 
@@ -750,7 +750,7 @@
       logoG.style.transform = markTransform();
       stage.classList.add('is-dim');
       for (let i = 0; !bare && i < Math.round(capOf(heroField) * 0.75); i++) {
-        spawnAmbient(heroField, { instant: true, life: SPLASH ? rand(2000, 9000) : 86400000 });
+        spawnAmbient(heroField, { instant: true, life: SPLASH ? rand(2000, 5000) : 86400000 });
       }
     }
   }
@@ -797,7 +797,7 @@
     t(120, () => {
       const seed = Math.round(capOf(heroField) * 0.9);
       for (let k = 0; k < seed; k++) {
-        if (!spawnAmbient(heroField, { drawDur: rand(650, 950), life: rand(900, 5200), delay: k * 75 })) break;
+        if (!spawnAmbient(heroField, { drawDur: rand(650, 950), life: rand(900, 5000), delay: k * 75 })) break;
       }
     });
     /* Timers rather than rAF: a tab opened in the background gets no animation
@@ -847,7 +847,7 @@
       const seed = Math.round(capOf(heroField) * 0.95);
       (function spawnNext() {
         if (splashDone || i++ >= seed) return;
-        spawnAmbient(heroField, { drawDur: rand(600, 850), life: rand(3000, 9000) });
+        spawnAmbient(heroField, { drawDur: rand(600, 850), life: rand(3000, 5000) });
         setTimeout(spawnNext, 65);
       })();
     });
@@ -935,7 +935,7 @@
     const target = Math.round(capOf(heroField) * 0.75);
     let alive = aliveInBand(heroField);
     while (alive++ < target) {
-      spawnAmbient(heroField, { instant: true, life: rand(2000, 9000) });
+      spawnAmbient(heroField, { instant: true, life: rand(2000, 5000) });
     }
   });
 
@@ -950,7 +950,7 @@
     if (!f.timer || document.hidden) return;              /* loop not running yet */
     const need = Math.round(capOf(f) * 0.9) - aliveInBand(f);
     for (let k = 0; k < need; k++) {
-      const item = spawnAmbient(f, { drawDur: rand(600, 850), life: rand(3000, 9000), delay: k * 35 });
+      const item = spawnAmbient(f, { drawDur: rand(600, 850), life: rand(3000, 5000), delay: k * 35 });
       if (!item) break;                                   /* no free spot left */
     }
   }
