@@ -76,10 +76,19 @@
      clusters and gaps), 1 compares 16 (very even). Either way shapes never
      touch: each keeps a clear cell all round it. Try values on the page
      with ?uniformity=0.2 in the address. */
-  const UNIFORMITY = (() => {
-    const v = parseFloat(new URLSearchParams(location.search).get('uniformity'));
-    return isNaN(v) ? 0.35 : Math.min(1, Math.max(0, v));
-  })();
+  const param = (name, def, max) => {
+    const v = parseFloat(new URLSearchParams(location.search).get(name));
+    return isNaN(v) ? def : Math.min(max, Math.max(0, v));
+  };
+  const UNIFORMITY = param('uniformity', 0.35, 1);
+
+  /* Extra lone rings that fill the gaps between the other shapes, as a share
+     of the main count: 0 = none, 0.5 = half as many again on top. Separate
+     from MIX and UNIFORMITY: these always take the emptiest spot they can
+     find, and like every shape keep a clear cell between themselves and
+     anything else. Try values with ?fill=0.6 in the address. */
+  const RING_FILL = param('fill', 0.4, 2);
+  const FILL_CANDIDATES = 16;
 
   /* Concurrent shapes per grid cell. Every field derives its own cap from this,
      so the hero and the ecosystem section hold the same density whatever their
@@ -344,16 +353,17 @@
     const rEnd = Math.floor((heroBottom - f.y0) / f.S + 0.5) + 1;   /* exclusive */
     return [r0, Math.max(r0, Math.min(r1, rEnd))];         /* empty once past the hero */
   }
-  function capOf(f) {
+  function capOf(f, fill) {
     const b = bandOf(f);
-    return Math.round(f.cols * (b[1] - b[0]) * AMBIENT_DENSITY);
+    const cap = f.cols * (b[1] - b[0]) * AMBIENT_DENSITY;
+    return Math.round(fill ? cap * RING_FILL : cap);
   }
   /* Only shapes in the current band count toward the cap. Counting the whole
      population let shapes stranded above the fold use up the allowance, so a
      newly scrolled-to section sat empty until they expired. */
-  function aliveInBand(f) {
+  function aliveInBand(f, fill) {
     const b = bandOf(f);
-    return f.population.filter(i => !i.dead && i.spot.r >= b[0] - 1 && i.spot.r <= b[1] + 1).length;
+    return f.population.filter(i => !i.dead && !!i.fill === !!fill && i.spot.r >= b[0] - 1 && i.spot.r <= b[1] + 1).length;
   }
 
   /* A shape's middle, in grid cells: a ring's centre, or halfway along a link. */
@@ -377,13 +387,14 @@
      every shape already showing (best-candidate sampling), rather than the
      first free one, which let shapes bunch up and leave holes. */
   const CANDIDATES = 1 + Math.round(UNIFORMITY * 15);
-  function claimSpot(f, kind) {
+  function claimSpot(f, kind, candidates) {
+    candidates = candidates || CANDIDATES;
     const band = bandOf(f);
     const span = band[1] - band[0];
     if (span <= 0) return null;
     const live = f.population.filter(i => !i.dead).map(i => i.centre);
     let best = null, bestScore = -1, found = 0;
-    for (let i = 0; i < 120 && found < CANDIDATES; i++) {
+    for (let i = 0; i < 120 && found < candidates; i++) {
       const c = 1 + Math.floor(Math.random() * (f.cols - 3));
       const r = band[0] + Math.floor(Math.random() * span);
       let spot;
@@ -438,15 +449,15 @@
   function spawnAmbient(f, opts) {
     opts = opts || {};
     if (!f.layer || !f.dots) return null;
-    let kind = opts.kind || pickKind();
+    let kind = opts.fill ? 'ring' : opts.kind || pickKind();
     if (kind === 'merge' && opts.instant) kind = 'link';  /* nobody to watch it merge */
-    const spot = claimSpot(f, kind);
+    const spot = claimSpot(f, kind, opts.fill ? FILL_CANDIDATES : 0);
     if (!spot) return null;
     const centre = centreOf(spot);
     const color = pickColor(f, centre);
     if (kind === 'merge') return spawnMerge(f, spot, centre, color, opts);
     const p = makeShape(f, kind, spot, color);
-    const item = { p, spot, centre, color, dead: false };
+    const item = { p, spot, centre, color, dead: false, fill: !!opts.fill };
     f.population.push(item);
     if (!opts.instant) {
       preparePath(p);
@@ -534,6 +545,9 @@
       if (alive < cap) spawnAmbient(f);
       if (alive < cap - 3) spawnAmbient(f);
       if (alive < cap - 8) spawnAmbient(f);
+      const fills = aliveInBand(f, true), fillCap = capOf(f, true);
+      if (fills < fillCap) spawnAmbient(f, { fill: true });
+      if (fills < fillCap - 3) spawnAmbient(f, { fill: true });
     }, 550);
   }
 
@@ -752,6 +766,9 @@
       for (let i = 0; !bare && i < Math.round(capOf(heroField) * 0.75); i++) {
         spawnAmbient(heroField, { instant: true, life: SPLASH ? rand(2000, 5000) : 86400000 });
       }
+      for (let i = 0; !bare && i < Math.round(capOf(heroField, true) * 0.75); i++) {
+        spawnAmbient(heroField, { instant: true, fill: true, life: SPLASH ? rand(2000, 5000) : 86400000 });
+      }
     }
   }
 
@@ -796,8 +813,14 @@
        runs straight into the ambient churn instead of pausing between. */
     t(120, () => {
       const seed = Math.round(capOf(heroField) * 0.9);
-      for (let k = 0; k < seed; k++) {
+      let k = 0;
+      for (; k < seed; k++) {
         if (!spawnAmbient(heroField, { drawDur: rand(650, 950), life: rand(900, 5000), delay: k * 75 })) break;
+      }
+      /* the gap-filling rings, threaded in among them */
+      const fills = Math.round(capOf(heroField, true) * 0.9);
+      for (let j = 0; j < fills; j++) {
+        if (!spawnAmbient(heroField, { fill: true, drawDur: rand(650, 950), life: rand(900, 5000), delay: (j + 0.5) * 75 * k / Math.max(1, fills) })) break;
       }
     });
     /* Timers rather than rAF: a tab opened in the background gets no animation
@@ -845,9 +868,12 @@
     t(2200, () => {
       let i = 0;
       const seed = Math.round(capOf(heroField) * 0.95);
+      const fills = Math.round(capOf(heroField, true) * 0.95);
       (function spawnNext() {
-        if (splashDone || i++ >= seed) return;
-        spawnAmbient(heroField, { drawDur: rand(600, 850), life: rand(3000, 5000) });
+        if (splashDone || i++ >= seed + fills) return;
+        /* the gap-filling rings, threaded in among the rest */
+        const fill = i > seed || Math.random() < fills / (seed + fills);
+        spawnAmbient(heroField, { fill, drawDur: rand(600, 850), life: rand(3000, 5000) });
         setTimeout(spawnNext, 65);
       })();
     });
@@ -932,11 +958,13 @@
      return instead — drawn in place, since nobody watched it happen. */
   document.addEventListener('visibilitychange', () => {
     if (document.hidden || !splashDone) return;
-    const target = Math.round(capOf(heroField) * 0.75);
-    let alive = aliveInBand(heroField);
-    while (alive++ < target) {
-      spawnAmbient(heroField, { instant: true, life: rand(2000, 5000) });
-    }
+    [false, true].forEach(fill => {
+      const target = Math.round(capOf(heroField, fill) * 0.75);
+      let alive = aliveInBand(heroField, fill);
+      while (alive++ < target) {
+        if (!spawnAmbient(heroField, { instant: true, fill, life: rand(2000, 5000) })) break;
+      }
+    });
   });
 
   /* The loop adds a few shapes per tick, which keeps a band topped up but
@@ -948,11 +976,14 @@
   let topUpT;
   function topUp(f) {
     if (!f.timer || document.hidden) return;              /* loop not running yet */
-    const need = Math.round(capOf(f) * 0.9) - aliveInBand(f);
-    for (let k = 0; k < need; k++) {
-      const item = spawnAmbient(f, { drawDur: rand(600, 850), life: rand(3000, 5000), delay: k * 35 });
-      if (!item) break;                                   /* no free spot left */
-    }
+    let k = 0;
+    [false, true].forEach(fill => {                       /* the shapes, then the rings between */
+      const need = Math.round(capOf(f, fill) * 0.9) - aliveInBand(f, fill);
+      for (let n = 0; n < need; n++, k++) {
+        const item = spawnAmbient(f, { fill, drawDur: rand(600, 850), life: rand(3000, 5000), delay: k * 35 });
+        if (!item) break;                                 /* no free spot left */
+      }
+    });
   }
   window.addEventListener('scroll', () => {
     clearTimeout(topUpT);
