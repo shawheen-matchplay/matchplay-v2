@@ -1734,7 +1734,8 @@ html.splash--returning [data-reveal] {
 }
 /* On white a glass box has nothing to glow against: the glow runs stronger
    and the lift reads through a soft shadow and a firmer edge. */
-.section--light [data-tilt] { --fx-rest: 0.06; --fx-hover: 0.18; --fx-track: 0.28; }
+.section--light [data-tilt],
+.testimonial[data-tilt] { --fx-rest: 0.06; --fx-hover: 0.18; --fx-track: 0.28; }   /* white testimonial cards glow like a light band's boxes */
 .section--light [data-tilt]:hover {
   border-color: rgba(10, 10, 10, 0.14);
   box-shadow: 0 18px 40px -22px rgba(10, 10, 10, 0.28);
@@ -2573,7 +2574,7 @@ html.splash--returning [data-reveal] {
   /* No gap and no side padding: the loop moves the track by -50%, which only
      lands exactly on the copy if the track is two identical halves. A gap
      leaves it one gap short of that, so it jumped a few px every loop. */
-  padding: var(--space-2xs) 0;
+  padding: 0.75rem 0 1.75rem;        /* room for a hovered card's lift and shadow */
   animation: marquee 60s linear infinite;
 }
 .marquee__track > * { margin-right: var(--space-md); }
