@@ -233,7 +233,7 @@ def build_index(posts, header, footer, fonts):
     canonical = SITE + "/blog"
     desc = ("Explore MatchPlay’s latest blogs on venture capital, startup fundraising, founder stories, "
             "investor insights, and the networks shaping high-growth companies.")
-    lead, rest = posts[0], posts[1:]
+    PER_PAGE = 10
     jsonld = {"@context": "https://schema.org", "@type": "Blog", "@id": canonical + "#blog",
               "name": BLOG_NAME + " | MatchPlay Blog", "url": canonical, "description": desc,
               "publisher": {"@type": "Organization", "name": "MatchPlay",
@@ -241,9 +241,9 @@ def build_index(posts, header, footer, fonts):
               "blogPost": [{"@type": "BlogPosting", "headline": p["title"],
                             "url": "%s/blog/%s" % (SITE, p["slug"]), "datePublished": p["datePublished"],
                             "author": {"@type": "Person", "name": p["author"]}} for p in posts]}
-    page = head("Blog", desc, canonical, fonts, "", image="%s/assets/blog/%s" % (SITE, lead["cover"]["jpg"]),
-                image_alt=lead["cover"]["alt"], jsonld=jsonld)
-    grid = "\n        ".join(card(p, "blog/") for p in rest)
+    page = head("Blog", desc, canonical, fonts, "", image="%s/assets/blog/%s" % (SITE, posts[0]["cover"]["jpg"]),
+                image_alt=posts[0]["cover"]["alt"], jsonld=jsonld)
+    grid = "\n        ".join(card(p, "blog/") for p in posts)
     page += """
   %(header)s
 
@@ -252,15 +252,16 @@ def build_index(posts, header, footer, fonts):
     <!-- ===== Hero ===== -->
     <section class="page-hero">
       <div class="container page-hero__inner">
-        <h1 class="page-hero__title reveal">%(blog)s<em>, the MatchPlay blog.</em></h1>
+        <h1 class="page-hero__title reveal">%(blog)s,<br><em>the MatchPlay blog.</em></h1>
         <p class="page-hero__sub reveal">%(desc)s</p>
-      </div>
-    </section>
-
-    <!-- ===== Latest ===== -->
-    <section class="section blog-latest" aria-label="Latest post">
-      <div class="container container--wide">
-        %(lead)s
+        <form class="subscribe__form blog-subscribe reveal" data-subscribe>
+          <label class="subscribe__field">
+            <span class="visually-hidden">Email address</span>
+            <input class="subscribe__input" type="email" name="email" placeholder="you@company.com" autocomplete="email" required>
+          </label>
+          <button type="submit" class="btn btn--primary btn--pill">Subscribe</button>
+        </form>
+        <p class="subscribe__success blog-subscribe__done" role="status">Thank you &mdash; you&rsquo;re on the list.</p>
       </div>
     </section>
 
@@ -270,9 +271,11 @@ def build_index(posts, header, footer, fonts):
         <header class="sec-head reveal">
           <h2 class="sec-head__title">All <em>posts.</em></h2>
         </header>
-        <div class="post-grid">
+        <!-- every post is in the HTML; main.js shows %(per)d at a time -->
+        <div class="post-grid" data-paginate="%(per)d">
         %(grid)s
         </div>
+        <nav class="pager" aria-label="Blog pages" data-pager hidden></nav>
       </div>
     </section>
 
@@ -284,7 +287,7 @@ def build_index(posts, header, footer, fonts):
 </body>
 </html>
 """ % {"header": header, "footer": footer, "blog": BLOG_NAME, "desc": esc(desc),
-       "lead": card(lead, "blog/", "post-feature", "h2"), "grid": grid, "cta": CTA("")}
+       "per": PER_PAGE, "grid": grid, "cta": CTA("")}
     io.open(os.path.join(ROOT, "blog.html"), "w", encoding="utf-8").write(page)
 
 

@@ -270,6 +270,54 @@
     });
   });
 
+  /* ---- Paginated list (blog index) --------------------------------- */
+  // Every item is already in the HTML, so the full list is there without
+  // JavaScript and for search engines; this only shows one page at a time.
+  // The page lives in the URL (?page=2), so back, forward and shared links work.
+  var pageList = document.querySelector("[data-paginate]");
+  var pager = document.querySelector("[data-pager]");
+  if (pageList && pager) {
+    var perPage = parseInt(pageList.getAttribute("data-paginate"), 10) || 10;
+    var entries = Array.prototype.slice.call(pageList.children);
+    var pageCount = Math.ceil(entries.length / perPage);
+
+    var pageFromUrl = function () {
+      var q = new URLSearchParams(location.search), n = q.get("page");
+      // Webflow's pagination used ?<id>_page=N; honour old links to it
+      if (!n) q.forEach(function (v, k) { if (/_page$/.test(k)) n = v; });
+      return Math.min(Math.max(parseInt(n, 10) || 1, 1), pageCount);
+    };
+    var pageLink = function (n, label, current, disabled) {
+      var el = document.createElement(disabled ? "span" : "a");
+      el.textContent = label;
+      if (disabled) { el.className = "is-disabled"; el.setAttribute("aria-disabled", "true"); }
+      else { el.href = n === 1 ? location.pathname : "?page=" + n; el.setAttribute("data-page", n); }
+      if (current) el.setAttribute("aria-current", "page");
+      return el;
+    };
+    var showPage = function (n) {
+      entries.forEach(function (el, i) { el.hidden = Math.floor(i / perPage) !== n - 1; });
+      pager.textContent = "";
+      pager.hidden = pageCount < 2;
+      if (pageCount < 2) return;
+      pager.appendChild(pageLink(n - 1, "← Prev", false, n === 1));
+      for (var i = 1; i <= pageCount; i++) pager.appendChild(pageLink(i, String(i), i === n, false));
+      pager.appendChild(pageLink(n + 1, "Next →", false, n === pageCount));
+    };
+
+    pager.addEventListener("click", function (e) {
+      var a = e.target.closest("a[data-page]");
+      if (!a) return;
+      e.preventDefault();
+      var n = parseInt(a.getAttribute("data-page"), 10);
+      history.pushState({ page: n }, "", a.getAttribute("href"));
+      showPage(n);
+      (pageList.closest("section") || pageList).scrollIntoView();   // honours the CSS scroll-behavior
+    });
+    window.addEventListener("popstate", function () { showPage(pageFromUrl()); });
+    showPage(pageFromUrl());
+  }
+
   /* ---- Subscribe form ---------------------------------------------- */
   // No backend yet — show the success state locally. Wire up a real
   // endpoint (fetch POST) where indicated when a backend exists.

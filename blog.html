@@ -272,25 +272,16 @@
     <!-- ===== Hero ===== -->
     <section class="page-hero">
       <div class="container page-hero__inner">
-        <h1 class="page-hero__title reveal">Warm Intro<em>, the MatchPlay blog.</em></h1>
+        <h1 class="page-hero__title reveal">Warm Intro,<br><em>the MatchPlay blog.</em></h1>
         <p class="page-hero__sub reveal">Explore MatchPlay’s latest blogs on venture capital, startup fundraising, founder stories, investor insights, and the networks shaping high-growth companies.</p>
-      </div>
-    </section>
-
-    <!-- ===== Latest ===== -->
-    <section class="section blog-latest" aria-label="Latest post">
-      <div class="container container--wide">
-        <article class="post-feature reveal">
-          <a class="post-feature__link" href="blog/venture-capital-spv-what-it-is-how-it-works-and-when-vcs-should-use-one.html">
-            <img class="post-feature__img" src="assets/blog/venture-capital-spv-what-it-is-how-it-works-and-when-vcs-should-use-one.webp" alt="" width="1200" height="630" loading="lazy" decoding="async">
-            <div class="post-feature__body">
-              <p class="post-meta"><time datetime="2026-10-07">October 7, 2026</time><span>24 min read</span></p>
-              <h2 class="post-feature__title">Venture Capital SPV: What It Is, How It Works, and When VCs Should Use One</h2>
-              <p class="post-feature__text">What a venture capital SPV is, how it works, and when VCs should use one, plus how SPV fees, carry, legal structure, filings, and taxes work.</p>
-              <p class="post-author">Mahesh Narayanan</p>
-            </div>
-          </a>
-        </article>
+        <form class="subscribe__form blog-subscribe reveal" data-subscribe>
+          <label class="subscribe__field">
+            <span class="visually-hidden">Email address</span>
+            <input class="subscribe__input" type="email" name="email" placeholder="you@company.com" autocomplete="email" required>
+          </label>
+          <button type="submit" class="btn btn--primary btn--pill">Subscribe</button>
+        </form>
+        <p class="subscribe__success blog-subscribe__done" role="status">Thank you &mdash; you&rsquo;re on the list.</p>
       </div>
     </section>
 
@@ -300,7 +291,19 @@
         <header class="sec-head reveal">
           <h2 class="sec-head__title">All <em>posts.</em></h2>
         </header>
-        <div class="post-grid">
+        <!-- every post is in the HTML; main.js shows 10 at a time -->
+        <div class="post-grid" data-paginate="10">
+        <article class="post-card reveal">
+          <a class="post-card__link" href="blog/venture-capital-spv-what-it-is-how-it-works-and-when-vcs-should-use-one.html">
+            <img class="post-card__img" src="assets/blog/venture-capital-spv-what-it-is-how-it-works-and-when-vcs-should-use-one.webp" alt="" width="1200" height="630" loading="lazy" decoding="async">
+            <div class="post-card__body">
+              <p class="post-meta"><time datetime="2026-10-07">October 7, 2026</time><span>24 min read</span></p>
+              <h3 class="post-card__title">Venture Capital SPV: What It Is, How It Works, and When VCs Should Use One</h3>
+              <p class="post-card__text">What a venture capital SPV is, how it works, and when VCs should use one, plus how SPV fees, carry, legal structure, filings, and taxes work.</p>
+              <p class="post-author">Mahesh Narayanan</p>
+            </div>
+          </a>
+        </article>
         <article class="post-card reveal">
           <a class="post-card__link" href="blog/startup-due-diligence-red-flags-to-fix-before-your-seed-round.html">
             <img class="post-card__img" src="assets/blog/startup-due-diligence-red-flags-to-fix-before-your-seed-round.webp" alt="" width="1200" height="630" loading="lazy" decoding="async">
@@ -467,6 +470,7 @@
           </a>
         </article>
         </div>
+        <nav class="pager" aria-label="Blog pages" data-pager hidden></nav>
       </div>
     </section>
 
