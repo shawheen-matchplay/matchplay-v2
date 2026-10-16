@@ -15,11 +15,18 @@
    corner radius R/2, stroke R/5, a link's centres 2 sqrt 2 R apart.
 
    Options in the URL, e.g. ring-play-a.html?rings=10
-     rings  how many rings to start with (default: fits the window)
-     bg     ground: dark (default) or grey (the hero before its dim) */
+     rings    how many rings to start with (default: fits the window)
+     density  more or fewer rings than fit by default, e.g. 1.5
+     r        ring radius in px
+     bg       ground: dark (default) or grey (the hero before its dim)
+     embed    1 when shown in a box on another page (the homepage): black
+              ground, hero-sized rings, denser, no Reset button, and the
+              page can still be scrolled by touch over it */
 (function () {
   "use strict";
   var q = new URLSearchParams(location.search);
+  var EMBED = q.get("embed") === "1";
+  if (EMBED) document.documentElement.classList.add("embed");
   var MODE = ({ a: "a", b: "b", c: "c" })[window.RING_PLAY && window.RING_PLAY.mode] || "a";
   var DRAG = MODE !== "b";             /* rings can be picked up and merged by hand */
   var AVOID = MODE === "b";            /* rings and links keep away from the mouse */
@@ -131,7 +138,10 @@
     svg.setAttribute("viewBox", "0 0 " + W + " " + H);
   }
   measure();
-  R = Math.max(22, Math.min(40, Math.min(W, H) * 0.045));   /* fixed once: shapes are built at it */
+  /* fixed once: shapes are built at it. Embedded, about the hero's size. */
+  R = EMBED ? Math.max(16, Math.min(26, Math.min(W, H) * 0.05)) : Math.max(22, Math.min(40, Math.min(W, H) * 0.045));
+  if (parseFloat(q.get("r")) > 0) R = parseFloat(q.get("r"));
+  var DENSITY = parseFloat(q.get("density")) || (EMBED ? 1.9 : 1);
   LW = R * 0.2; K = R / R0;
   CAN = 2 * Math.SQRT2 * R;            /* centre to centre in a link */
   HALF = CAN / 2;
@@ -198,8 +208,8 @@
     layer = el("g", {}, svg);
     bodies = []; merges = []; splits = []; drag = null; preview = null;
     var n = parseInt(q.get("rings"), 10);
-    if (!(n > 0)) n = Math.round(W * H / (R * R * 55));
-    n = Math.max(4, Math.min(40, n));
+    if (!(n > 0)) n = Math.round(W * H / (R * R * 55) * DENSITY);
+    n = Math.max(4, Math.min(90, n));
     var pad = R + LW + 8;
     for (var i = 0, tries = 0; i < n && tries < 4000; tries++) {
       var x = rand(pad, W - pad), y = rand(pad, H - pad - 40);
@@ -531,17 +541,30 @@
     });
   }
 
-  var last = performance.now();
+  /* Runs only while on screen: in a box further down a page it starts
+     (rings drawing in) when scrolled to, and pauses when scrolled past. */
+  var last = performance.now(), visible = true, running = false, populated = false;
   function frame(now) {
+    if (!visible) { running = false; return; }
     var dt = Math.min(1 / 30, Math.max(0, now - last) / 1000);
     last = now;
     step(dt, now);
     render();
     requestAnimationFrame(frame);
   }
+  function show() {
+    if (!populated) { populated = true; populate(); }
+    if (!running) { running = true; last = performance.now(); requestAnimationFrame(frame); }
+  }
 
   window.addEventListener("resize", measure);
   document.getElementById("reset").addEventListener("click", populate);
-  populate();
-  requestAnimationFrame(frame);
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (es) {
+      visible = es[es.length - 1].isIntersecting;
+      if (visible) show();
+    }).observe(svg);
+  } else {
+    show();
+  }
 })();

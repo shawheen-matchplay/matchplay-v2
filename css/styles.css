@@ -1854,6 +1854,27 @@ html.splash--returning [data-reveal] {
   min-height: clamp(18rem, 40vh, 24rem);
 }
 .page--screens #start .cta-band { display: flex; flex-direction: column; justify-content: center; }
+/* The ring toy in its black box, last thing before the footer: not a
+   screen of its own, just the box under the newsletter. */
+.page--screens #play {
+  min-height: 0;
+  padding-top: 0;
+}
+.play__box {
+  position: relative;
+  height: clamp(24rem, 62vh, 40rem);
+  background: #000;
+  border-radius: clamp(21.6px, 2.7vw, 32.4px);
+  overflow: hidden;
+}
+.play__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
 .page--screens .sec-head { margin-bottom: clamp(2rem, 4vh, 3rem); }
 .page--screens .panel { padding: clamp(1.5rem, 2.16vw, 2rem); }
 /* Every call to action sits centred. */
