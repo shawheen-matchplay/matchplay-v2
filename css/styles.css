@@ -1132,7 +1132,7 @@ html.splash--returning [data-reveal] {
 .story-grid {
   display: grid;
   grid-auto-rows: 1fr;
-  gap: clamp(1rem, 1.8vw, 1.5rem);
+  gap: clamp(1.5rem, 3vw, 2.5rem);
   max-width: 1000px;
   margin-inline: auto;
 }
@@ -1142,7 +1142,7 @@ html.splash--returning [data-reveal] {
   align-items: center;
   gap: clamp(1.25rem, 3vw, 2.5rem);
   margin: 0;
-  padding: clamp(0.75rem, 1.2vw, 1rem);
+  padding: clamp(1rem, 1.8vw, 1.5rem);
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 24px;
@@ -1698,40 +1698,39 @@ html.splash--returning [data-reveal] {
 .page--screens .flow,
 .page--screens .voices { grid-auto-rows: 1fr; }
 
-/* Every section fills one screen less the fixed nav (--nav-clear: its
-   height plus a little room under it, set by main.js), so a section scrolled
-   up to just under the nav is exactly in view, content centred. On the
-   homepage the closing call to action and the newsletter share one. A page
-   hero sits under the nav, so it keeps the whole screen. min-height, so a
-   section with more than that of content still grows. */
+/* Every section fills one screen. The fixed nav sits over the top of a
+   section scrolled into view, so the top padding clears it (--nav-clear:
+   its height plus a little room under it, set by main.js) and the content
+   centres in the space below. On the homepage the closing call to action
+   and the newsletter share one screen. min-height, so a section with more
+   than a screen of content still grows. */
 .page--screens .ecosystem,
 .page--screens .page-hero,
 .page--screens .section {
-  min-height: calc(100vh - var(--nav-clear, 6rem));
-  min-height: calc(100svh - var(--nav-clear, 6rem));
+  min-height: 100vh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   /* centring supplies the breathing room, so the spacing can be leaner */
-  padding-block: clamp(2.5rem, 6vh, 4.5rem);
-}
-.page--screens .sec-head { margin-bottom: clamp(2rem, 4vh, 3rem); }
-.page--screens .panel { padding: clamp(1.5rem, 2.4vw, 2rem); }
-.page--screens .page-hero {
-  min-height: 100vh;
-  min-height: 100svh;
+  padding-top: calc(var(--nav-clear, 6rem) + clamp(0.5rem, 2vh, 1.5rem));
+  padding-bottom: clamp(2.5rem, 6vh, 4.5rem);
 }
 .page--screens #start,
 .page--screens #subscribe {
-  min-height: calc((100vh - var(--nav-clear, 6rem)) / 2);
-  min-height: calc((100svh - var(--nav-clear, 6rem)) / 2);
-  padding-block: clamp(1rem, 2.5vh, 2rem);
+  min-height: 50vh;
+  min-height: 50svh;
+  padding-bottom: clamp(1rem, 2.5vh, 2rem);
 }
-.page--screens #start .cta-band { padding-block: clamp(2rem, 5vh, 3.5rem); }
+/* Half a screen each: #start clears the nav and no more, and the
+   newsletter, below it, has no nav to clear. */
+.page--screens #start { padding-top: var(--nav-clear, 6rem); }
+.page--screens #subscribe { padding-top: clamp(1rem, 2.5vh, 2rem); }
+.page--screens #start .cta-band { padding-block: clamp(1.5rem, 3.5vh, 2.75rem); }
+.page--screens .sec-head { margin-bottom: clamp(2rem, 4vh, 3rem); }
+.page--screens .panel { padding: clamp(1.5rem, 2.4vw, 2rem); }
 /* Every call to action sits centred. */
 .page--screens .sec-actions { justify-content: center; }
-/* A page hero still clears the fixed nav before it centres. */
-.page--screens .page-hero { padding-top: calc(var(--nav-h, 96px) + clamp(1rem, 3vh, 2rem)); }
 
 /* Numbered steps */
 .steps {
@@ -1911,12 +1910,14 @@ html.splash--returning [data-reveal] {
   gap: clamp(1.5rem, 4vw, 4rem);
 }
 /* Two boxes side by side at one height, each ending in its own actions. */
-.split--even { align-items: stretch; grid-auto-rows: 1fr; }   /* equal when stacked, too */
+/* Boxes side by side keep the same gutter as every other box set (.steps,
+   .cards), and a box pair under a row of steps sits that same distance below. */
+.split--even { align-items: stretch; grid-auto-rows: 1fr; gap: clamp(1rem, 1.8vw, 1.5rem); }   /* equal when stacked, too */
 .split--even > .panel { display: flex; flex-direction: column; }
 .split--even > .panel .sec-actions { margin-top: auto; padding-top: clamp(1.5rem, 3vw, 2rem); }
 .split + .split,
 .cards + .split { margin-top: clamp(2.5rem, 5vw, 4rem); }
-.steps + .split { margin-top: clamp(1rem, 1.6vw, 1.25rem); }   /* one set, continued */
+.steps + .split { margin-top: clamp(1rem, 1.8vw, 1.5rem); }   /* one set, continued */
 
 .fineprint {
   margin-top: clamp(1rem, 2vw, 1.5rem);
