@@ -17,7 +17,7 @@
   var here = pageKey(location.pathname);
   if (/\/blog\//.test(location.pathname)) here = "blog";   // a post counts as Blog
   if (/^press-/.test(here)) here = "press";                 // a release counts as Press
-  here = here.replace(/-v\d+$/, "");                       // founders-v2 counts as Founders
+  here = here.replace(/-v\d+$/, "");                       // a draft, page-v2, counts as its page
   Array.prototype.forEach.call(document.querySelectorAll(".nav__menu a, .nav__mobile a"), function (a) {
     if (pageKey(a.getAttribute("href")) !== here) { a.removeAttribute("aria-current"); return; }
     a.setAttribute("aria-current", "page");
