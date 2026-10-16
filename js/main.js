@@ -9,7 +9,6 @@
   // dropdown the dropdown's own button too. Done here rather than in each
   // file, so the generated blog pages and draft pages pick it up as well.
   function pageKey(href) {
-    if (/matchhouse\.events/.test(href)) return "match-house";
     if (/^[a-z]+:/i.test(href)) return null;              // other sites, mailto
     var key = href.split(/[?#]/)[0].split("/").pop().replace(/\.html$/, "");
     return key || "index";
