@@ -1238,10 +1238,10 @@ html.splash--returning [data-reveal] {
   line-height: 0.85;
   color: var(--accent);
 }
-.feature-quote--marks .feature-quote__by { gap: clamp(1rem, 1.8vw, 1.5rem); font-size: 1rem; }
+.feature-quote--marks .feature-quote__by { gap: clamp(1.1rem, 2vw, 1.75rem); margin-top: clamp(2rem, 6vh, 4rem); font-size: 1rem; }
 .feature-quote--marks .feature-quote__by img {
-  width: clamp(79.2px, 8.1vw, 100.8px);
-  height: clamp(79.2px, 8.1vw, 100.8px);
+  width: clamp(104px, 10vw, 144px);
+  height: clamp(104px, 10vw, 144px);
   box-shadow: 0 0 0 4px #fff, 0 0 0 6px var(--accent);
 }
 .feature-quote--marks .feature-quote__name { font-size: 1.1rem; }
