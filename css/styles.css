@@ -1161,7 +1161,8 @@ html.splash--returning [data-reveal] {
   border-radius: 21.6px;
 }
 .story-card:nth-child(even) .story__video { order: 2; }
-.story-card > .fx::before { content: none; }   /* glow and tilt only, no accent rule */
+.story-card > .fx::before,
+.testimonial > .fx::before { content: none; }   /* glow and tilt only, no accent rule */
 .story-card .story__video { border-radius: 14px; background: var(--panel); border-color: var(--line); }
 .story-card__text { display: flex; flex-direction: column; gap: 1rem; padding-right: clamp(0.5rem, 1.35vw, 1.25rem); }
 /* The company's site sits at the bottom left; the quote and name centre in
