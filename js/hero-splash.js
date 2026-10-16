@@ -260,12 +260,12 @@
       },
       /* A link or ring popping into shape, in this frame (a ring is centred
          on the origin). k is how far off true it is: 1 is how it draws in
-         (the ring 5% oval, the link a touch pinched at the waist with its
-         loops 5% flat), 0 the plain shape, below 0 an overshoot the
+         (the ring 8% oval, the link a touch pinched at the waist with its
+         loops 8% flat), 0 the plain shape, below 0 an overshoot the
          other way, kept small so nothing grows much. */
       linkForm(k) {
         if (k < 0) k *= 0.5;
-        const s = sides(RHO - 6 * k, -0.05 * k);
+        const s = sides(RHO - 10 * k, -0.08 * k);
         const loop = join(s[0], s[1]);
         /* start where the plain link does, ring A's right-hand point */
         return loop.slice(12).concat(loop.slice(1, 13));
@@ -274,7 +274,7 @@
         if (k < 0) k *= 0.5;
         return sample(u => {
           const deg = -360 * u, sin = Math.sin((deg - axis) * Math.PI / 180);
-          return on([0, 0], R * (1 - 0.05 * k * sin * sin), deg);
+          return on([0, 0], R * (1 - 0.08 * k * sin * sin), deg);
         }, 8);
       },
       /* off true, through a pop: the spring that settles the merges, t 0..1 */
