@@ -38,6 +38,7 @@
           <li class="nav__dropdown">
             <button type="button" class="nav__link" aria-expanded="false" aria-haspopup="true">Events <span class="nav__chev" aria-hidden="true">&#9662;</span></button>
             <ul class="nav__dropdown-menu">
+              <li><a href="https://www.matchhouse.events" target="_blank" rel="noopener">Match House</a></li>
               <li><a href="summit-2024.html">2024 ATX Summit</a></li>
               <li><a href="summit-2025.html">2025 NYC Summit</a></li>
             </ul>
@@ -45,7 +46,6 @@
           <li class="nav__dropdown">
             <button type="button" class="nav__link" aria-expanded="false" aria-haspopup="true">About <span class="nav__chev" aria-hidden="true">&#9662;</span></button>
             <ul class="nav__dropdown-menu">
-              <li><a href="team.html#mission">Mission</a></li>
               <li><a href="press.html">Press</a></li>
               <li><a href="partners.html">Partners</a></li>
               <li><a href="team.html" aria-current="page">Team</a></li>
@@ -70,10 +70,10 @@
       <a href="capital-partners.html">Capital Partners</a>
       <a href="https://www.matchplaygroup.com/blog" target="_blank" rel="noopener">Blog</a>
       <div class="nav__mobile-label">Events</div>
+      <a href="https://www.matchhouse.events" target="_blank" rel="noopener">Match House</a>
       <a href="summit-2024.html">2024 ATX Summit</a>
       <a href="summit-2025.html">2025 NYC Summit</a>
       <div class="nav__mobile-label">About</div>
-      <a href="team.html#mission">Mission</a>
       <a href="press.html">Press</a>
       <a href="partners.html">Partners</a>
       <a href="team.html">Team</a>
@@ -84,61 +84,80 @@
 
   <main class="dotfield">
 
-    <!-- ===== Mission ===== -->
-    <section class="section section--top" id="mission">
-      <div class="container container--wide">
-        <h1 class="team-mission__title reveal">Our mission.</h1>
-        <p class="team-mission reveal">
+    <!-- ===== Hero: the mission ===== -->
+    <section class="page-hero" id="mission">
+      <div class="container page-hero__inner">
+        <h1 class="page-hero__title page-hero__title--long reveal">
           MatchPlay is a hub that tees up founders on their journey towards their
-          <em class="team-mission__moonshot">entrepreneurial moonshot</em>. We believe that
-          the startup world should be united, and our mission is to <em>match startups</em>
-          to resources that they need at the pivotal moment that they need them.
+          <em>entrepreneurial moonshot.</em>
+        </h1>
+        <p class="page-hero__sub reveal">
+          We believe that the startup world should be united, and our mission is to match
+          startups to resources that they need at the pivotal moment that they need them.
         </p>
+        <div class="page-hero__actions reveal">
+          <a href="#team" class="btn btn--primary btn--pill">
+            Meet the team <span class="btn__arrow" aria-hidden="true">&darr;</span>
+          </a>
+          <a href="https://app.matchplaygroup.com/#/auth/signup" target="_blank" rel="noopener" class="btn btn--quiet">Apply to MatchPlay</a>
+        </div>
       </div>
     </section>
 
     <!-- ===== Team ===== -->
-    <section class="section" id="team">
+    <section class="section section--light" id="team">
       <div class="container container--wide">
-        <header class="sec-head reveal">
+        <header class="sec-head sec-head--center reveal">
           <h2 class="sec-head__title">Our <em>team.</em></h2>
         </header>
         <ul class="team-grid">
           <li class="member reveal">
             <img class="member__photo" src="assets/team/mahesh-narayanan.jpg" alt="Mahesh Narayanan" width="466" height="573" loading="lazy">
-            <h3 class="member__name">Mahesh Narayanan</h3>
-            <p class="member__role">Managing Partner</p>
-            <p class="member__bio">Serial founder, investor, &amp; mentor w/ 15+ years in biotech. Founded two startups w/ one exit. Experienced accelerator director.</p>
+            <div class="member__body">
+              <h3 class="card__title">Mahesh Narayanan</h3>
+              <p class="member__role">Managing Partner</p>
+              <p class="card__text">Serial founder, investor, &amp; mentor w/ 15+ years in biotech. Founded two startups w/ one exit. Experienced accelerator director.</p>
+            </div>
           </li>
           <li class="member reveal">
             <img class="member__photo" src="assets/team/shawheen-attar.jpg" alt="Shawheen Attar" width="466" height="573" loading="lazy">
-            <h3 class="member__name">Shawheen Attar</h3>
-            <p class="member__role">Operating Partner</p>
-            <p class="member__bio">Entrepreneur with engineering, product, and process optimization experience. 6+ years running startups and advising founders.</p>
+            <div class="member__body">
+              <h3 class="card__title">Shawheen Attar</h3>
+              <p class="member__role">Operating Partner</p>
+              <p class="card__text">Entrepreneur with engineering, product, and process optimization experience. 6+ years running startups and advising founders.</p>
+            </div>
           </li>
           <li class="member reveal">
             <img class="member__photo" src="assets/team/steven-richer.jpg" alt="Steven Richer" width="466" height="573" loading="lazy">
-            <h3 class="member__name">Steven Richer</h3>
-            <p class="member__role">Venture Partner</p>
-            <p class="member__bio">Product &amp; program leader with 15+ years in supporting startups worldwide through incubator programs.</p>
+            <div class="member__body">
+              <h3 class="card__title">Steven Richer</h3>
+              <p class="member__role">Venture Partner</p>
+              <p class="card__text">Product &amp; program leader with 15+ years in supporting startups worldwide through incubator programs.</p>
+            </div>
           </li>
           <li class="member reveal">
             <img class="member__photo" src="assets/team/hari-gopal.jpg" alt="Hari Gopal" width="466" height="573" loading="lazy">
-            <h3 class="member__name">Hari Gopal</h3>
-            <p class="member__role">Venture Partner</p>
-            <p class="member__bio">Senior finance executive and investor with 40+ years across technology, manufacturing, and SaaS. A decade advising technology and healthcare startups on financial strategy, operations, and governance.</p>
+            <div class="member__body">
+              <h3 class="card__title">Hari Gopal</h3>
+              <p class="member__role">Venture Partner</p>
+              <p class="card__text">Senior finance executive and investor with 40+ years across technology, manufacturing, and SaaS. A decade advising technology and healthcare startups on financial strategy, operations, and governance.</p>
+            </div>
           </li>
           <li class="member reveal">
             <img class="member__photo" src="assets/team/fernando-moreno-cortina.jpg" alt="Fernando Moreno Cortina" width="466" height="573" loading="lazy">
-            <h3 class="member__name">Fernando Moreno Cortina</h3>
-            <p class="member__role">Program Director</p>
-            <p class="member__bio">Financial expert who supports startups &amp; SMEs with finances and fundraising. Experienced accelerator director.</p>
+            <div class="member__body">
+              <h3 class="card__title">Fernando Moreno Cortina</h3>
+              <p class="member__role">Program Director</p>
+              <p class="card__text">Financial expert who supports startups &amp; SMEs with finances and fundraising. Experienced accelerator director.</p>
+            </div>
           </li>
           <li class="member reveal">
             <img class="member__photo" src="assets/team/aakarsh-malhotra.jpg" alt="Aakarsh Malhotra" width="466" height="573" loading="lazy">
-            <h3 class="member__name">Aakarsh Malhotra</h3>
-            <p class="member__role">Junior Venture Partner</p>
-            <p class="member__bio">Startup advisor, venture and ecosystem builder, previously accelerator programs and operations lead. 7+ years experience in startups, investments, M&amp;A consulting and entrepreneurship.</p>
+            <div class="member__body">
+              <h3 class="card__title">Aakarsh Malhotra</h3>
+              <p class="member__role">Junior Venture Partner</p>
+              <p class="card__text">Startup advisor, venture and ecosystem builder, previously accelerator programs and operations lead. 7+ years experience in startups, investments, M&amp;A consulting and entrepreneurship.</p>
+            </div>
           </li>
         </ul>
       </div>
