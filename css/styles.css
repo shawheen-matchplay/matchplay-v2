@@ -1165,7 +1165,7 @@ html.splash--returning [data-reveal] {
   color: var(--text-on-light);
 }
 .feature-quote blockquote p + p { margin-top: 1em; }
-.feature-quote blockquote em { font-style: italic; color: #0E7C93; }
+.feature-quote blockquote em { font-style: italic; color: var(--accent); }
 .feature-quote__by {
   display: flex;
   align-items: center;
@@ -1180,7 +1180,7 @@ html.splash--returning [data-reveal] {
 }
 .feature-quote__by img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; }
 .feature-quote__name { display: block; color: var(--text-on-light); font-weight: 500; }
-.feature-quote__by em { font-style: italic; color: #0E7C93; }
+.feature-quote__by em { font-style: italic; color: var(--accent); }
 
 /* Closing CTA */
 .cta-band {
@@ -1514,11 +1514,8 @@ html.splash--returning [data-reveal] {
   --panel: rgba(10, 10, 10, 0.035);
   --panel-hover: rgba(10, 10, 10, 0.06);
   --ground: #fff;
-  /* The bright accents fail contrast as text on white; use a deep shade. */
-  --accent-ink: #0E7C93;
+  /* One accent everywhere: white bands use the same bright accent as dark ones. */
 }
-.page--ventures .section--light { --accent-ink: #B4532B; }
-.page--purple .section--light   { --accent-ink: #9230C2; }
 
 /* The colour-swap hover goes to white, which vanishes on a white band. */
 .section--light .btn--primary:hover {
@@ -2040,6 +2037,9 @@ html.splash--returning [data-reveal] {
   list-style: none;
 }
 .team-grid > .member { flex: 0 0 calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols)); }
+@media (min-width: 601px) {
+  .team-grid { max-width: 80%; margin-inline: auto; }   /* cards about 20% smaller */
+}
 .member {
   display: flex;
   flex-direction: column;
