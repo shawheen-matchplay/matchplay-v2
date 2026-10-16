@@ -269,10 +269,13 @@
         // 3. ...and the join bounces open: the circles relax into the link
         //    while its waist springs wide, pinches back, and wobbles to rest
         //    at the link's own width
-        var RHO0 = 12, END = 0.15;
+        var RHO0 = 12, END = 0.15, OUT = 0.4;
         tween(1400, function (t) { return t; }, function (t) {
           var m = easeOut(Math.min(1, t / 0.14));
-          var link = sides(RHO0 + (RHO - RHO0) * spring(t), t < 1 ? END * wobble(t) : 0);
+          // the loops' wobble swings out only a little, so the link never
+          // grows much past its size, and flattens back in full
+          var e = t < 1 ? END * wobble(t) : 0;
+          var link = sides(RHO0 + (RHO - RHO0) * spring(t), e > 0 ? e * OUT : e);
           nodes.moveA.setAttribute("d", d(mix(touchA, link[0], m)));
           nodes.moveB.setAttribute("d", d(mix(touchB, link[1], m)));
         });
