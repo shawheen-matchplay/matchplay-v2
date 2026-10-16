@@ -998,6 +998,8 @@ html.splash--returning [data-reveal] {
    the footer, so a page only has to name its colour once. */
 .page--ventures { --accent: var(--orange); --accent-hover: var(--orange-hover); }
 .page--purple   { --accent: var(--purple); --accent-hover: var(--purple-hover); }
+/* The nav is shared chrome: it keeps the site blue whatever the page's accent. */
+.site-header { --accent: var(--cyan); --accent-hover: var(--cyan-hover); }
 
 /* Page hero — the homepage's animated lockup would be wrong here. */
 .page-hero {
