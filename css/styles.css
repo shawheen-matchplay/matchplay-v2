@@ -1878,6 +1878,9 @@ html.splash--returning [data-reveal] {
 }
 .cards--2 { --cols: 2; }
 .cards--4 { --cols: 4; }
+@media (min-width: 761px) {
+  .cards--tall .card { min-height: clamp(190px, 24vh, 260px); }   /* fills a sparse section, closing up its gaps */
+}
 .card {
   position: relative;
   display: flex;
