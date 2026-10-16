@@ -1806,6 +1806,12 @@ html.splash--returning [data-reveal] {
   padding: 0;
 }
 .steps--5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }   /* narrower screens fall back to .steps' columns */
+/* A step set apart from the rest (the one that's the visitor's), in the accent. */
+.step.step--accent {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.step.step--accent:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
 .step {
   position: relative;
   display: flex;
