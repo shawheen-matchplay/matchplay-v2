@@ -1532,7 +1532,8 @@ html.splash--returning [data-reveal] {
    The homepage alternates dark and light bands. Rather than a light variant of
    every component, each band defines the ink it paints with and the
    components read those tokens — so any of them can sit on either ground. */
-.section {
+.section,
+.page-hero {
   --ink: #fff;
   --ink-2: rgba(255, 255, 255, 0.72);
   --ink-3: rgba(255, 255, 255, 0.5);
@@ -2107,6 +2108,20 @@ html.splash--returning [data-reveal] {
 .marks--x li { color: var(--ink-2); }
 .marks--x li::before { content: "\2715"; color: var(--ink-3); }
 .panel .marks { margin-top: 1rem; }
+
+/* A "Built for" row of tags, centred under a page hero. */
+.page-hero__tags { margin-top: clamp(2rem, 4vw, 2.75rem); }
+.page-hero__tags .grid-intro { color: var(--ink-2); font-weight: 400; }
+.page-hero__tags .chips { justify-content: center; }
+
+/* Term-and-meaning pairs inside a panel. */
+.terms { display: grid; gap: 0.9rem; margin: 1rem 0 0; }
+.terms div { padding-top: 0.9rem; border-top: 1px solid var(--line); }
+.terms dt { font-family: var(--font-ui); font-weight: 500; color: var(--ink); }
+.terms dd { margin: 0.2rem 0 0; font-family: var(--font-ui); font-size: 0.95rem; line-height: 1.55; color: var(--ink-2); }
+
+/* Chips inside a closing call to action. */
+.cta-band .chips { justify-content: center; margin-top: clamp(1.25rem, 2.5vw, 1.75rem); }
 .card .grid-intro { margin: 1.25rem 0 0.75rem; font-size: 0.95rem; }
 
 /* A button in the Ventures colour, for the hand-off to the Ventures site. */
@@ -2115,14 +2130,19 @@ html.splash--returning [data-reveal] {
 /* Team page ---------------------------------------------------------------
    Each person is a card in the site's panel style: the photo runs edge to
    edge across the top, the name, role and bio sit in the padded body. */
+/* Flex rather than grid so a short last row centres instead of leaving a gap. */
 .team-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(1rem, 1.8vw, 1.5rem);
+  --cols: 3;
+  --gap: clamp(1rem, 1.8vw, 1.5rem);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--gap);
   margin: 0;
   padding: 0;
   list-style: none;
 }
+.team-grid > .member { flex: 0 0 calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols)); }
 .member {
   display: flex;
   flex-direction: column;
@@ -2418,7 +2438,7 @@ html.splash--returning [data-reveal] {
 }
 
 @media (max-width: 991px) {
-  .team-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .team-grid { --cols: 2; }
   .sec-head--split,
   .split { grid-template-columns: 1fr; }
   .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -2470,7 +2490,7 @@ html.splash--returning [data-reveal] {
 }
 
 @media (max-width: 600px) {
-  .team-grid { grid-template-columns: 1fr; }
+  .team-grid { --cols: 1; }
   .steps,
   .cards,
   .cards--4,
