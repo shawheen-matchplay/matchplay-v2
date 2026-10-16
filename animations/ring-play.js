@@ -5,6 +5,8 @@
      window.RING_PLAY = { mode: "b" }   rings and links keep away from the
                                         mouse; rings that drift close reach
                                         for each other and merge by themselves
+     window.RING_PLAY = { mode: "c" }   as a, and rings that drift close also
+                                        merge by themselves
    Either way, links split back into two rings after 2-4 seconds.
 
    The merge is the one in link-merge.html and the hero: a stretch, a
@@ -18,10 +20,10 @@
 (function () {
   "use strict";
   var q = new URLSearchParams(location.search);
-  var MODE = (window.RING_PLAY && window.RING_PLAY.mode) === "b" ? "b" : "a";
-  var DRAG = MODE === "a";             /* rings can be picked up and merged by hand */
+  var MODE = ({ a: "a", b: "b", c: "c" })[window.RING_PLAY && window.RING_PLAY.mode] || "a";
+  var DRAG = MODE !== "b";             /* rings can be picked up and merged by hand */
   var AVOID = MODE === "b";            /* rings and links keep away from the mouse */
-  var AUTO = MODE === "b";             /* rings that drift close merge by themselves */
+  var AUTO = MODE !== "a";             /* rings that drift close merge by themselves */
   if (q.get("bg") === "grey") document.documentElement.style.setProperty("--ground", "#26262A");
   var COLORS = ["#2BD9C0", "#FF7A45", "#E94F8A", "#C6F25E", "#B558F6", "#35C5F0", "#E9B949"];
   var STILL = window.matchMedia("(prefers-reduced-motion: reduce)").matches;   /* no drifting */
@@ -137,8 +139,8 @@
   var CRUISE = R * 0.35, WANDER = R * 0.6;
   var AVOID_R = R * 4.5;               /* how near the mouse can come before shapes move off */
   var SPLIT_AFTER = [2000, 4000];      /* ms a link holds before it splits on its own */
-  var MEET = CAN + R * 1.6;            /* (b) rings this close start reaching for each other */
-  var COOL = 2500;                     /* (b) ms after a split before a ring merges again */
+  var MEET = CAN + R * 1.6;            /* (b, c) rings this close start reaching for each other */
+  var COOL = 2500;                     /* (b, c) ms after a split before a ring merges again */
 
   var f2 = function (n) { return n.toFixed(2); };
   /* points (in the merge frame, less an origin) to a path, scaled */
@@ -406,12 +408,14 @@
       });
     }
 
-    /* (b) rings that drift close pair up, reach for each other and draw
+    /* (b, c) rings that drift close pair up, reach for each other and draw
        together, and merge once they touch. Closest pairs first, one partner
        each, and not straight after a split. */
     pairs = [];
     if (AUTO) {
-      var free = bodies.filter(function (b) { return b.kind === "ring" && !b.busy && !(now < b.cool); });
+      var free = bodies.filter(function (b) {               /* not one in your hand, nor what it reaches for */
+      return b.kind === "ring" && !b.busy && !b.dragged && !(now < b.cool) && !(preview && b === preview.a);
+    });
       var cands = [];
       for (var i0 = 0; i0 < free.length; i0++) for (var j0 = i0 + 1; j0 < free.length; j0++) {
         var dd0 = Math.hypot(free[j0].x - free[i0].x, free[j0].y - free[i0].y);
