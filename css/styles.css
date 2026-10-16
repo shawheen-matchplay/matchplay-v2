@@ -1293,13 +1293,13 @@ html.splash--returning [data-reveal] {
   height: 100%;
   object-fit: cover;
 }
-/* The title in MATCH HOUSE's own type: Lexend Exa Black for the name, and
+/* The title in MATCH HOUSE's own type: Lexend Zetta Black for the name, and
    the line under it in Lexend Mega Black, smaller (Mega runs very wide). */
 .mh-title { display: flex; flex-direction: column; align-items: center; gap: clamp(0.6rem, 1.4vw, 1.1rem); }
 .mh-title__name {
-  font-family: "Lexend Exa", var(--font-display);
+  font-family: "Lexend Zetta", var(--font-display);
   font-weight: 900;
-  font-size: clamp(2.2rem, 5.4vw, 4.6rem);
+  font-size: clamp(1.7rem, 4.4vw, 3.8rem);   /* Zetta runs wider than the site's display face */
   line-height: 1.05;
   letter-spacing: -0.01em;
   color: #fff;
@@ -1314,6 +1314,7 @@ html.splash--returning [data-reveal] {
   color: var(--accent);
   text-wrap: balance;
 }
+.mh-hero .page-hero__sub { color: #fff; }   /* full white over the film */
 .mh-hero::after {
   content: "";
   position: absolute;

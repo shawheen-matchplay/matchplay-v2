@@ -128,7 +128,7 @@ def related(post, posts, n=3):
 CTA = lambda root: """    <section class="section">
       <div class="container">
         <div class="cta-band reveal">
-          <h2 class="cta-band__title">Be ready before<br><em>the investor asks.</em></h2>
+          <h2 class="cta-band__title">Be ready before<br><em>the investor asks</em></h2>
           <p class="cta-band__text">Start with diligence and build the financing process from there.</p>
           <div class="cta-band__actions">
             <a href="%s" target="_blank" rel="noopener" class="btn btn--primary btn--pill">
@@ -207,7 +207,7 @@ def build_post(p, posts, header, footer, fonts):
         <p class="article__byline">Written by %(author)s. Published <time datetime="%(iso)s">%(date)s</time>.%(updated)s</p>
 
         <aside class="related" aria-labelledby="related-title">
-          <h2 class="sec-head__title related__title" id="related-title">Keep <em>reading.</em></h2>
+          <h2 class="sec-head__title related__title" id="related-title">Keep <em>reading</em></h2>
           <div class="post-grid">
         %(related)s
           </div>
@@ -273,7 +273,7 @@ def build_index(posts, header, footer, fonts):
     <section class="section section--light" id="posts">
       <div class="container container--wide">
         <header class="sec-head reveal">
-          <h2 class="sec-head__title">All <em>blog posts.</em></h2>
+          <h2 class="sec-head__title">All <em>blog posts</em></h2>
         </header>
         <!-- every post is in the HTML; main.js shows %(per)d at a time -->
         <div class="post-grid" data-paginate="%(per)d">
