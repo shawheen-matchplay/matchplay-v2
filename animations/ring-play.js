@@ -19,7 +19,7 @@
      density  more or fewer rings than fit by default, e.g. 1.5
      r        ring radius in px
      bg       ground: dark (default) or grey (the hero before its dim)
-     embed    1 when shown in a box on another page (the homepage): black
+     embed    1 when shown inside another page (the homepage): its dark
               ground, hero-sized rings, denser, no Reset button, and the
               page can still be scrolled by touch over it */
 (function () {

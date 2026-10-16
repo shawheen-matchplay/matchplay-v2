@@ -1854,18 +1854,15 @@ html.splash--returning [data-reveal] {
   min-height: clamp(18rem, 40vh, 24rem);
 }
 .page--screens #start .cta-band { display: flex; flex-direction: column; justify-content: center; }
-/* The ring toy in its black box, last thing before the footer: not a
-   screen of its own, just the box under the newsletter. */
-.page--screens #play {
-  min-height: 0;
-  padding-top: 0;
-}
-.play__box {
+/* The ring toy across a dark section, last thing before the footer: the
+   homepage's dark ground (as the dark sections over the field and the
+   footer), the toy filling it edge to edge. */
+.play {
   position: relative;
-  height: clamp(24rem, 62vh, 40rem);
-  background: #000;
-  border-radius: clamp(21.6px, 2.7vw, 32.4px);
-  overflow: hidden;
+  height: 80vh;
+  height: 80svh;
+  min-height: 30rem;
+  background: var(--splash-bg-dim);
 }
 .play__frame {
   position: absolute;
