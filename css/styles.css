@@ -2255,8 +2255,12 @@ html.splash--returning [data-reveal] {
 .member:hover .member__photo { transform: scale(1.03); }
 .member__body {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: clamp(1.25rem, 2.2vw, 1.75rem);
 }
+/* LinkedIn sits on the card's floor, level across a row. */
+.member__link { align-self: flex-start; margin-top: auto; padding-top: 1.25rem; }
 .member__role {
   margin-top: 0.45rem;
   font-family: var(--font-mono);
