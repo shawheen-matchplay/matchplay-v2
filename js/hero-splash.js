@@ -128,7 +128,6 @@
   let cols, rows, x0, y0, rowTop;
   let gridG, linksG, logoG, logoPaths, ballEl, dimpleG;
   let usedCells, excluded, dotCells;
-  let dotEls = new Map();                                 /* cell key -> its dot, for keepContentClear */
   let logoShift = 0, splashDone = false;
 
   const cellXY = (c, r) => [x0 + c * S, y0 + r * S];
@@ -385,9 +384,8 @@
   }
 
   /* Cells under the hero's text and buttons (stage--bright only). Measured
-     from the live layout, so it is redone whenever the copy reflows. No
-     shape is placed there, any already on it is retired, and its dots are
-     hidden, so the copy sits on plain ground. */
+     from the live layout, so it is redone whenever the copy reflows; any
+     shape now sitting on the content is retired. */
   function keepContentClear() {
     if (!KEEP_CLEAR || !gridG) return;
     const st = stage.getBoundingClientRect();
@@ -408,7 +406,6 @@
           clear.add(key(c, r));
     });
     heroField.clear = clear;
-    dotEls.forEach((dot, k) => { dot.style.visibility = clear.has(k) ? 'hidden' : ''; });
     heroField.population.forEach(i => {
       if (!i.dead && i.spot.cells.some(k2 => clear.has(k2))) retireAmbient(heroField, i);
     });
@@ -509,7 +506,6 @@
     /* dot field: uniform black dots, random cells left empty */
     dotCells = new Set();
     heroField.dots = dotCells;
-    dotEls = new Map();
     dotRows = dotRowLimit();
     for (let c = 0; c < cols; c++) {
       for (let r = 0; r < dotRows; r++) {
@@ -517,7 +513,6 @@
         dotCells.add(key(c, r));
         const [x, y] = cellXY(c, r);
         const dot = el('circle', { cx: x, cy: y, r: S * DOT_RADIUS, fill: '#0B0B0B' }, gridG);
-        dotEls.set(key(c, r), dot);
         if (!instant && y < OY + window.innerHeight) {
           dot.style.opacity = 0;
           dot.style.transform = 'scale(.45)';

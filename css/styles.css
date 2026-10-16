@@ -570,12 +570,7 @@ button { font: inherit; cursor: pointer; }
 #splash-links { transition: opacity 1.1s ease; }
 .stage.is-dim #splash-grid { opacity: 0.5; }
 .stage.is-dim #splash-links { opacity: 0.26; }
-/* stage--bright skips the dim altogether: the field keeps its grey ground and
-   its black dots, and the links keep full strength (hero-splash.js keeps them
-   off the hero copy instead). */
-.stage--bright.is-dim { background: var(--splash-bg); }
-.stage--bright.is-dim #splash-grid,
-.stage--bright.is-dim #splash-links { opacity: 1; }
+.stage--bright.is-dim #splash-links { opacity: 1; }   /* kept off the hero copy instead (hero-splash.js) */
 
 #splash-grid circle {
   transform-box: fill-box;
