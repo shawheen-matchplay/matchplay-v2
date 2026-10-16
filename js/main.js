@@ -54,39 +54,47 @@
     });
   }
 
-  /* ---- Hero lockup -------------------------------------------------- */
-  // Track the tagline out until it spans the wordmark exactly, the way the
-  // brand lockup sets it. letter-spacing also adds a trailing gap after the
-  // last glyph, so pull that back off with a negative margin.
-  var wordmark = document.getElementById("hero-wordmark");
-  var tagline = document.getElementById("hero-tagline");
-  if (wordmark && tagline) {
-    var taglineChars = tagline.textContent.trim().length;
+  /* ---- Lockups ------------------------------------------------------ */
+  // Track a line of small caps out until it spans the name above it exactly,
+  // the way the brand lockup sets it: the homepage tagline under the
+  // wordmark, and any element with data-fit-to="<id of the name>" (the blog's
+  // title). letter-spacing also adds a trailing gap after the last glyph, so
+  // pull that back off with a negative margin.
+  var lockups = [];
+  var heroWordmark = document.getElementById("hero-wordmark");
+  var heroTagline = document.getElementById("hero-tagline");
+  if (heroWordmark && heroTagline) lockups.push([heroWordmark, heroTagline]);
+  Array.prototype.forEach.call(document.querySelectorAll("[data-fit-to]"), function (el) {
+    var name = document.getElementById(el.getAttribute("data-fit-to"));
+    if (name) lockups.push([name, el]);
+  });
 
-    function fitTagline() {
-      tagline.style.letterSpacing = "0px";
-      tagline.style.marginRight = "0px";
-      var target = wordmark.getBoundingClientRect().width;
-      var natural = tagline.getBoundingClientRect().width;
-      if (!target || !natural || taglineChars < 2) return;
-      // n glyphs give n-1 gaps between them, so size the gap off that. The
-      // trailing gap after the last glyph is then cancelled by the margin,
-      // which leaves the visible run spanning the wordmark exactly.
-      // Never go negative: if a fallback face measures wider than the wordmark,
-      // leave the tagline untracked rather than overlapping its own glyphs.
-      var ls = Math.max(0, (target - natural) / (taglineChars - 1));
-      tagline.style.letterSpacing = ls + "px";
-      tagline.style.marginRight = -ls + "px";
-    }
+  function fitLockup(name, line) {
+    var chars = line.textContent.trim().length;
+    line.style.letterSpacing = "0px";
+    line.style.marginRight = "0px";
+    var target = name.getBoundingClientRect().width;
+    var natural = line.getBoundingClientRect().width;
+    if (!target || !natural || chars < 2) return;
+    // n glyphs give n-1 gaps between them, so size the gap off that. The
+    // trailing gap after the last glyph is then cancelled by the margin,
+    // which leaves the visible run spanning the name exactly.
+    // Never go negative: if a fallback face measures wider than the name,
+    // leave the line untracked rather than overlapping its own glyphs.
+    var ls = Math.max(0, (target - natural) / (chars - 1));
+    line.style.letterSpacing = ls + "px";
+    line.style.marginRight = -ls + "px";
+  }
+  function fitLockups() { lockups.forEach(function (l) { fitLockup(l[0], l[1]); }); }
 
-    fitTagline();
+  if (lockups.length) {
+    fitLockups();
     // Re-fit once the webfonts land, otherwise the measurement is of the fallback.
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTagline);
-
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitLockups);
     var fitTimer;
     window.addEventListener("resize", function () {
       clearTimeout(fitTimer);
-      fitTimer = setTimeout(fitTagline, 150);
+      fitTimer = setTimeout(fitLockups, 150);
     });
   }
 

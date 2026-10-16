@@ -24,7 +24,7 @@ import re
 SITE = "https://matchplaygroup.com"          # the host the old sitemap and canonicals used
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 APP = "https://app.matchplaygroup.com/#/auth/signup"
-BLOG_NAME = "Warm Intro"
+BLOG_NAME = "The Warm Intro"
 
 esc = lambda s: html.escape(s or "", quote=True)
 
@@ -252,7 +252,11 @@ def build_index(posts, header, footer, fonts):
     <!-- ===== Hero ===== -->
     <section class="page-hero">
       <div class="container page-hero__inner">
-        <h1 class="page-hero__title reveal">%(blog)s,<br><em>the MatchPlay blog.</em></h1>
+        <h1 class="page-hero__title blog-lockup reveal">
+          <span class="blog-lockup__name" id="blog-name">%(blog)s</span>
+          <!-- tracked out by main.js until it spans the name exactly -->
+          <span class="blog-lockup__tag" data-fit-to="blog-name">The MatchPlay Blog</span>
+        </h1>
         <p class="page-hero__sub reveal">%(desc)s</p>
         <form class="subscribe__form blog-subscribe reveal" data-subscribe>
           <label class="subscribe__field">

@@ -1303,6 +1303,24 @@ html.splash--returning [data-reveal] {
     rgba(14, 14, 17, 0.25);
 }
 
+/* Blog title: the name, and under it a line of small caps tracked out by
+   main.js to the name's exact width, like the homepage's brand lockup. The
+   lockup shrink-wraps to the name so that width is the name's. */
+.blog-lockup { display: inline-flex; flex-direction: column; align-items: center; }
+.blog-lockup__name { display: block; }
+.blog-lockup__tag {
+  display: inline-block;
+  margin-top: clamp(0.6rem, 1.3vw, 1.1rem);
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: clamp(0.8rem, 1.4vw, 1.35rem);
+  line-height: 1.2;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--accent);
+}
+
 /* 7f. Logo roster ----------------------------------------------------------
    Each tile holds a partner's logo (assets/partners/, transparent PNGs) on
    white. Used by the Partners page. */
