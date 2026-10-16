@@ -61,7 +61,9 @@
      so the grid, links, rings and mark all resize together. */
   const SCALE = 0.675;                  /* 0.75 x the site-wide 90% (see html in styles.css) */
 
-  const COLORS = ['#2BD9C0', '#FF7A45', '#E94F8A', '#C6F25E', '#B558F6', '#35C5F0', '#E9B949'];
+  /* The six MatchPlay brand colours, and only these:
+     open, ventures, masters, studios, invitational, challenge */
+  const COLORS = ['#1ED2F4', '#F97D4A', '#DDF01A', '#9590FF', '#8DEBD1', '#D25AFF'];
   const MARGIN = 0.18;        /* off-screen bleed on every side (resize safety) */
   const DOT_SKIP = 0.26;      /* fraction of grid cells left empty */
   const DOT_RADIUS = 0.5;     /* dot radius as a fraction of the grid step.

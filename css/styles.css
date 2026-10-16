@@ -2620,15 +2620,17 @@ html.splash--returning [data-reveal] {
   border-radius: 50%;
   background: var(--accent);
 }
-/* The dots take the hero links' colours in turn (COLORS in hero-splash.js);
-   seven items, seven colours, so the doubled loop repeats them exactly. */
-.ticker__track li:nth-child(7n+1)::after { background: #2BD9C0; }
-.ticker__track li:nth-child(7n+2)::after { background: #FF7A45; }
-.ticker__track li:nth-child(7n+3)::after { background: #E94F8A; }
-.ticker__track li:nth-child(7n+4)::after { background: #C6F25E; }
-.ticker__track li:nth-child(7n+5)::after { background: #B558F6; }
-.ticker__track li:nth-child(7n+6)::after { background: #35C5F0; }
-.ticker__track li:nth-child(7n+7)::after { background: #E9B949; }
+/* The dots take the six brand colours in turn (COLORS in hero-splash.js).
+   The list has seven items and is doubled to loop, so the pattern repeats
+   every seven to keep the seam exact: the seventh repeats masters, which
+   sits apart from its own copy and from its neighbours either side. */
+.ticker__track li:nth-child(7n+1)::after { background: #1ED2F4; }
+.ticker__track li:nth-child(7n+2)::after { background: #F97D4A; }
+.ticker__track li:nth-child(7n+3)::after { background: #DDF01A; }
+.ticker__track li:nth-child(7n+4)::after { background: #9590FF; }
+.ticker__track li:nth-child(7n+5)::after { background: #8DEBD1; }
+.ticker__track li:nth-child(7n+6)::after { background: #D25AFF; }
+.ticker__track li:nth-child(7n+7)::after { background: #DDF01A; }
 
 /* 9. Testimonials (marquee) ---------------------------------------------- */
 .marquee {

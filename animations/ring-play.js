@@ -25,7 +25,9 @@
   var AVOID = MODE === "b";            /* rings and links keep away from the mouse */
   var AUTO = MODE !== "a";             /* rings that drift close merge by themselves */
   if (q.get("bg") === "grey") document.documentElement.style.setProperty("--ground", "#26262A");
-  var COLORS = ["#2BD9C0", "#FF7A45", "#E94F8A", "#C6F25E", "#B558F6", "#35C5F0", "#E9B949"];
+  /* the six MatchPlay brand colours, and only these:
+     open, ventures, masters, studios, invitational, challenge */
+  var COLORS = ["#1ED2F4", "#F97D4A", "#DDF01A", "#9590FF", "#8DEBD1", "#D25AFF"];
   var STILL = window.matchMedia("(prefers-reduced-motion: reduce)").matches;   /* no drifting */
   var NS = "http://www.w3.org/2000/svg";
   var svg = document.getElementById("stage");
