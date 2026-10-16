@@ -55,7 +55,7 @@
      SCALE is the master size control. 1 = original, 0.75 = three quarters.
      Everything below derives from the grid step, which SCALE multiplies,
      so the grid, links, rings and mark all resize together. */
-  const SCALE = 0.75;
+  const SCALE = 0.675;                  /* 0.75 x the site-wide 90% (see html in styles.css) */
 
   const COLORS = ['#2BD9C0', '#FF7A45', '#E94F8A', '#C6F25E', '#B558F6', '#35C5F0', '#E9B949'];
   const MARGIN = 0.18;        /* off-screen bleed on every side (resize safety) */
@@ -569,7 +569,7 @@
     t(120, () => {
       const seed = Math.round(capOf(heroField) * 0.9);
       for (let k = 0; k < seed; k++) {
-        if (!spawnAmbient(heroField, { drawDur: rand(450, 700), life: rand(3000, 9000), delay: k * 28 })) break;
+        if (!spawnAmbient(heroField, { drawDur: rand(650, 950), life: rand(4000, 9500), delay: k * 75 })) break;
       }
     });
     /* Timers rather than rAF: a tab opened in the background gets no animation
