@@ -47,6 +47,10 @@
   if (!svg || !hero) return;
 
   const NS = 'http://www.w3.org/2000/svg';
+  /* stage--bright: the links stay at full strength rather than dimming once
+     the intro ends, so instead they are kept off the hero's text and buttons
+     (see keepContentClear). */
+  const KEEP_CLEAR = stage.classList.contains('stage--bright');
   const SPLASH = document.documentElement.classList.contains('splash');
   /* Here in the last 24h: skip the load sequence, keep the moving field. */
   const RETURNING = document.documentElement.classList.contains('splash--returning');
@@ -147,7 +151,7 @@
     return {
       layer: null,                 /* <g> the shapes are drawn into */
       S: 0, R: 0, cols: 0, rows: 0, x0: 0, y0: 0,
-      dots: null, used: null, excluded: null,
+      dots: null, used: null, excluded: null, clear: null,
       population: [], timer: null, cap: 0
     };
   }
@@ -259,7 +263,7 @@
         if (!f.dots.has(key(c, r))) continue;
         spot = { c, r, cells: blockAround([[c, r]]) };
       }
-      if (spot.cells.some(k2 => f.used.has(k2) || f.excluded.has(k2))) continue;
+      if (spot.cells.some(k2 => f.used.has(k2) || f.excluded.has(k2) || (f.clear && f.clear.has(k2)))) continue;
       found++;
       const centre = centreOf(spot);
       const score = live.reduce((m, o) => Math.min(m, distance(centre, o)), Infinity);
@@ -379,10 +383,39 @@
     return 'translateY(' + (-logoShift) + 'px)';
   }
 
+  /* Cells under the hero's text and buttons (stage--bright only). Measured
+     from the live layout, so it is redone whenever the copy reflows; any
+     shape now sitting on the content is retired. */
+  function keepContentClear() {
+    if (!KEEP_CLEAR || !gridG) return;
+    const st = stage.getBoundingClientRect();
+    const boxes = [];
+    document.querySelectorAll('.hero__wordmark, .hero__tagline, .hero__sub, .hero__actions > *').forEach(el => {
+      if (el.matches('a, button')) { boxes.push(el.getBoundingClientRect()); return; }
+      const range = document.createRange();              /* text: just the lines, not the full block */
+      range.selectNodeContents(el);
+      for (const r of range.getClientRects()) boxes.push(r);
+    });
+    const clear = new Set(), pad = S * 0.5;
+    boxes.forEach(b => {
+      if (!b.width) return;
+      const left = b.left - st.left + OX, right = b.right - st.left + OX;
+      const top = b.top - st.top + OY, bottom = b.bottom - st.top + OY;
+      for (let c = Math.ceil((left - pad - x0) / S); c <= Math.floor((right + pad - x0) / S); c++)
+        for (let r = Math.ceil((top - pad - y0) / S); r <= Math.floor((bottom + pad - y0) / S); r++)
+          clear.add(key(c, r));
+    });
+    heroField.clear = clear;
+    heroField.population.forEach(i => {
+      if (!i.dead && i.spot.cells.some(k2 => clear.has(k2))) retireAmbient(heroField, i);
+    });
+  }
+
   /* Re-resolve against the settled layout and move the mark if it has already
      travelled. Needed because webfonts (and the reveal) change the text height
      after build(), which shifts where the slot lands. */
   function realignMark() {
+    keepContentClear();
     if (!logoG || rowTop === undefined) return;
     resolveShift();
     if (splashDone || logoG.style.transform) {
@@ -487,6 +520,9 @@
         }
       }
     }
+
+    heroField.clear = null;
+    keepContentClear();
 
     /* keep ambient shapes clear of the logo, before AND after it shifts up */
     const rowsUp = Math.ceil(logoShift / S) + 1;
