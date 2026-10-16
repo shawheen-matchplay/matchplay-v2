@@ -66,7 +66,20 @@
   const DOT_SKIP = 0.26;      /* fraction of grid cells left empty */
   const DOT_RADIUS = 0.5;     /* dot radius as a fraction of the grid step.
                                  0.5 = neighbouring dots exactly touch */
-  const LINK_RATIO = 0.62;    /* chance a new shape is a link vs a ring */
+  /* What each new shape is: a ring, a link, or a merge (two rings that draw
+     in, then stretch together and bounce into a link). Shares of 1. */
+  const MIX = { ring: 0.36, link: 0.42, merge: 0.22 };
+
+  /* How evenly the shapes spread, 0 to 1. Each new shape looks at several
+     free spots and takes the one furthest from everything already showing;
+     this sets how many it compares. 0 takes the first free spot (random:
+     clusters and gaps), 1 compares 16 (very even). Either way shapes never
+     touch: each keeps a clear cell all round it. Try values on the page
+     with ?uniformity=0.2 in the address. */
+  const UNIFORMITY = (() => {
+    const v = parseFloat(new URLSearchParams(location.search).get('uniformity'));
+    return isNaN(v) ? 0.35 : Math.min(1, Math.max(0, v));
+  })();
 
   /* Concurrent shapes per grid cell. Every field derives its own cap from this,
      so the hero and the ecosystem section hold the same density whatever their
@@ -115,6 +128,125 @@
       ' A ' + r + ' ' + r + ' 0 1 0 ' + (c[0] - r).toFixed(2) + ' ' + c[1].toFixed(2) +
       ' A ' + r + ' ' + r + ' 0 1 0 ' + (c[0] + r).toFixed(2) + ' ' + c[1].toFixed(2) + ' Z';
   }
+
+  /* ---------- the merge ----------------------------------------------------
+     Two rings stretch toward each other, touch, and bounce together into a
+     link: the motion of animations/link-merge.html. Worked out once in a
+     frame of its own (ring A's centre at the origin, ring B's at (200, 200),
+     ring radius 100, the link's own proportions) and placed on the grid with
+     a transform. Paths are lists of cubic Beziers, p0 c c p1 c c p2 ..., so
+     any two with the same pieces can be blended point by point. */
+  const MERGE = (() => {
+    const R = 100, D = 200, RHO = 50;
+    const add = (p, q) => [p[0] + q[0], p[1] + q[1]];
+    const lerp = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
+    const on = (c, r, deg) => { const a = deg * Math.PI / 180; return [c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)]; };
+    const join = (a, b) => a.concat(b.slice(1));          /* end of a is start of b */
+
+    function arcCubics(c, r, a0, a1, n) {
+      const pts = [on(c, r, a0)], step = (a1 - a0) / n;
+      const h = 4 / 3 * Math.tan(Math.abs(step) * Math.PI / 720) * r * Math.sign(step);
+      for (let i = 0; i < n; i++) {
+        const s0 = (a0 + i * step) * Math.PI / 180, s1 = (a0 + (i + 1) * step) * Math.PI / 180;
+        const p0 = on(c, r, a0 + i * step), p1 = on(c, r, a0 + (i + 1) * step);
+        pts.push(add(p0, [-Math.sin(s0) * h, Math.cos(s0) * h]), add(p1, [Math.sin(s1) * h, -Math.cos(s1) * h]), p1);
+      }
+      return pts;
+    }
+    const lineCubic = (p, q) => [p, lerp(p, q, 1 / 3), lerp(p, q, 2 / 3), q];
+    const line2 = (p, q) => { const m = lerp(p, q, 0.5); return join(lineCubic(p, m), lineCubic(m, q)); };
+    /* a curve given as a function of u in 0..1, as n cubics whose handles
+       follow its tangent, so it stays smooth however it bends */
+    function sample(fn, n) {
+      const pts = [fn(0)], e = 1e-4;
+      const tan = u => {
+        const a = Math.max(0, u - e), b = Math.min(1, u + e), p = fn(a), q = fn(b);
+        return [(q[0] - p[0]) / (b - a), (q[1] - p[1]) / (b - a)];
+      };
+      for (let i = 0; i < n; i++) {
+        const u0 = i / n, u1 = (i + 1) / n, p0 = fn(u0), p1 = fn(u1), t0 = tan(u0), t1 = tan(u1), k = (u1 - u0) / 3;
+        pts.push([p0[0] + t0[0] * k, p0[1] + t0[1] * k], [p1[0] - t1[0] * k, p1[1] - t1[1] * k], p1);
+      }
+      return pts;
+    }
+
+    /* Each ring as one loop from the point facing the other ring (angle T)
+       round and back, in the three pieces that become its side of the link.
+       Stretched by s (1 = the facing point reaches halfway, where the two
+       touch) the whole ring deforms: leans toward the other, swells toward it
+       (most at the front, nothing at the back) and narrows across the middle. */
+    const LEAN = 12, PULL = 8, NARROW = 0.08;
+    const REACH = Math.hypot(D / 2, D / 2) - R - LEAN;
+    function loop(c, T, dir, s) {
+      const ctr = add(c, [dir[0] * LEAN * s, dir[1] * LEAN * s]);
+      const at = deg => {
+        const phi = (deg - T) * Math.PI / 180, sin = Math.sin(phi);
+        return on(ctr, R + s * (REACH * Math.pow((1 + Math.cos(phi)) / 2, PULL) - NARROW * R * sin * sin), deg);
+      };
+      const piece = (a0, a1, n) => sample(u => at(a0 + (a1 - a0) * u), n);
+      return join(join(piece(T, T - 45, 4), piece(T - 45, T - 315, 6)), piece(T - 315, T - 360, 4));
+    }
+    /* The link, as each ring's side of it, in the same pieces. rho is the
+       bridges' corner radius, which sets the waist (RHO is the link); e bends
+       the back of each loop out (> 0) or flat (< 0), 0 being the true circle. */
+    function back(c, a0, a1, rear, e) {
+      if (!e) return arcCubics(c, R, a0, a1, 6);
+      return sample(u => {
+        const deg = a0 + (a1 - a0) * u, k = Math.cos((deg - rear) * Math.PI / 270);
+        return on(c, R * (1 + e * k * k), deg);
+      }, 6);
+    }
+    function sides(rho, e) {
+      const k1 = [D - R - rho, R + rho], k2 = [R + rho, D - R - rho];
+      return [
+        join(join(join(arcCubics(k2, rho, 135, 180, 2), line2([R, D - R - rho], [R, 0])),
+                  back([0, 0], 0, -270, -135, e)),
+             join(line2([0, R], [D - R - rho, R]), arcCubics(k1, rho, -90, -45, 2))),
+        join(join(join(arcCubics(k1, rho, -45, 0, 2), line2([D - R, R + rho], [D - R, D])),
+                  back([D, D], -180, -450, -315, e)),
+             join(line2([D, D - R], [R + rho, D - R]), arcCubics(k2, rho, 90, 135, 2)))
+      ];
+    }
+    const toB = [Math.SQRT1_2, Math.SQRT1_2], toA = [-Math.SQRT1_2, -Math.SQRT1_2];
+    /* a loop's points move in step with s, so two ends are enough */
+    const A0 = loop([0, 0], 45, toB, 0), A1 = loop([0, 0], 45, toB, 1);
+    const B0 = loop([D, D], -135, toA, 0), B1 = loop([D, D], -135, toA, 1);
+    const mix = (P, Q, t) => P.map((p, i) => lerp(p, Q[i], t));
+
+    /* timing: a loose spring (overshoots by about half, wobbles to rest), its
+       first rise for the reach, so both move alike, and a dying swing for the
+       loops' wobble */
+    const SZ = 0.22, SW = 20, SWD = SW * Math.sqrt(1 - SZ * SZ);
+    const spring = t => t >= 1 ? 1
+      : 1 - Math.exp(-SZ * SW * t) * (Math.cos(SWD * t) + SZ * SW / SWD * Math.sin(SWD * t));
+    const RISE = (Math.PI - Math.atan(SWD / (SZ * SW))) / SWD;
+    const wobble = t => Math.sin(12 * t) * Math.exp(-2.3 * t) * (1 - Math.pow(t, 4));
+    const easeOut = t => 1 - Math.pow(1 - t, 3);
+
+    const d = pts => {
+      let out = 'M ' + pts[0][0].toFixed(2) + ' ' + pts[0][1].toFixed(2);
+      for (let i = 1; i < pts.length; i += 3) {
+        out += ' C ' + [pts[i], pts[i + 1], pts[i + 2]].map(p => p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join(' ');
+      }
+      return out;
+    };
+
+    return {
+      REACH_MS: 850, SETTLE_MS: 1400,
+      rings: ['M 100 0 A 100 100 0 1 0 0 100 A 100 100 0 0 0 100 0',
+              'M 100 200 A 100 100 0 1 0 200 100 A 100 100 0 0 0 100 200'],
+      /* the reach, t 0..1: rings stretch until they touch, picking up speed */
+      reach(t) { const s = t >= 1 ? 1 : spring(t * RISE); return [d(mix(A0, A1, s)), d(mix(B0, B1, s))]; },
+      /* the settle, t 0..1: into the link, the waist springing wide and back
+         while the loops wobble (out only a little, so it barely grows) */
+      settle(t) {
+        const m = easeOut(Math.min(1, t / 0.14));
+        const e = t < 1 ? 0.15 * wobble(t) : 0;
+        const link = sides(12 + (RHO - 12) * spring(t), e > 0 ? e * 0.4 : e);
+        return [d(mix(A1, link[0], m)), d(mix(B1, link[1], m))];
+      }
+    };
+  })();
 
   function el(name, attrs, parent) {
     const n = document.createElementNS(NS, name);
@@ -244,7 +376,7 @@
   /* Even spread: gather several free spots and take the one furthest from
      every shape already showing (best-candidate sampling), rather than the
      first free one, which let shapes bunch up and leave holes. */
-  const CANDIDATES = 14;
+  const CANDIDATES = 1 + Math.round(UNIFORMITY * 15);
   function claimSpot(f, kind) {
     const band = bandOf(f);
     const span = band[1] - band[0];
@@ -255,7 +387,7 @@
       const c = 1 + Math.floor(Math.random() * (f.cols - 3));
       const r = band[0] + Math.floor(Math.random() * span);
       let spot;
-      if (kind === 'link') {
+      if (kind === 'link' || kind === 'merge') {
         const dir = Math.random() < 0.5 ? 1 : -1;         /* down-right or up-right */
         if (!f.dots.has(key(c, r)) || !f.dots.has(key(c + 1, r + dir))) continue;
         spot = { c, r, dir, cells: blockAround([[c, r], [c + 1, r + dir]]) };
@@ -306,11 +438,13 @@
   function spawnAmbient(f, opts) {
     opts = opts || {};
     if (!f.layer || !f.dots) return null;
-    const kind = opts.kind || (Math.random() < LINK_RATIO ? 'link' : 'ring');
+    let kind = opts.kind || pickKind();
+    if (kind === 'merge' && opts.instant) kind = 'link';  /* nobody to watch it merge */
     const spot = claimSpot(f, kind);
     if (!spot) return null;
     const centre = centreOf(spot);
     const color = pickColor(f, centre);
+    if (kind === 'merge') return spawnMerge(f, spot, centre, color, opts);
     const p = makeShape(f, kind, spot, color);
     const item = { p, spot, centre, color, dead: false };
     f.population.push(item);
@@ -322,15 +456,67 @@
     return item;
   }
 
+  const pickKind = () => {
+    const x = Math.random() * (MIX.ring + MIX.link + MIX.merge);
+    return x < MIX.merge ? 'merge' : x < MIX.merge + MIX.link ? 'link' : 'ring';
+  };
+
+  /* A merge: its two rings draw in, sit a moment, then stretch together and
+     bounce into a link. Once settled it is swapped for an ordinary link path
+     and lives out its time like any other. */
+  function spawnMerge(f, spot, centre, color, opts) {
+    const c1 = cellOf(f, spot.c, spot.r);
+    const g = el('g', {
+      transform: 'translate(' + c1[0].toFixed(2) + ' ' + c1[1].toFixed(2) + ') rotate(' + (spot.dir === 1 ? 0 : -90) +
+        ') scale(' + (f.R / 100).toFixed(5) + ')',
+      fill: 'none', stroke: color, 'stroke-width': 20, 'stroke-linecap': 'round', 'stroke-linejoin': 'round'
+    }, f.layer);
+    const rings = MERGE.rings.map(dd => el('path', { d: dd }, g));
+    const item = { p: g, spot, centre, color, dead: false, merging: true, raf: 0 };
+    f.population.push(item);
+
+    const delay = opts.delay || 0, draw = opts.drawDur || rand(750, 1100);
+    rings.forEach((r, i) => { preparePath(r); drawPath(r, draw, delay + i * 250); });
+
+    /* frames, not transitions: the shape itself changes. Stops if retired. */
+    const tween = (dur, fn, done) => {
+      const t0 = performance.now();
+      (function frame(now) {
+        if (item.dead) return;
+        const t = Math.min(1, Math.max(0, now - t0) / dur);  /* a frame stamp can predate t0 */
+        const dd = fn(t);
+        rings[0].setAttribute('d', dd[0]); rings[1].setAttribute('d', dd[1]);
+        if (t < 1) item.raf = requestAnimationFrame(frame); else done();
+      })(t0);
+    };
+    item.timer = setTimeout(() => {
+      rings.forEach(r => { r.style.transition = 'none'; r.style.strokeDasharray = 'none'; });
+      tween(MERGE.REACH_MS, MERGE.reach, () => tween(MERGE.SETTLE_MS, MERGE.settle, () => {
+        const p = makeShape(f, 'link', spot, color);
+        g.remove();
+        item.p = p;
+        item.merging = false;
+        item.timer = setTimeout(() => retireAmbient(f, item), opts.life || rand(3000, 7000));
+      }));
+    }, delay + 250 + draw + rand(250, 1200));
+    return item;
+  }
+
   function retireAmbient(f, item) {
     if (item.dead) return;
     item.dead = true;
     clearTimeout(item.timer);
+    cancelAnimationFrame(item.raf);
     const dur = 700;
     /* Hold on to this shape's own grid: a rebuild in the meantime swaps in a
        new one, and releasing these cells there would free another shape's. */
     const used = f.used;
-    undrawPath(item.p, dur);
+    if (item.merging) {                                   /* mid-merge: fade it */
+      item.p.style.transition = 'opacity ' + dur + 'ms ease';
+      item.p.style.opacity = 0;
+    } else {
+      undrawPath(item.p, dur);
+    }
     setTimeout(() => {
       item.p.remove();
       item.spot.cells.forEach(k2 => used.delete(k2));
