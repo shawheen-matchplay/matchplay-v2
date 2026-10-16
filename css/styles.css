@@ -782,7 +782,7 @@ html.splash--returning [data-reveal] {
 .ecosystem__title {
   font-family: var(--font-display);
   font-size: clamp(2.25rem, 4.5vw, 4rem);
-  line-height: 0.98;
+  line-height: 1.12;
   letter-spacing: -0.03em;
   color: #fff;
 }
@@ -941,7 +941,7 @@ html.splash--returning [data-reveal] {
 .values__title {
   font-family: var(--font-display);
   font-size: clamp(2rem, 3.96vw, 3.6rem);
-  line-height: 1.02;
+  line-height: 1.12;
   letter-spacing: -0.03em;
   color: #fff;
 }
@@ -1245,7 +1245,7 @@ html.splash--returning [data-reveal] {
 .cta-band__title {
   font-family: var(--font-display);
   font-size: clamp(1.9rem, 3.6vw, 3.2rem);
-  line-height: 1.04;
+  line-height: 1.12;
   letter-spacing: -0.03em;
   color: #fff;
   text-wrap: balance;
@@ -1596,7 +1596,7 @@ html.splash--returning [data-reveal] {
 .sec-head__title {
   font-family: var(--font-display);
   font-size: clamp(2rem, 3.78vw, 3.5rem);
-  line-height: 1.02;
+  line-height: 1.12;
   letter-spacing: -0.03em;
   color: var(--ink);
   text-wrap: balance;
