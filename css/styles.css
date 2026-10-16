@@ -2142,8 +2142,8 @@ html.splash--returning [data-reveal] {
   max-width: 1000px;
   margin-inline: auto;
   padding: clamp(2rem, 4vw, 3.5rem);
-  background: var(--surface-glass);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--panel);
+  border: 1px solid var(--line);
   border-radius: clamp(24px, 3vw, 36px);
   display: grid;
   grid-template-columns: 1fr auto;
@@ -2155,7 +2155,7 @@ html.splash--returning [data-reveal] {
   font-size: 0.72rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-ink);
   margin-bottom: 0.9em;
 }
 .subscribe__title {
@@ -2163,15 +2163,15 @@ html.splash--returning [data-reveal] {
   font-size: clamp(1.5rem, 2.6vw, 2.1rem);
   line-height: 1.12;
   letter-spacing: -0.02em;
-  color: #fff;
+  color: var(--ink);
 }
-.subscribe__title em { font-style: italic; color: var(--accent); }
+.subscribe__title em { font-style: italic; color: var(--accent-ink); }
 .subscribe__text {
   margin-top: 0.7em;
   font-family: var(--font-ui);
   font-size: clamp(0.95rem, 1.1vw, 1.0625rem);
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.68);
+  color: var(--ink-2);
   max-width: 40ch;
 }
 
@@ -2185,19 +2185,20 @@ html.splash--returning [data-reveal] {
 .subscribe__input {
   width: 100%;
   padding: 0.95em 1.25em;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  /* Mixed from the band's ink, so the field reads on either ground. */
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
   border-radius: 999px;
-  color: #fff;
+  color: var(--ink);
   font-family: var(--font-ui);
   font-size: 1rem;
   transition: border-color var(--dur), background-color var(--dur);
 }
-.subscribe__input::placeholder { color: rgba(255, 255, 255, 0.4); }
+.subscribe__input::placeholder { color: var(--ink-3); }
 .subscribe__input:focus {
   outline: none;
-  border-color: var(--accent);
-  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--accent-ink);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
 }
 .subscribe__success {
   display: none;
@@ -2207,7 +2208,7 @@ html.splash--returning [data-reveal] {
   font-size: 0.75rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .subscribe__form.is-done ~ .subscribe__success { display: block; }
 
