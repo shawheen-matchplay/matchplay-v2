@@ -24,9 +24,21 @@
     if (dropdown) dropdown.classList.add("is-current");
   });
 
+  /* ---- Desktop dropdowns -------------------------------------------- */
+  // They open on :hover and stay open on :focus-within, for keyboard users.
+  // A mouse click also focuses the button, which kept that dropdown open
+  // after the pointer moved on (even while another one was open). When a
+  // mouse leaves a dropdown, let go of the focus the click left behind.
+  Array.prototype.forEach.call(document.querySelectorAll(".nav__dropdown"), function (dd) {
+    dd.addEventListener("pointerleave", function (e) {
+      if (e.pointerType !== "mouse") return;
+      var focused = document.activeElement;
+      if (focused && dd.contains(focused)) focused.blur();
+    });
+  });
+
   /* ---- Mobile menu -------------------------------------------------- */
-  // Desktop dropdowns are pure CSS (:hover / :focus-within); only the
-  // mobile panel needs JS.
+  // The mobile panel opens and closes from the hamburger.
   var hamburger = document.querySelector(".nav__hamburger");
   var mobileMenu = document.getElementById("nav-mobile");
   if (hamburger && mobileMenu) {
