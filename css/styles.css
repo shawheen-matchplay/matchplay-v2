@@ -1424,8 +1424,15 @@ html.splash--returning [data-reveal] {
 /* Release page: a single readable column. */
 .release { max-width: 792px; margin-inline: auto; }
 .release__title { text-align: left; margin-top: 0.75rem; }
+/* Paragraphs sit a clear line apart (more than the 1.75 leading inside
+   them); a heading opens more room above and stays close to what follows;
+   a quote's attribution stays with its quote. */
 .release__body > * + *,
-.prose > * + * { margin-top: 1.35rem; }
+.prose > * + * { margin-top: 2rem; }
+.release__body > h2 + *,
+.prose > h2 + * { margin-top: 0.85rem; }
+.release__body > blockquote + p,
+.prose > blockquote + p { margin-top: 0.85rem; }
 .release__body p,
 .prose p {
   font-family: var(--font-ui);
@@ -1448,6 +1455,7 @@ html.splash--returning [data-reveal] {
 .release__body blockquote,
 .prose blockquote {
   margin-inline: 0;
+  margin-bottom: 0;
   padding-left: clamp(1rem, 1.8vw, 1.5rem);
   border-left: 2px solid var(--accent);
 }
