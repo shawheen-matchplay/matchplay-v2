@@ -70,15 +70,15 @@
     });
   }
 
-  /* ---- Testimonial marquee ----------------------------------------- */
+  /* ---- Marquees (testimonials, homepage ticker) --------------------- */
   // Duplicate the items so the -50% keyframe loops seamlessly.
-  var track = document.querySelector("[data-marquee]");
-  if (track && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    var originals = Array.prototype.slice.call(track.children);
-    originals.forEach(function (node) {
-      var clone = node.cloneNode(true);
-      clone.setAttribute("aria-hidden", "true");
-      track.appendChild(clone);
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-marquee]"), function (track) {
+      Array.prototype.slice.call(track.children).forEach(function (node) {
+        var clone = node.cloneNode(true);
+        clone.setAttribute("aria-hidden", "true");
+        track.appendChild(clone);
+      });
     });
   }
 
@@ -130,6 +130,10 @@
   // it stranded part-way.
   var DIMPLES = [[0.77, -0.32], [0.43, 0.03], [0.77, 0.03], [0.08, 0.37], [0.43, 0.37],
                  [0.77, 0.37], [-0.26, 0.72], [0.08, 0.71], [0.43, 0.71]];  // the brand mark's wedge
+  // The ball is drawn on a radius of 1. A dark rim (about 1.5px on the 1.6rem
+  // ball) keeps the white ball clear of a white band, and the wedge is drawn
+  // at 78% so its outer dimples sit 1-2px inside the rim instead of on it.
+  var RIM = 0.12, WEDGE = 0.78;
   var SEG = 560, PAUSE = 200, HOLD = 2200;
   var EASE = "cubic-bezier(0.45, 0.05, 0.3, 1)";
   var stillMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -146,14 +150,15 @@
     var svg = document.createElementNS(NS, "svg");
     svg.setAttribute("viewBox", "-1 -1 2 2");
     var body = document.createElementNS(NS, "circle");
-    body.setAttribute("r", "1");
+    body.setAttribute("r", String(1 - RIM / 2));          // the rim's outer edge lands on the box
+    body.setAttribute("stroke-width", String(RIM));
     body.setAttribute("class", "pipeline__ball-body");
     svg.appendChild(body);
     DIMPLES.forEach(function (d) {
       var c = document.createElementNS(NS, "circle");
-      c.setAttribute("cx", d[0]);
-      c.setAttribute("cy", d[1]);
-      c.setAttribute("r", "0.118");
+      c.setAttribute("cx", d[0] * WEDGE);
+      c.setAttribute("cy", d[1] * WEDGE);
+      c.setAttribute("r", String(0.118 * WEDGE));
       c.setAttribute("class", "pipeline__ball-dimple");
       svg.appendChild(c);
     });

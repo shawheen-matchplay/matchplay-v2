@@ -1933,14 +1933,14 @@ html.splash--returning [data-reveal] {
   z-index: 3;
   width: 1.6rem;
   height: 1.6rem;
-  color: var(--ink);                /* dark ball on white, white ball on dark */
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.22));
   pointer-events: none;
   will-change: transform;
 }
 .pipeline__ball svg { display: block; width: 100%; height: 100%; overflow: visible; }
-.pipeline__ball-body   { fill: currentColor; }
-.pipeline__ball-dimple { fill: var(--ground); }
+/* White like a real ball, with a dark rim so it holds on a white band. */
+.pipeline__ball-body   { fill: #fff; stroke: #0A0A0A; }
+.pipeline__ball-dimple { fill: #0A0A0A; }
 
 /* While it runs, a stage stays unlit until the ball reaches it. */
 .pipeline.is-live li { color: var(--ink-3); transition: color 0.3s ease; }
@@ -2338,6 +2338,48 @@ html.splash--returning [data-reveal] {
 }
 .hero__actions .hero__cta { margin-top: 0; }
 
+/* Homepage ticker: a slow mono loop between two hairlines, on the
+   ecosystem's ground so it closes off the hero above. */
+.ticker {
+  position: relative;
+  z-index: 1;                        /* over the field, like the sections */
+  overflow: hidden;
+  padding-block: clamp(0.9rem, 1.6vw, 1.15rem);
+  background: var(--splash-bg-dim);
+  border-block: 1px solid rgba(255, 255, 255, 0.1);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.ticker__track {
+  display: flex;
+  width: max-content;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  animation: marquee 45s linear infinite;
+}
+/* Spacing lives on each item (no gap), so the two halves are identical and
+   the -50% loop lands exactly; see .marquee__track. */
+.ticker__track li {
+  display: flex;
+  flex: none;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.62);
+}
+.ticker__track li::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  margin-inline: clamp(1.25rem, 2.6vw, 2.25rem);
+  border-radius: 50%;
+  background: var(--accent);
+}
+
 /* 9. Testimonials (marquee) ---------------------------------------------- */
 .marquee {
   display: flex;
@@ -2661,7 +2703,8 @@ html.splash--returning [data-reveal] {
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .reveal { opacity: 1; transform: none; transition: none; }
-  .marquee__track { animation: none; }
+  .marquee__track,
+  .ticker__track { animation: none; }
   .nav__mobile,
   .nav__mobile.is-open,
   .nav__mobile > *,
