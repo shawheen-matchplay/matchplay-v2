@@ -132,7 +132,7 @@ CTA = lambda root: """    <section class="section">
           <p class="cta-band__text">Start with diligence and build the financing process from there.</p>
           <div class="cta-band__actions">
             <a href="%s" target="_blank" rel="noopener" class="btn btn--primary btn--pill">
-              Start Diligence <span class="btn__arrow" aria-hidden="true">&#8599;</span>
+              Apply for Diligence <span class="btn__arrow" aria-hidden="true">&#8599;</span>
             </a>
             <a href="%sindex.html#how" class="btn btn--quiet">See how it works</a>
           </div>
