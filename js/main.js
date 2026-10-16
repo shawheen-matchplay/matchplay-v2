@@ -70,6 +70,19 @@
     });
   }
 
+  /* ---- Nav clearance ----------------------------------------------- */
+  // Full-screen sections are one screen tall less the fixed nav and a little
+  // room under it (styles.css, "Every section fills one screen"). offsetTop
+  // and offsetHeight, because the header can carry a reveal transform.
+  var siteHeader = document.querySelector(".site-header");
+  function setNavClear() {
+    if (!siteHeader) return;
+    document.documentElement.style.setProperty("--nav-clear",
+      (siteHeader.offsetTop + siteHeader.offsetHeight + 16) + "px");
+  }
+  setNavClear();
+  window.addEventListener("resize", setNavClear);
+
   /* ---- Marquees (testimonials, homepage ticker) --------------------- */
   // Duplicate the items so the -50% keyframe loops seamlessly.
   if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {

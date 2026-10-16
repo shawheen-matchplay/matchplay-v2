@@ -1241,6 +1241,10 @@ html.splash--returning [data-reveal] {
   margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
 }
 
+/* MATCH HOUSE: the last event's cover, filling its panel edge to edge. */
+.mh-recap { padding: 0; overflow: hidden; }
+.mh-recap img { flex: 1; width: 100%; height: 100%; min-height: 0; object-fit: cover; display: block; }
+
 /* 7f. Logo roster ----------------------------------------------------------
    Names rather than marks until the logo files are exported; swap an <img>
    into each tile and the grid takes it unchanged. Used by the Partners page. */
@@ -1694,24 +1698,33 @@ html.splash--returning [data-reveal] {
 .page--screens .flow,
 .page--screens .voices { grid-auto-rows: 1fr; }
 
-/* Every section fills one screen, its content centred in it; on the
-   homepage the closing call to action and the newsletter share one screen.
-   min-height, so a section with more than a screen of content still grows. */
+/* Every section fills one screen less the fixed nav (--nav-clear: its
+   height plus a little room under it, set by main.js), so a section scrolled
+   up to just under the nav is exactly in view, content centred. On the
+   homepage the closing call to action and the newsletter share one. A page
+   hero sits under the nav, so it keeps the whole screen. min-height, so a
+   section with more than that of content still grows. */
 .page--screens .ecosystem,
 .page--screens .page-hero,
 .page--screens .section {
-  min-height: 100vh;
-  min-height: 100svh;
+  min-height: calc(100vh - var(--nav-clear, 6rem));
+  min-height: calc(100svh - var(--nav-clear, 6rem));
   display: flex;
   flex-direction: column;
   justify-content: center;
-  /* centring supplies the breathing room, so the padding can be leaner */
-  padding-block: clamp(3.5rem, 8vh, 6rem);
+  /* centring supplies the breathing room, so the spacing can be leaner */
+  padding-block: clamp(2.5rem, 6vh, 4.5rem);
+}
+.page--screens .sec-head { margin-bottom: clamp(2rem, 4vh, 3rem); }
+.page--screens .panel { padding: clamp(1.5rem, 2.4vw, 2rem); }
+.page--screens .page-hero {
+  min-height: 100vh;
+  min-height: 100svh;
 }
 .page--screens #start,
 .page--screens #subscribe {
-  min-height: 50vh;
-  min-height: 50svh;
+  min-height: calc((100vh - var(--nav-clear, 6rem)) / 2);
+  min-height: calc((100svh - var(--nav-clear, 6rem)) / 2);
   padding-block: clamp(1rem, 2.5vh, 2rem);
 }
 .page--screens #start .cta-band { padding-block: clamp(2rem, 5vh, 3.5rem); }
@@ -1902,7 +1915,7 @@ html.splash--returning [data-reveal] {
 .split--even > .panel .sec-actions { margin-top: auto; padding-top: clamp(1.5rem, 3vw, 2rem); }
 .split + .split,
 .cards + .split { margin-top: clamp(2.5rem, 5vw, 4rem); }
-.steps + .split { margin-top: clamp(1.25rem, 2.5vw, 2rem); }   /* one set, continued */
+.steps + .split { margin-top: clamp(1rem, 1.6vw, 1.25rem); }   /* one set, continued */
 
 .fineprint {
   margin-top: clamp(1rem, 2vw, 1.5rem);

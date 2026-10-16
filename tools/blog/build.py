@@ -233,7 +233,7 @@ def build_index(posts, header, footer, fonts):
     canonical = SITE + "/blog"
     desc = ("Explore MatchPlay’s latest blogs on venture capital, startup fundraising, founder stories, "
             "investor insights, and the networks shaping high-growth companies.")
-    PER_PAGE = 10
+    PER_PAGE = 9
     jsonld = {"@context": "https://schema.org", "@type": "Blog", "@id": canonical + "#blog",
               "name": BLOG_NAME + " | MatchPlay Blog", "url": canonical, "description": desc,
               "publisher": {"@type": "Organization", "name": "MatchPlay",
@@ -265,11 +265,11 @@ def build_index(posts, header, footer, fonts):
       </div>
     </section>
 
-    <!-- ===== All posts ===== -->
+    <!-- ===== All articles ===== -->
     <section class="section section--light" id="posts">
       <div class="container container--wide">
         <header class="sec-head reveal">
-          <h2 class="sec-head__title">All <em>posts.</em></h2>
+          <h2 class="sec-head__title">All <em>articles.</em></h2>
         </header>
         <!-- every post is in the HTML; main.js shows %(per)d at a time -->
         <div class="post-grid" data-paginate="%(per)d">
