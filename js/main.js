@@ -103,6 +103,15 @@
   setNavClear();
   window.addEventListener("resize", setNavClear);
 
+  /* ---- Background videos -------------------------------------------- */
+  // Reduced motion: stop on the poster frame instead of playing.
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    Array.prototype.forEach.call(document.querySelectorAll("video[data-bg-video]"), function (v) {
+      v.removeAttribute("autoplay");
+      v.pause();
+    });
+  }
+
   /* ---- Marquees (testimonials, homepage ticker) --------------------- */
   // Duplicate the items so the -50% keyframe loops seamlessly.
   if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
