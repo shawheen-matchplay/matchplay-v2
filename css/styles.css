@@ -1206,6 +1206,24 @@ html.splash--returning [data-reveal] {
 .feature-quote__by img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; }
 .feature-quote__name { display: block; color: var(--text-on-light); font-weight: 500; }
 .feature-quote__by em { font-style: italic; color: var(--accent); }
+/* Giant quote mark over the text and a larger, ringed portrait. */
+.feature-quote--marks::before {
+  content: "\201C";
+  display: block;
+  height: 0.5em;                     /* the glyph sits high; trim its empty lower half */
+  margin-bottom: clamp(0.5rem, 1.5vw, 1rem);
+  font-family: "Libre Baskerville", Georgia, serif;
+  font-size: clamp(7rem, 13vw, 11rem);
+  line-height: 0.85;
+  color: var(--accent);
+}
+.feature-quote--marks .feature-quote__by { gap: clamp(1rem, 2vw, 1.5rem); font-size: 1rem; }
+.feature-quote--marks .feature-quote__by img {
+  width: clamp(88px, 9vw, 112px);
+  height: clamp(88px, 9vw, 112px);
+  box-shadow: 0 0 0 4px #fff, 0 0 0 6px var(--accent);
+}
+.feature-quote--marks .feature-quote__name { font-size: 1.1rem; }
 
 /* Closing CTA */
 .cta-band {
