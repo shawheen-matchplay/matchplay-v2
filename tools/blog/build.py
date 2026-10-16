@@ -99,7 +99,7 @@ def head(title, desc, canonical, fonts, prefix, extra="", og_type="website", ima
 
 def card(p, prefix, cls="post-card", heading="h3"):
     # prefix is the path from the current page to the blog/ folder
-    return """<article class="%(cls)s reveal">
+    return """<article class="%(cls)s reveal" data-tilt>
           <a class="%(cls)s__link" href="%(to_post)s%(slug)s.html">
             <img class="%(cls)s__img" src="%(to_root)sassets/blog/%(webp)s" alt="" width="1200" height="630" loading="lazy" decoding="async">
             <div class="%(cls)s__body">

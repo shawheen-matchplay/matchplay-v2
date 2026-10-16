@@ -2337,10 +2337,11 @@ html.splash--returning [data-reveal] {
   overflow: hidden;
   background: var(--panel);
   border: 1px solid var(--line);
-  transition: background-color 0.3s var(--ease), transform 0.35s var(--ease);
+  border-radius: 18px;
 }
-.post-card { border-radius: 18px; }
-.post-card:hover { background: var(--panel-hover); transform: translateY(-3px); }
+.post-card:hover { background: var(--panel-hover); }
+/* The pointer card (data-tilt) hover; the cover would hide the top rule. */
+.post-card > .fx::before { content: none; }
 .post-card__link { display: flex; flex-direction: column; height: 100%; color: inherit; }
 .post-card__img { display: block; width: 100%; aspect-ratio: 1200 / 630; object-fit: cover; }
 .post-card__body { flex: 1; display: flex; flex-direction: column; gap: 0.65rem; padding: clamp(1.1rem, 1.8vw, 1.5rem); }
@@ -2394,14 +2395,13 @@ html.splash--returning [data-reveal] {
 }
 .article-head__back:hover { opacity: 0.75; }
 .article-head__title {
-  max-width: 22ch;
   margin-top: clamp(1rem, 1.8vw, 1.5rem);
   font-family: var(--font-display);
   font-size: clamp(2.1rem, 3.96vw, 3.6rem);
   line-height: 1.06;
   letter-spacing: -0.03em;
   color: var(--ink);
-  text-wrap: balance;
+  text-wrap: pretty;          /* fill the line; only avoid a lone last word */
 }
 .article-head__meta { margin-top: clamp(1rem, 1.8vw, 1.4rem); }
 .article-cover { margin: clamp(2rem, 3.6vw, 3rem) 0 0; }
