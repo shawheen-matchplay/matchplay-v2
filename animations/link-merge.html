@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Link Merge — MatchPlay</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <!--
+    Two circles appear on the grid, diagonal to each other, then combine into
+    a MatchPlay link: the quarter of each circle that faces the other draws
+    away while the two bridging strokes draw in. Same geometry and drawing
+    style as the homepage hero (js/hero-splash.js): ring radius 0.5 x grid
+    step, corner radius 0.5 x ring radius, stroke 0.1 x grid step, dots that
+    exactly touch, the hero's grey ground before its dim.
+
+    Options in the URL, e.g. link-merge.html?color=FF7A45&loop=0
+      color  stroke colour, hex without # (default 1ED2F4, the site blue)
+      a, b   give each circle its own colour (they meet in --color)
+      bg     ground: grey (default, the hero before its dim) or dark
+      dots   1 (default) or 0 for no dot grid
+      loop   1 (default) to replay forever, 0 to play once
+      speed  playback rate, e.g. 0.5 for half speed
+  -->
+  <style>
+    :root { --ground: #26262A; --dot: #0B0B0B; }
+    html, body { margin: 0; height: 100%; background: var(--ground); }
+    body { display: grid; place-items: center; overflow: hidden; }
+    svg { width: 100vw; height: 100vh; height: 100svh; display: block; }   /* fills the window; the link stays centred */
+    .replay {
+      position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: 16px;
+      padding: 8px 14px; border: 1px solid rgba(255,255,255,.2); border-radius: 999px;
+      background: rgba(0,0,0,.35); color: rgba(255,255,255,.85);
+      font: 500 12px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .12em; text-transform: uppercase;
+      cursor: pointer;
+    }
+    .replay:hover { color: #fff; border-color: rgba(255,255,255,.45); }
+    body.capture .replay { display: none; }
+  </style>
+</head>
+<body>
+  <svg id="stage" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Two circles join into a MatchPlay link"></svg>
+  <button class="replay" type="button" id="replay">Replay</button>
+
+  <script>
+  (function () {
+    "use strict";
+    var q = new URLSearchParams(location.search);
+    var hex = function (k, d) { var v = (q.get(k) || d).replace(/[^0-9a-f]/gi, ""); return "#" + (v || d); };
+    var COLOR = hex("color", "1ED2F4");
+    var COLOR_A = q.get("a") ? hex("a", "1ED2F4") : COLOR;
+    var COLOR_B = q.get("b") ? hex("b", "1ED2F4") : COLOR;
+    var LOOP = q.get("loop") !== "0";
+    var SPEED = Math.max(0.1, parseFloat(q.get("speed")) || 1);
+    var DOTS = q.get("dots") !== "0";
+    if (q.get("bg") === "dark") document.documentElement.style.setProperty("--ground", "#0E0E11");
+    if (q.get("capture") === "1") document.body.classList.add("capture");
+
+    var NS = "http://www.w3.org/2000/svg";
+    var svg = document.getElementById("stage");
+    var VW = 1200, VH = 900;
+    var S = 200;                 // grid step
+    var R = S * 0.5;             // ring radius (= dot radius: the ring outlines a dot)
+    var RHO = R * 0.5;           // corner radius
+    var D = S;                   // the two centres sit one cell apart on each axis
+    var LW = S * 0.1;            // stroke
+    var EASE_DRAW = "cubic-bezier(.45,0,.25,1)";
+    var EASE_UNDRAW = "cubic-bezier(.6,0,.8,1)";
+
+    function el(name, attrs, parent) {
+      var n = document.createElementNS(NS, name);
+      for (var k in attrs) n.setAttribute(k, attrs[k]);
+      if (parent) parent.appendChild(n);
+      return n;
+    }
+    var f = function (n) { return n.toFixed(2); };
+
+    // Grid: centred so the link's two cells land mid-frame.
+    var c1 = [VW / 2 - D / 2, VH / 2 - D / 2];            // top-left circle
+    var c2 = [c1[0] + D, c1[1] + D];                      // bottom-right circle
+    var x0 = c1[0] - Math.ceil(c1[0] / S) * S, y0 = c1[1] - Math.ceil(c1[1] / S) * S;
+
+    // Points in the link's own frame (c1 at the origin, c2 at (D, D)).
+    var P = function (x, y) { return f(c1[0] + x) + " " + f(c1[1] + y); };
+    var arc = function (r, large, sweep, x, y) { return " A " + f(r) + " " + f(r) + " 0 " + large + " " + sweep + " " + P(x, y); };
+
+    // The link, cut into the pieces that move. Arcs run the same way the
+    // hero's linkPath does, so the finished shape is identical to it.
+    var paths = {
+      keepA:   "M " + P(R, 0) + arc(R, 1, 0, 0, R),                       // circle A's 270
+      faceA:   "M " + P(0, R) + arc(R, 0, 0, R, 0),                       // circle A's quarter facing B
+      keepB:   "M " + P(D - R, D) + arc(R, 1, 0, D, D - R),               // circle B's 270
+      faceB:   "M " + P(D, D - R) + arc(R, 0, 0, D - R, D),               // circle B's quarter facing A
+      bridge1: "M " + P(0, R) + " L " + P(D - R - RHO, R) + arc(RHO, 0, 1, D - R, R + RHO) + " L " + P(D - R, D),
+      bridge2: "M " + P(D, D - R) + " L " + P(R + RHO, D - R) + arc(RHO, 0, 1, R, D - R - RHO) + " L " + P(R, 0)
+    };
+    // Each circle draws in as one stroke (its 270 then its facing quarter, in
+    // the same direction), then hands over to the two pieces above, which
+    // sit exactly on it, so the swap can't be seen.
+    paths.circleA = paths.keepA + arc(R, 0, 0, R, 0);
+    paths.circleB = paths.keepB + arc(R, 0, 0, D - R, D);
+
+    var dotsG, linkG, parts = {}, dotEls = [];
+    function build() {
+      svg.innerHTML = "";
+      dotsG = el("g", {}, svg);
+      linkG = el("g", { fill: "none", "stroke-width": LW, "stroke-linecap": "round", "stroke-linejoin": "round" }, svg);
+      dotEls = [];
+      if (DOTS) {
+        // uniform dots that exactly touch, a quarter of cells left empty,
+        // never the two the link sits on
+        var seed = 7;
+        var rnd = function () { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+        for (var x = x0 - 6 * S; x <= VW + 6 * S; x += S) for (var y = y0 - 6 * S; y <= VH + 6 * S; y += S) {
+          var onLink = (Math.abs(x - c1[0]) < 1 && Math.abs(y - c1[1]) < 1) || (Math.abs(x - c2[0]) < 1 && Math.abs(y - c2[1]) < 1);
+          if (!onLink && rnd() < 0.26) continue;
+          dotEls.push(el("circle", { cx: f(x), cy: f(y), r: f(R), fill: "var(--dot)", opacity: 0 }, dotsG));
+        }
+      }
+      parts = {};
+      [["circleA", COLOR_A], ["circleB", COLOR_B], ["faceA", COLOR_A], ["keepA", COLOR_A], ["faceB", COLOR_B], ["keepB", COLOR_B], ["bridge1", COLOR], ["bridge2", COLOR]].forEach(function (p) {
+        var node = el("path", { d: paths[p[0]], stroke: p[1] }, linkG);
+        var len = node.getTotalLength();
+        node.style.strokeDasharray = len;
+        node.style.strokeDashoffset = len;
+        parts[p[0]] = { node: node, len: len };
+      });
+    }
+
+    var running = [], timers = [];
+    function at(ms, fn) { timers.push(setTimeout(fn, ms / SPEED)); }
+    function draw(name, dur, from) {
+      var p = parts[name];
+      running.push(p.node.animate([{ strokeDashoffset: from === "end" ? -p.len : p.len }, { strokeDashoffset: 0 }],
+        { duration: dur / SPEED, easing: EASE_DRAW, fill: "forwards" }));
+    }
+    function undraw(name, dur, toward) {
+      var p = parts[name];
+      running.push(p.node.animate([{ strokeDashoffset: 0 }, { strokeDashoffset: toward === "end" ? -p.len : p.len }],
+        { duration: dur / SPEED, easing: EASE_UNDRAW, fill: "forwards" }));
+    }
+    function show(name) { parts[name].node.style.strokeDashoffset = 0; }
+    function hide(name) { parts[name].node.style.visibility = "hidden"; }
+    function recolor(name, color, dur) {
+      running.push(parts[name].node.animate([{ stroke: parts[name].node.getAttribute("stroke") }, { stroke: color }],
+        { duration: dur / SPEED, easing: "ease", fill: "forwards" }));
+    }
+
+    function play() {
+      running.forEach(function (a) { a.cancel(); }); running = [];
+      timers.forEach(clearTimeout); timers = [];
+      build();
+      // 1. the dots come up, staggered (as the hero's do)
+      dotEls.forEach(function (d) {
+        running.push(d.animate([{ opacity: 0, transform: "scale(.45)" }, { opacity: 1, transform: "scale(1)" }],
+          { duration: 550 / SPEED, delay: (Math.random() * 700) / SPEED, easing: "cubic-bezier(.2,.8,.2,1)", fill: "forwards" }));
+        d.style.transformBox = "fill-box"; d.style.transformOrigin = "center";
+      });
+      // 2. two circles draw themselves in, diagonal to each other
+      at(900,  function () { draw("circleA", 900); });
+      at(1200, function () { draw("circleB", 900); });
+      // 3. they combine: the facing quarters draw away as the bridges draw in
+      at(2500, function () {
+        ["keepA", "faceA", "keepB", "faceB"].forEach(show);
+        hide("circleA"); hide("circleB");
+        undraw("faceA", 620, "start");
+        undraw("faceB", 620, "start");
+        draw("bridge1", 820);
+        draw("bridge2", 820);
+        if (COLOR_A !== COLOR) recolor("keepA", COLOR, 820);
+        if (COLOR_B !== COLOR) recolor("keepB", COLOR, 820);
+      });
+      // 4. hold, then go round again
+      if (LOOP) at(5400, function () {
+        Object.keys(parts).forEach(function (k) {
+          running.push(parts[k].node.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500 / SPEED, fill: "forwards" }));
+        });
+        dotEls.forEach(function (d) { running.push(d.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500 / SPEED, fill: "forwards" })); });
+      });
+      if (LOOP) at(6100, play);
+    }
+
+    document.getElementById("replay").addEventListener("click", play);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      // the finished link, no motion
+      build();
+      dotEls.forEach(function (d) { d.setAttribute("opacity", 1); });
+      ["keepA", "keepB", "bridge1", "bridge2"].forEach(function (k) { parts[k].node.style.strokeDashoffset = 0; });
+    } else {
+      play();
+    }
+  })();
+  </script>
+</body>
+</html>
