@@ -230,21 +230,24 @@
       })(t0);
     }
     var easeOut = function (t) { return 1 - Math.pow(1 - t, 3); };
-    var easeInOut = function (t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
     // A loose damped spring from rest, 0 to 1 over t in 0..1: shoots about
     // half again past 1, swings back under, and wobbles to rest by the end.
-    // A swing out and back that dies away, from 0 to 0: starts a beat in,
-    // so its first swing lands as the loops come round, then about half as
-    // big each way.
+    // A swing out and back that dies away, from 0 to 0: its first swing
+    // lands as the loops come round, then about half as big each way.
     var wobble = function (t) {
-      var u = Math.max(0, t - 0.06);
+      var u = t;
       return Math.sin(12 * u) * Math.exp(-2.3 * u) * (1 - Math.pow(t, 4));
     };
+    var SZ = 0.22, SW = 20, SWD = SW * Math.sqrt(1 - SZ * SZ);
     var spring = function (t) {
       if (t >= 1) return 1;
-      var z = 0.22, w = 20, wd = w * Math.sqrt(1 - z * z);
-      return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + z * w / wd * Math.sin(wd * t));
+      return 1 - Math.exp(-SZ * SW * t) * (Math.cos(SWD * t) + SZ * SW / SWD * Math.sin(SWD * t));
     };
+    // The same spring's first rise, from rest to where it first reaches 1,
+    // stretched over 0..1: the reach speeds up the way the bounce does and
+    // arrives at full speed.
+    var RISE = (Math.PI - Math.atan(SWD / (SZ * SW))) / SWD;
+    var springRise = function (t) { return t >= 1 ? 1 : spring(t * RISE); };
     function recolor(n, color, dur) {
       running.push(n.animate([{ stroke: n.getAttribute("stroke") }, { stroke: color }], { duration: dur / SPEED, easing: "ease", fill: "forwards" }));
     }
@@ -253,9 +256,9 @@
       ["moveA", "moveB"].forEach(function (k) { nodes[k].setAttribute("visibility", "visible"); });
       nodes.circleA.setAttribute("visibility", "hidden");
       nodes.circleB.setAttribute("visibility", "hidden");
-      // 1. reach: the circles stretch toward each other, picking up speed,
-      //    then easing off as they come together
-      tween(1000, easeInOut, function (t) {
+      // 1. reach: the circles stretch toward each other, picking up speed
+      //    like the bounce does, and meet on the move
+      tween(850, springRise, function (t) {
         nodes.moveA.setAttribute("d", d(loopA(t)));
         nodes.moveB.setAttribute("d", d(loopB(t)));
       }, function () {
@@ -268,7 +271,7 @@
         //    at the link's own width
         var RHO0 = 12, END = 0.15;
         tween(1400, function (t) { return t; }, function (t) {
-          var m = easeOut(Math.min(1, t / 0.3));
+          var m = easeOut(Math.min(1, t / 0.14));
           var link = sides(RHO0 + (RHO - RHO0) * spring(t), t < 1 ? END * wobble(t) : 0);
           nodes.moveA.setAttribute("d", d(mix(touchA, link[0], m)));
           nodes.moveB.setAttribute("d", d(mix(touchB, link[1], m)));
