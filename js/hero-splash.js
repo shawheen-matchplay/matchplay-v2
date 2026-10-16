@@ -388,7 +388,9 @@
   }
 
   /* ---------- build the scene --------------------------------------------- */
-  function build(instant) {
+  /* instant: lay out the resting state, no intro. bare: and leave the field
+     without coloured shapes, for the caller to draw them in. */
+  function build(instant, bare) {
     svg.innerHTML = '';
     stopAmbient(heroField);
     heroField.population = [];
@@ -522,7 +524,7 @@
       logoG.style.transition = 'none';
       logoG.style.transform = markTransform();
       stage.classList.add('is-dim');
-      for (let i = 0; i < Math.round(capOf(heroField) * 0.75); i++) {
+      for (let i = 0; !bare && i < Math.round(capOf(heroField) * 0.75); i++) {
         spawnAmbient(heroField, { instant: true, life: SPLASH ? rand(2000, 9000) : 86400000 });
       }
     }
@@ -555,10 +557,18 @@
     build(true);                                          /* reduced motion: done */
     splashDone = true;
   } else if (RETURNING) {
-    /* Field starts in its resting state — dots up, mark placed, shapes already
-       drawn — and the ambient loop takes over from there, so the movement is
-       the same as always. The only thing animated is the page arriving. */
-    build(true);
+    /* Field starts at rest — dots up, mark placed — but empty of colour, and
+       the links and rings draw themselves in quickly as the page arrives, so
+       a repeat visit opens on movement rather than a finished picture. The
+       ambient loop takes over from there. */
+    build(true, true);
+    /* One batch, staggered by CSS delay (chained timers get throttled). */
+    t(120, () => {
+      const seed = Math.round(capOf(heroField) * 0.9);
+      for (let k = 0; k < seed; k++) {
+        if (!spawnAmbient(heroField, { drawDur: rand(450, 700), life: rand(3000, 9000), delay: k * 28 })) break;
+      }
+    });
     /* Timers rather than rAF: a tab opened in the background gets no animation
        frames at all, and the cascade would sit unstarted until the watchdog.
        The first delay only has to outlast the initial style pass so the
