@@ -260,12 +260,12 @@
       },
       /* A link or ring popping into shape, in this frame (a ring is centred
          on the origin). k is how far off true it is: 1 is how it draws in
-         (the ring a little oval, the link pinched at the waist with its
-         loops a little flat), 0 the plain shape, below 0 an overshoot the
+         (the ring 5% oval, the link a touch pinched at the waist with its
+         loops 5% flat), 0 the plain shape, below 0 an overshoot the
          other way, kept small so nothing grows much. */
       linkForm(k) {
         if (k < 0) k *= 0.5;
-        const s = sides(RHO - 15 * k, -0.12 * k);
+        const s = sides(RHO - 6 * k, -0.05 * k);
         const loop = join(s[0], s[1]);
         /* start where the plain link does, ring A's right-hand point */
         return loop.slice(12).concat(loop.slice(1, 13));
@@ -274,7 +274,7 @@
         if (k < 0) k *= 0.5;
         return sample(u => {
           const deg = -360 * u, sin = Math.sin((deg - axis) * Math.PI / 180);
-          return on([0, 0], R * (1 - 0.12 * k * sin * sin), deg);
+          return on([0, 0], R * (1 - 0.05 * k * sin * sin), deg);
         }, 8);
       },
       /* off true, through a pop: the spring that settles the merges, t 0..1 */
@@ -326,11 +326,18 @@
 
   const heroField = createField();
 
-  /* ---- line-drawing via stroke-dash ---- */
+  /* ---- line-drawing via stroke-dash ----
+     One dash the length of the path, then a gap twice that, and the hidden
+     state sits a hair past the dash's end: with round caps, a dash that ends
+     exactly on the path's start (or the next one beginning exactly on its
+     end) is painted as a dot before anything has drawn. */
+  const hideDash = (p, L) => {
+    p.style.strokeDasharray = L + ' ' + (2 * L);
+    p.style.strokeDashoffset = L * 1.02;
+  };
   function preparePath(p) {
     const L = p.getTotalLength();
-    p.style.strokeDasharray = L;
-    p.style.strokeDashoffset = L;
+    hideDash(p, L);
     return L;
   }
   function drawPath(p, dur, delay) {
@@ -346,11 +353,11 @@
   function undrawPath(p, dur) {
     const L = p.getTotalLength();
     p.style.transition = 'none';
-    p.style.strokeDasharray = L;
+    p.style.strokeDasharray = L + ' ' + (2 * L);
     p.style.strokeDashoffset = 0;
     p.getBoundingClientRect();
     p.style.transition = 'stroke-dashoffset ' + dur + 'ms cubic-bezier(.6,0,.8,1)';
-    p.style.strokeDashoffset = L;
+    p.style.strokeDashoffset = L * 1.02;
   }
 
   /* ---------- ambient shapes ----------------------------------------------
@@ -512,8 +519,7 @@
     const plain = p.getAttribute('d');
     p.setAttribute('d', MERGE.d(form(1), map));
     p.setAttribute('pathLength', 1);
-    p.style.strokeDasharray = 1;
-    p.style.strokeDashoffset = 1;
+    hideDash(p, 1);
     drawPath(p, draw, delay);
     /* the spring takes over two thirds of the way through the draw */
     item.pop = setTimeout(() => {
