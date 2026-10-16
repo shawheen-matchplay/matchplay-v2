@@ -1750,6 +1750,17 @@ html.splash--returning [data-reveal] {
 .page--screens .panel { padding: clamp(1.5rem, 2.4vw, 2rem); }
 /* Every call to action sits centred. */
 .page--screens .sec-actions { justify-content: center; }
+/* Spare height is shared out evenly: above the header, between the header,
+   the boxes and the actions, and below them, instead of everything bunching
+   in the middle. The parts' own margins stay as the minimum gaps, so a
+   section that already fills the screen is unchanged. */
+.page--screens .ecosystem > .container,
+.page--screens .section > .container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+}
 
 /* Numbered steps */
 .steps {
@@ -2259,8 +2270,8 @@ html.splash--returning [data-reveal] {
   flex-direction: column;
   padding: clamp(1.25rem, 2.2vw, 1.75rem);
 }
-/* LinkedIn sits on the card's floor, level across a row. */
-.member__link { align-self: flex-start; margin-top: auto; padding-top: 1.25rem; }
+/* LinkedIn sits in the card's bottom-right corner, level across a row. */
+.member__link { align-self: flex-end; margin-top: auto; padding-top: 0.5rem; }
 .member__role {
   margin-top: 0.45rem;
   font-family: var(--font-mono);
