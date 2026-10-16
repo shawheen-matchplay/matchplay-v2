@@ -1287,8 +1287,8 @@ html.splash--returning [data-reveal] {
 .mh-recap img { flex: 1; width: 100%; height: 100%; min-height: 0; object-fit: cover; display: block; }
 
 /* 7f. Logo roster ----------------------------------------------------------
-   Names rather than marks until the logo files are exported; swap an <img>
-   into each tile and the grid takes it unchanged. Used by the Partners page. */
+   Each tile holds a partner's logo (assets/partners/, transparent PNGs) on
+   white. Used by the Partners page. */
 .roster {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -1298,8 +1298,8 @@ html.splash--returning [data-reveal] {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 82.8px;
-  padding: 1rem;
+  min-height: 120px;
+  padding: 1.25rem 1.5rem;
   text-align: center;
   background: var(--surface-light);
   border-radius: 12.6px;
@@ -1311,7 +1311,7 @@ html.splash--returning [data-reveal] {
   transition: transform 0.3s var(--ease);
 }
 .roster__tile:hover { transform: translateY(-3px); }
-.roster__tile img { max-width: 100%; max-height: 50.4px; object-fit: contain; }
+.roster__tile img { width: auto; height: auto; max-width: 80%; max-height: 58px; object-fit: contain; }
 
 /* 7g. Press ----------------------------------------------------------------
    An index of releases, and the release pages themselves. */
