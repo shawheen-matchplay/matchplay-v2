@@ -1799,6 +1799,17 @@ html.splash--returning [data-reveal] {
   justify-content: space-evenly;
 }
 
+/* A set of boxes with a small label over it ("The MatchPlay process"). The
+   wrapper keeps the label on the boxes when a section spaces out its parts. */
+.set__label {
+  margin-bottom: clamp(0.9rem, 1.6vw, 1.25rem);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+
 /* Numbered steps */
 .steps {
   display: grid;
