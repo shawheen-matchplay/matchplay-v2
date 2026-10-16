@@ -1188,20 +1188,6 @@ html.splash--returning [data-reveal] {
   margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
 }
 
-/* The newsletter, folded into the bottom of the closing band. */
-.cta-band__subscribe {
-  margin-top: clamp(2rem, 4vw, 3rem);
-  padding-top: clamp(1.75rem, 3.5vw, 2.5rem);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-.cta-band__subscribe-text {
-  font-family: var(--font-ui);
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.68);
-}
-.cta-band__subscribe .blog-subscribe { margin-top: 1.25rem; }
-
 /* 7f. Logo roster ----------------------------------------------------------
    Names rather than marks until the logo files are exported; swap an <img>
    into each tile and the grid takes it unchanged. Used by the Partners page. */
@@ -1651,6 +1637,29 @@ html.splash--returning [data-reveal] {
 .page--home .flow,
 .page--home .voices { grid-auto-rows: 1fr; }
 
+/* Homepage: every section fills one screen, its content centred in it; the
+   closing call to action and the newsletter share one screen between them.
+   min-height, so a section with more than a screen of content still grows. */
+.page--home .ecosystem,
+.page--home .section {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* centring supplies the breathing room, so the padding can be leaner */
+  padding-block: clamp(3.5rem, 8vh, 6rem);
+}
+.page--home #start,
+.page--home #subscribe {
+  min-height: 50vh;
+  min-height: 50svh;
+  padding-block: clamp(1rem, 2.5vh, 2rem);
+}
+.page--home #start .cta-band { padding-block: clamp(2rem, 5vh, 3.5rem); }
+/* Every call to action on the homepage sits centred. */
+.page--home .sec-actions { justify-content: center; }
+
 /* Numbered steps */
 .steps {
   display: grid;
@@ -1698,9 +1707,6 @@ html.splash--returning [data-reveal] {
   line-height: 1.6;
   color: var(--ink-2);
 }
-/* A step can end in a link, which sits on the card's floor. */
-.step .text-link { align-self: flex-start; margin-top: auto; }
-.step__text:has(+ .text-link) { margin-bottom: clamp(1.25rem, 2.5vw, 1.75rem); }
 
 /* Cards */
 .cards {
@@ -2091,8 +2097,18 @@ html.splash--returning [data-reveal] {
 /* Term-and-meaning pairs inside a panel. */
 .terms { display: grid; gap: 0.9rem; margin: 1rem 0 0; }
 .terms div { padding-top: 0.9rem; border-top: 1px solid var(--line); }
-.terms--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: clamp(1rem, 2.5vw, 2rem); }
-@media (max-width: 600px) { .terms--2 { grid-template-columns: 1fr; } }
+/* Name and meaning on one line. */
+.terms--inline { gap: 0.6rem; }
+.terms--inline div {
+  display: grid;
+  grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
+  align-items: baseline;
+  gap: 1rem;
+  padding-top: 0.6rem;
+}
+.terms--inline dd { margin: 0; }
+@media (max-width: 600px) { .terms--inline div { grid-template-columns: 1fr; gap: 0.2rem; } }
+.syndicate-intro { margin-top: clamp(1.75rem, 3.5vw, 2.5rem); }
 .terms dt { font-family: var(--font-ui); font-weight: 500; color: var(--ink); }
 .terms dd { margin: 0.2rem 0 0; font-family: var(--font-ui); font-size: 0.95rem; line-height: 1.55; color: var(--ink-2); }
 

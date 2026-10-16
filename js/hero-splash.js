@@ -127,6 +127,15 @@
   let logoShift = 0, splashDone = false;
 
   const cellXY = (c, r) => [x0 + c * S, y0 + r * S];
+
+  /* Dots stop at the hero: the dark sections below are plain. One row past
+     its bottom edge is drawn so the grid doesn't end on a half-empty row; the
+     ecosystem band paints over the overhang. */
+  let dotRows = 0;                                        /* rows that have dots */
+  function dotRowLimit() {
+    const heroBottom = OY + hero.getBoundingClientRect().bottom - stage.getBoundingClientRect().top;
+    return Math.min(rows, Math.ceil((heroBottom - y0) / S) + 1);
+  }
   const key = (c, r) => c + ',' + r;
 
   /* ---------- fields -------------------------------------------------------
@@ -459,8 +468,9 @@
     /* dot field: uniform black dots, random cells left empty */
     dotCells = new Set();
     heroField.dots = dotCells;
+    dotRows = dotRowLimit();
     for (let c = 0; c < cols; c++) {
-      for (let r = 0; r < rows; r++) {
+      for (let r = 0; r < dotRows; r++) {
         if (Math.random() < DOT_SKIP && !forced.has(key(c, r))) continue;
         dotCells.add(key(c, r));
         const [x, y] = cellXY(c, r);
@@ -627,8 +637,9 @@
 
   /* The stage grows when text reflows (webfonts landing, mostly). Because y0
      is anchored, the field grows in place: stretch the box and viewBox
-     together and append rows of dots. Nothing already on screen moves. A
-     shrinking stage needs nothing — the stage clips the overhang. */
+     together, and add rows of dots if the hero itself got taller. Nothing
+     already on screen moves. A shrinking stage needs nothing — the stage
+     clips the overhang. */
   let stageT;
   function extendField() {
     if (!gridG) return;
@@ -638,8 +649,11 @@
     svg.setAttribute('viewBox', '0 0 ' + TW + ' ' + TH);
     svg.style.height = TH + 'px';
 
-    const newRows = Math.ceil((TH - y0) / S) + 2;
-    for (let r = rows; r < newRows; r++) {
+    rows = Math.ceil((TH - y0) / S) + 2;
+    heroField.rows = rows;
+    /* the hero itself grew: carry the dots down to its new bottom */
+    const limit = dotRowLimit();
+    for (let r = dotRows; r < limit; r++) {
       for (let c = 0; c < cols; c++) {
         if (Math.random() < DOT_SKIP) continue;
         dotCells.add(key(c, r));
@@ -647,8 +661,7 @@
         el('circle', { cx: x, cy: y, r: S * DOT_RADIUS, fill: '#0B0B0B' }, gridG);
       }
     }
-    rows = newRows;
-    heroField.rows = rows;
+    dotRows = Math.max(dotRows, limit);
   }
   if (window.ResizeObserver) {
     let lastH = 0;
