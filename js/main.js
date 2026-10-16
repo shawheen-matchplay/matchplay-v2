@@ -4,6 +4,27 @@
 (function () {
   "use strict";
 
+  /* ---- Current page in the nav ------------------------------------- */
+  // Marks the nav link for the page being viewed, and for a page inside a
+  // dropdown the dropdown's own button too. Done here rather than in each
+  // file, so the generated blog pages and draft pages pick it up as well.
+  function pageKey(href) {
+    if (/matchhouse\.events/.test(href)) return "match-house";
+    if (/^[a-z]+:/i.test(href)) return null;              // other sites, mailto
+    var key = href.split(/[?#]/)[0].split("/").pop().replace(/\.html$/, "");
+    return key || "index";
+  }
+  var here = pageKey(location.pathname);
+  if (/\/blog\//.test(location.pathname)) here = "blog";   // a post counts as Blog
+  if (/^press-/.test(here)) here = "press";                 // a release counts as Press
+  here = here.replace(/-v\d+$/, "");                       // founders-v2 counts as Founders
+  Array.prototype.forEach.call(document.querySelectorAll(".nav__menu a, .nav__mobile a"), function (a) {
+    if (pageKey(a.getAttribute("href")) !== here) { a.removeAttribute("aria-current"); return; }
+    a.setAttribute("aria-current", "page");
+    var dropdown = a.closest(".nav__dropdown");
+    if (dropdown) dropdown.classList.add("is-current");
+  });
+
   /* ---- Mobile menu -------------------------------------------------- */
   // Desktop dropdowns are pure CSS (:hover / :focus-within); only the
   // mobile panel needs JS.

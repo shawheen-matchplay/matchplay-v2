@@ -338,6 +338,12 @@ button { font: inherit; cursor: pointer; }
   white-space: nowrap;
 }
 .nav__link:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+/* The page being viewed (main.js marks it): its link, or the dropdown that
+   holds it, in the site blue. */
+.nav__link[aria-current="page"],
+.nav__dropdown.is-current > .nav__link,
+.nav__dropdown-menu a[aria-current="page"],
+.nav__mobile a[aria-current="page"] { color: var(--cyan); }
 
 .nav__chev {
   font-size: 8px;
