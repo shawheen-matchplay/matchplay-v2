@@ -1732,7 +1732,7 @@ html.splash--returning [data-reveal] {
   flex-direction: column;
   justify-content: center;
   /* centring supplies the breathing room, so the spacing can be leaner */
-  padding-top: calc(var(--nav-clear, 6rem) + clamp(0.5rem, 2vh, 1.5rem));
+  padding-top: calc(var(--nav-clear, 5.5rem) + clamp(0.25rem, 1vh, 0.75rem));
   padding-bottom: clamp(2.5rem, 6vh, 4.5rem);
 }
 .page--screens #start,

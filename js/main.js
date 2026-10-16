@@ -78,7 +78,7 @@
   function setNavClear() {
     if (!siteHeader) return;
     document.documentElement.style.setProperty("--nav-clear",
-      (siteHeader.offsetTop + siteHeader.offsetHeight + 16) + "px");
+      (siteHeader.offsetTop + siteHeader.offsetHeight + 8) + "px");
   }
   setNavClear();
   window.addEventListener("resize", setNavClear);
