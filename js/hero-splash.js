@@ -232,7 +232,8 @@
     const wobble = t => Math.sin(12 * t) * Math.exp(-2.3 * t) * (1 - Math.pow(t, 4));
     const easeOut = t => 1 - Math.pow(1 - t, 3);
 
-    const d = pts => {
+    const d = (pts, map) => {
+      if (map) pts = pts.map(map);
       let out = 'M ' + pts[0][0].toFixed(2) + ' ' + pts[0][1].toFixed(2);
       for (let i = 1; i < pts.length; i += 3) {
         out += ' C ' + [pts[i], pts[i + 1], pts[i + 2]].map(p => p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join(' ');
@@ -253,7 +254,25 @@
         const e = t < 1 ? 0.15 * wobble(t) : 0;
         const link = sides(12 + (RHO - 12) * spring(t), e > 0 ? e * 0.4 : e);
         return [d(mix(A1, link[0], m)), d(mix(B1, link[1], m))];
-      }
+      },
+      /* A link or ring popping in on its own, once drawn, t 0..1, in this
+         frame (a ring is centred on the origin). The link's waist springs
+         wider and back while its loops wobble; the ring squashes along one
+         axis and back. Both keep close to their size and end exactly on the
+         plain shape. */
+      linkPop(t) {
+        const w = t < 1 ? wobble(t) : 0, e = 0.15 * w;
+        const s = sides(RHO + 22 * w, e > 0 ? e * 0.4 : e);
+        return join(s[0], s[1]);
+      },
+      ringPop(t, axis) {
+        const a = t < 1 ? 0.09 * wobble(t) : 0;
+        return sample(u => {
+          const deg = axis - 360 * u;
+          return on([0, 0], R * (1 + a * Math.cos(2 * (deg - axis) * Math.PI / 180)), deg);
+        }, 8);
+      },
+      d
     };
   })();
 
@@ -461,10 +480,47 @@
     f.population.push(item);
     if (!opts.instant) {
       preparePath(p);
-      drawPath(p, opts.drawDur || rand(750, 1100), opts.delay);
+      const draw = opts.drawDur || rand(750, 1100);
+      drawPath(p, draw, opts.delay);
+      /* the draw eases out to a near stop over its last tenth: pop then */
+      item.pop = setTimeout(() => pop(f, item, kind), (opts.delay || 0) + draw * 0.9);
     }
     item.timer = setTimeout(() => retireAmbient(f, item), (opts.life || rand(3000, 5000)) + (opts.delay || 0));
     return item;
+  }
+
+  /* Once drawn, a ring or link pops: see MERGE.linkPop / ringPop. Drawn
+     frame by frame onto the shape's own path, which gets its plain outline
+     back at the end. */
+  const POP_MS = 1400;
+  function pop(f, item, kind) {
+    if (item.dead) return;
+    const p = item.p, spot = item.spot, k = f.R / 100;
+    const c = cellOf(f, spot.c, spot.r);
+    let map, shape;
+    if (kind === 'link') {                                /* placed as in spawnMerge */
+      const sin = spot.dir === 1 ? 0 : -1, cos = spot.dir === 1 ? 1 : 0;
+      map = q => [c[0] + k * (q[0] * cos - q[1] * sin), c[1] + k * (q[0] * sin + q[1] * cos)];
+      shape = MERGE.linkPop;
+    } else {
+      const axis = rand(0, 180);
+      map = q => [c[0] + k * q[0], c[1] + k * q[1]];
+      shape = t => MERGE.ringPop(t, axis);
+    }
+    const plain = p.getAttribute('d');
+    p.style.transition = 'none';
+    p.style.strokeDasharray = 'none';
+    const t0 = performance.now();
+    (function frame(now) {
+      if (item.dead) return;
+      const t = Math.min(1, Math.max(0, now - t0) / POP_MS);   /* a frame stamp can predate t0 */
+      if (t < 1) {
+        p.setAttribute('d', MERGE.d(shape(t), map));
+        item.raf = requestAnimationFrame(frame);
+      } else {
+        p.setAttribute('d', plain);
+      }
+    })(t0);
   }
 
   const pickKind = () => {
@@ -509,7 +565,7 @@
         item.merging = false;
         item.timer = setTimeout(() => retireAmbient(f, item), Math.min(4000, opts.life || rand(2500, 4000)));
       }));
-    }, delay + 250 + draw + rand(100, 500));             /* the rings sit up to half a second */
+    }, delay + 250 + draw + rand(50, 250));              /* the rings sit up to a quarter second */
     return item;
   }
 
@@ -517,6 +573,7 @@
     if (item.dead) return;
     item.dead = true;
     clearTimeout(item.timer);
+    clearTimeout(item.pop);
     cancelAnimationFrame(item.raf);
     const dur = 700;
     /* Hold on to this shape's own grid: a rebuild in the meantime swaps in a
