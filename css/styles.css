@@ -1799,10 +1799,12 @@ html.splash--returning [data-reveal] {
   justify-content: space-evenly;
 }
 
-/* A set of boxes with a small label over it ("The MatchPlay process"). The
-   wrapper keeps the label on the boxes when a section spaces out its parts. */
+/* A set of boxes with a label over it ("The MatchPlay process") and its
+   call to action under it. The wrapper keeps the three together when a
+   section spaces out its parts, one even gap between them. */
+.set { display: flex; flex-direction: column; gap: clamp(1.5rem, 2.7vw, 2.5rem); }
+.set > .sec-actions { margin-top: 0; }
 .set__label {
-  margin-bottom: clamp(1.25rem, 2.2vw, 2rem);
   font-family: var(--font-mono);
   font-size: clamp(1.15rem, 1.8vw, 1.6rem);
   letter-spacing: 0.18em;
