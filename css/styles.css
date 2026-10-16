@@ -2340,8 +2340,9 @@ html.splash--returning [data-reveal] {
   border-radius: 18px;
 }
 .post-card:hover { background: var(--panel-hover); }
-/* The pointer card (data-tilt) hover; the cover would hide the top rule. */
-.post-card > .fx::before { content: none; }
+/* The pointer card (data-tilt) tilt and lift only: no glow, and no top rule
+   (the cover would hide it anyway). */
+.post-card > .fx { display: none; }
 .post-card__link { display: flex; flex-direction: column; height: 100%; color: inherit; }
 .post-card__img { display: block; width: 100%; aspect-ratio: 1200 / 630; object-fit: cover; }
 .post-card__body { flex: 1; display: flex; flex-direction: column; gap: 0.65rem; padding: clamp(1.1rem, 1.8vw, 1.5rem); }
