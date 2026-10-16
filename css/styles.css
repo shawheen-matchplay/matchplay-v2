@@ -570,7 +570,7 @@ button { font: inherit; cursor: pointer; }
 #splash-links { transition: opacity 1.1s ease; }
 .stage.is-dim #splash-grid { opacity: 0.5; }
 .stage.is-dim #splash-links { opacity: 0.26; }
-.stage--bright.is-dim #splash-links { opacity: 0.63; }   /* halfway between the usual dim (0.26) and full; kept off the hero copy (hero-splash.js) */
+.stage--bright.is-dim #splash-links { opacity: 0.75; }   /* brighter than the usual dim (0.26); kept off the hero copy (hero-splash.js) */
 
 #splash-grid circle {
   transform-box: fill-box;
