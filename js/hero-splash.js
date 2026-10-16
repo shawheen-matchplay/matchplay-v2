@@ -68,7 +68,7 @@
                                  0.5 = neighbouring dots exactly touch */
   /* What each new shape is: a ring, a link, or a merge (two rings that draw
      in, then stretch together and bounce into a link). Shares of 1. */
-  const MIX = { ring: 0.36, link: 0.42, merge: 0.22 };
+  const MIX = { ring: 0.25, link: 0.25, merge: 0.5 };
 
   /* How evenly the shapes spread, 0 to 1. Each new shape looks at several
      free spots and takes the one furthest from everything already showing;
