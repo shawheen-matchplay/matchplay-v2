@@ -152,12 +152,19 @@
     // structure (a straight run and 45 degrees of corner), so the touching
     // tips can settle into them. Bridge 1 runs A to B along A's underside,
     // bridge 2 back along B's top.
-    var k1 = [D - R - RHO, R + RHO], k2 = [R + RHO, D - R - RHO];          // corner centres
+    // rho is the corner radius, which sets how wide the waist is: RHO is the
+    // link itself, a little more or less gives the wobble as it settles.
     var line2 = function (p, q) { var m = lerp(p, q, 0.5); return join(lineCubic(p, m), lineCubic(m, q)); };
-    var br1 = join(join(line2([0, R], [D - R - RHO, R]), arcCubics(k1, RHO, -90, -45, 2)),
-                   join(arcCubics(k1, RHO, -45, 0, 2), line2([D - R, R + RHO], [D - R, D])));
-    var br2 = join(join(line2([D, D - R], [R + RHO, D - R]), arcCubics(k2, RHO, 90, 135, 2)),
-                   join(arcCubics(k2, RHO, 135, 180, 2), line2([R, D - R - RHO], [R, 0])));
+    function bridges(rho) {
+      var k1 = [D - R - rho, R + rho], k2 = [R + rho, D - R - rho];      // corner centres
+      return [
+        join(join(line2([0, R], [D - R - rho, R]), arcCubics(k1, rho, -90, -45, 2)),
+             join(arcCubics(k1, rho, -45, 0, 2), line2([D - R, R + rho], [D - R, D]))),
+        join(join(line2([D, D - R], [R + rho, D - R]), arcCubics(k2, rho, 90, 135, 2)),
+             join(arcCubics(k2, rho, 135, 180, 2), line2([R, D - R - rho], [R, 0])))
+      ];
+    }
+    var link = bridges(RHO), br1 = link[0], br2 = link[1];
 
     // When the tips touch, the strokes trade halves at the touching point:
     // A's first half carries on into B's second, and B's first into A's
@@ -171,7 +178,6 @@
       svg.innerHTML = "";
       dotsG = el("g", {}, svg);
       linkG = el("g", { fill: "none", "stroke-width": LW, "stroke-linecap": "round", "stroke-linejoin": "round" }, svg);
-      linkG.style.transformBox = "fill-box"; linkG.style.transformOrigin = "center";   // the bounce scales about the link's middle
       dotEls = [];
       if (DOTS) {
         // uniform dots that exactly touch, a quarter of cells left empty,
@@ -217,12 +223,13 @@
         if (t < 1) raf = requestAnimationFrame(frame); else if (done) done();
       })(t0);
     }
+    var easeOut = function (t) { return 1 - Math.pow(1 - t, 3); };
     var easeInOut = function (t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
-    // A damped spring from rest: picks up speed, runs a little past 1, and
-    // settles back (about 10% overshoot, at rest by the end).
+    // A loose damped spring from rest, 0 to 1 over t in 0..1: shoots about
+    // half again past 1, swings back under, and wobbles to rest by the end.
     var spring = function (t) {
       if (t >= 1) return 1;
-      var z = 0.6, w = 8.5, wd = w * Math.sqrt(1 - z * z);
+      var z = 0.22, w = 20, wd = w * Math.sqrt(1 - z * z);
       return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + z * w / wd * Math.sin(wd * t));
     };
     function recolor(n, color, dur) {
@@ -245,19 +252,15 @@
         if (COLOR_A !== COLOR || COLOR_B !== COLOR) {
           [nodes.keepA, nodes.keepB, nodes.moveA, nodes.moveB].forEach(function (n) { recolor(n, COLOR, 420); });
         }
-        // 3. ...then spring open into the link, the waist running a touch
-        //    wide and settling back, while the whole link gives a small bounce
-        tween(950, spring, function (t) {
-          nodes.moveA.setAttribute("d", d(mix(bridge1Touch, br1, t)));
-          nodes.moveB.setAttribute("d", d(mix(bridge2Touch, br2, t)));
+        // 3. ...then the join bounces open: the touching tips grow into the
+        //    link while its waist springs wide, pinches back, and wobbles
+        //    to rest at the link's own width
+        var RHO0 = 12;
+        tween(1400, function (t) { return t; }, function (t) {
+          var m = easeOut(Math.min(1, t / 0.2)), b = bridges(RHO0 + (RHO - RHO0) * spring(t));
+          nodes.moveA.setAttribute("d", d(mix(bridge1Touch, b[0], m)));
+          nodes.moveB.setAttribute("d", d(mix(bridge2Touch, b[1], m)));
         });
-        running.push(linkG.animate([
-          { transform: "scale(1)" },
-          { transform: "scale(1.045)", offset: 0.38 },
-          { transform: "scale(0.99)", offset: 0.68 },
-          { transform: "scale(1.004)", offset: 0.86 },
-          { transform: "scale(1)" }
-        ], { duration: 900 / SPEED, easing: "ease-in-out" }));
       });
     }
 
@@ -278,13 +281,13 @@
       // 3. they stretch toward each other and connect into a link
       at(2550, combine);
       // 4. hold, then go round again
-      if (LOOP) at(5900, function () {
+      if (LOOP) at(6300, function () {
         Object.keys(nodes).forEach(function (k) {
           running.push(nodes[k].animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500 / SPEED, fill: "forwards" }));
         });
         dotEls.forEach(function (dot) { running.push(dot.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500 / SPEED, fill: "forwards" })); });
       });
-      if (LOOP) at(6600, play);
+      if (LOOP) at(7000, play);
     }
 
     document.getElementById("replay").addEventListener("click", play);
