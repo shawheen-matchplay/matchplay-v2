@@ -47,7 +47,7 @@
   if (!svg || !hero) return;
 
   const NS = 'http://www.w3.org/2000/svg';
-  /* stage--bright: the links stay at full strength rather than dimming once
+  /* stage--bright (the homepage): the links stay brighter rather than dimming once
      the intro ends, so instead they are kept off the hero's text and buttons
      (see keepContentClear). */
   const KEEP_CLEAR = stage.classList.contains('stage--bright');
