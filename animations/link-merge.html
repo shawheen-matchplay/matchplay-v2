@@ -7,9 +7,8 @@
   <meta name="robots" content="noindex, nofollow">
   <!--
     Two circles appear on the grid, diagonal to each other, then stretch
-    toward each other and connect into a MatchPlay link: the side of each
-    circle that faces the other pulls out to a point, the points touch,
-    and the strokes settle into the link's two bridges. Same geometry and drawing
+    toward each other like something elastic, touch, and bounce together
+    into a MatchPlay link, its waist springing wide and settling. Same geometry and drawing
     style as the homepage hero (js/hero-splash.js): ring radius 0.5 x grid
     step, corner radius 0.5 x ring radius, stroke 0.1 x grid step, dots that
     exactly touch, the hero's grey ground before its dim.
@@ -113,9 +112,7 @@
     var mix = function (A, B, t) { return A.map(function (p, i) { return lerp(p, B[i], t); }); };
 
     var cA = [0, 0], cB = [D, D], MID = [D / 2, D / 2];
-    // The arcs that never move: each circle's 270 degrees facing away.
-    var keepA = "M " + P(R, 0) + arc(R, 1, 0, 0, R);
-    var keepB = "M " + P(D - R, D) + arc(R, 1, 0, D, D - R);
+    var toB = [Math.SQRT1_2, Math.SQRT1_2], toA = [-Math.SQRT1_2, -Math.SQRT1_2];
 
     // A curve given as a function of u in 0..1, as n cubics whose handles
     // follow its tangent, so it stays smooth however it bends.
@@ -132,45 +129,46 @@
       return pts;
     }
 
-    // The quarter of each circle that faces the other, stretched by s (0 =
-    // still a quarter circle, 1 = its midpoint pulled out to the point halfway
-    // between the circles, where the two tips touch). Each point is pushed
-    // straight out from its centre, hardest at the midpoint and easing to
-    // nothing well before the ends, so the circle draws out into a teardrop
-    // and meets its fixed arc without a kink.
-    var REACH = Math.hypot(D / 2, D / 2) - R;
-    function face(c, from, s) {
-      return sample(function (u) {
-        return on(c, R + s * REACH * Math.pow((1 - Math.cos(2 * Math.PI * u)) / 2, 1.5), from - 90 * u);
-      }, 8);
+    // Each circle as one loop that starts and ends at the point facing the
+    // other circle (angle T), cut into the three pieces that become its side
+    // of the link: 45 degrees, the 270 facing away, and 45 back to T.
+    // Stretched by s (0 = the circle, 1 = the facing point reaches the point
+    // halfway between the circles, where the two touch), the whole circle
+    // deforms: it leans toward the other one, swells toward it, hardest at
+    // the facing point and fading round to nothing at the back, and narrows a
+    // little across the middle, like something elastic being pulled.
+    var LEAN = 12, PULL = 8, NARROW = 0.08;
+    var REACH = Math.hypot(D / 2, D / 2) - R - LEAN;
+    function loop(c, T, dir, s) {
+      var ctr = add(c, [dir[0] * LEAN * s, dir[1] * LEAN * s]);
+      var at = function (deg) {
+        var phi = (deg - T) * Math.PI / 180, sin = Math.sin(phi);
+        var r = R + s * (REACH * Math.pow((1 + Math.cos(phi)) / 2, PULL) - NARROW * R * sin * sin);
+        return on(ctr, r, deg);
+      };
+      var piece = function (a0, a1, n) { return sample(function (u) { return at(a0 + (a1 - a0) * u); }, n); };
+      return join(join(piece(T, T - 45, 4), piece(T - 45, T - 315, 6)), piece(T - 315, T - 360, 4));
     }
-    var faceA0 = face(cA, 90, 0), faceA1 = face(cA, 90, 1);
-    var faceB0 = face(cB, -90, 0), faceB1 = face(cB, -90, 1);
-    var nA = (faceA0.length - 1) / 2;        // index of the tip
+    var loopA = function (s) { return loop(cA, 45, toB, s); };
+    var loopB = function (s) { return loop(cB, -135, toA, s); };
 
-    // The link's two bridges, cut at their waist into halves with the same
-    // structure (a straight run and 45 degrees of corner), so the touching
-    // tips can settle into them. Bridge 1 runs A to B along A's underside,
-    // bridge 2 back along B's top.
-    // rho is the corner radius, which sets how wide the waist is: RHO is the
-    // link itself, a little more or less gives the wobble as it settles.
+    // The link, as each circle's side of it, with the same pieces: from the
+    // waist round the circle and back to the waist. rho is the corner radius
+    // of the bridges, which sets how wide the waist is: RHO is the link
+    // itself, a little more or less gives the wobble as it settles.
     var line2 = function (p, q) { var m = lerp(p, q, 0.5); return join(lineCubic(p, m), lineCubic(m, q)); };
-    function bridges(rho) {
+    function sides(rho) {
       var k1 = [D - R - rho, R + rho], k2 = [R + rho, D - R - rho];      // corner centres
       return [
-        join(join(line2([0, R], [D - R - rho, R]), arcCubics(k1, rho, -90, -45, 2)),
-             join(arcCubics(k1, rho, -45, 0, 2), line2([D - R, R + rho], [D - R, D]))),
-        join(join(line2([D, D - R], [R + rho, D - R]), arcCubics(k2, rho, 90, 135, 2)),
-             join(arcCubics(k2, rho, 135, 180, 2), line2([R, D - R - rho], [R, 0])))
+        join(join(join(arcCubics(k2, rho, 135, 180, 2), line2([R, D - R - rho], [R, 0])),
+                  arcCubics(cA, R, 0, -270, 6)),
+             join(line2([0, R], [D - R - rho, R]), arcCubics(k1, rho, -90, -45, 2))),
+        join(join(join(arcCubics(k1, rho, -45, 0, 2), line2([D - R, R + rho], [D - R, D])),
+                  arcCubics(cB, R, -180, -450, 6)),
+             join(line2([D, D - R], [R + rho, D - R]), arcCubics(k2, rho, 90, 135, 2)))
       ];
     }
-    var link = bridges(RHO), br1 = link[0], br2 = link[1];
-
-    // When the tips touch, the strokes trade halves at the touching point:
-    // A's first half carries on into B's second, and B's first into A's
-    // second. Same curves, regrouped, so nothing moves at the swap.
-    var bridge1Touch = join(faceA1.slice(0, nA + 1), faceB1.slice(nA)),
-        bridge2Touch = join(faceB1.slice(0, nA + 1), faceA1.slice(nA));
+    var touchA = loopA(1), touchB = loopB(1);
 
     // ---- Drawing --------------------------------------------------------
     var dotsG, linkG, dotEls = [], nodes = {};
@@ -190,15 +188,13 @@
           dotEls.push(el("circle", { cx: f(x), cy: f(y), r: f(R), fill: "var(--dot)", opacity: 0 }, dotsG));
         }
       }
-      // Each circle draws in as one stroke, then hands over to its fixed 270
-      // and its moving quarter, which sit exactly on it.
+      // Each circle draws in as one stroke, then hands over to its loop,
+      // which sits exactly on it.
       nodes = {
-        circleA: el("path", { d: keepA + arc(R, 0, 0, R, 0), stroke: COLOR_A }, linkG),
-        circleB: el("path", { d: keepB + arc(R, 0, 0, D - R, D), stroke: COLOR_B }, linkG),
-        keepA: el("path", { d: keepA, stroke: COLOR_A, visibility: "hidden" }, linkG),
-        keepB: el("path", { d: keepB, stroke: COLOR_B, visibility: "hidden" }, linkG),
-        moveA: el("path", { d: d(faceA0), stroke: COLOR_A, visibility: "hidden" }, linkG),
-        moveB: el("path", { d: d(faceB0), stroke: COLOR_B, visibility: "hidden" }, linkG)
+        circleA: el("path", { d: "M " + P(R, 0) + arc(R, 1, 0, 0, R) + arc(R, 0, 0, R, 0), stroke: COLOR_A }, linkG),
+        circleB: el("path", { d: "M " + P(D - R, D) + arc(R, 1, 0, D, D - R) + arc(R, 0, 0, D - R, D), stroke: COLOR_B }, linkG),
+        moveA: el("path", { d: d(loopA(0)), stroke: COLOR_A, visibility: "hidden" }, linkG),
+        moveB: el("path", { d: d(loopB(0)), stroke: COLOR_B, visibility: "hidden" }, linkG)
       };
       ["circleA", "circleB"].forEach(function (k) {
         var len = nodes[k].getTotalLength();
@@ -237,29 +233,27 @@
     }
 
     function combine() {
-      ["keepA", "keepB", "moveA", "moveB"].forEach(function (k) { nodes[k].setAttribute("visibility", "visible"); });
+      ["moveA", "moveB"].forEach(function (k) { nodes[k].setAttribute("visibility", "visible"); });
       nodes.circleA.setAttribute("visibility", "hidden");
       nodes.circleB.setAttribute("visibility", "hidden");
-      // 1. reach: the facing sides draw out toward each other, picking up
-      //    speed, then easing off as the tips come together
+      // 1. reach: the circles stretch toward each other, picking up speed,
+      //    then easing off as they come together
       tween(1000, easeInOut, function (t) {
-        nodes.moveA.setAttribute("d", d(mix(faceA0, faceA1, t)));
-        nodes.moveB.setAttribute("d", d(mix(faceB0, faceB1, t)));
+        nodes.moveA.setAttribute("d", d(loopA(t)));
+        nodes.moveB.setAttribute("d", d(loopB(t)));
       }, function () {
-        // 2. connect: trade halves at the touching point (nothing moves)...
-        nodes.moveA.setAttribute("d", d(bridge1Touch));
-        nodes.moveB.setAttribute("d", d(bridge2Touch));
+        // 2. connect: where they touch becomes the link's waist
         if (COLOR_A !== COLOR || COLOR_B !== COLOR) {
-          [nodes.keepA, nodes.keepB, nodes.moveA, nodes.moveB].forEach(function (n) { recolor(n, COLOR, 420); });
+          [nodes.moveA, nodes.moveB].forEach(function (n) { recolor(n, COLOR, 420); });
         }
-        // 3. ...then the join bounces open: the touching tips grow into the
-        //    link while its waist springs wide, pinches back, and wobbles
-        //    to rest at the link's own width
+        // 3. ...and the join bounces open: the circles relax into the link
+        //    while its waist springs wide, pinches back, and wobbles to rest
+        //    at the link's own width
         var RHO0 = 12;
         tween(1400, function (t) { return t; }, function (t) {
-          var m = easeOut(Math.min(1, t / 0.2)), b = bridges(RHO0 + (RHO - RHO0) * spring(t));
-          nodes.moveA.setAttribute("d", d(mix(bridge1Touch, b[0], m)));
-          nodes.moveB.setAttribute("d", d(mix(bridge2Touch, b[1], m)));
+          var m = easeOut(Math.min(1, t / 0.3)), link = sides(RHO0 + (RHO - RHO0) * spring(t));
+          nodes.moveA.setAttribute("d", d(mix(touchA, link[0], m)));
+          nodes.moveB.setAttribute("d", d(mix(touchB, link[1], m)));
         });
       });
     }
@@ -295,9 +289,10 @@
       // the finished link, no motion
       build();
       dotEls.forEach(function (dot) { dot.setAttribute("opacity", 1); });
-      ["keepA", "keepB", "moveA", "moveB"].forEach(function (k) { nodes[k].setAttribute("visibility", "visible"); });
+      ["moveA", "moveB"].forEach(function (k) { nodes[k].setAttribute("visibility", "visible"); });
       nodes.circleA.setAttribute("visibility", "hidden"); nodes.circleB.setAttribute("visibility", "hidden");
-      nodes.moveA.setAttribute("d", d(br1)); nodes.moveB.setAttribute("d", d(br2));
+      var link = sides(RHO);
+      nodes.moveA.setAttribute("d", d(link[0])); nodes.moveB.setAttribute("d", d(link[1]));
     } else {
       play();
     }
