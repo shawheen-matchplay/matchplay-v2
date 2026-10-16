@@ -2549,6 +2549,15 @@ html.splash--returning [data-reveal] {
   border-radius: 50%;
   background: var(--accent);
 }
+/* The dots take the hero links' colours in turn (COLORS in hero-splash.js);
+   seven items, seven colours, so the doubled loop repeats them exactly. */
+.ticker__track li:nth-child(7n+1)::after { background: #2BD9C0; }
+.ticker__track li:nth-child(7n+2)::after { background: #FF7A45; }
+.ticker__track li:nth-child(7n+3)::after { background: #E94F8A; }
+.ticker__track li:nth-child(7n+4)::after { background: #C6F25E; }
+.ticker__track li:nth-child(7n+5)::after { background: #B558F6; }
+.ticker__track li:nth-child(7n+6)::after { background: #35C5F0; }
+.ticker__track li:nth-child(7n+7)::after { background: #E9B949; }
 
 /* 9. Testimonials (marquee) ---------------------------------------------- */
 .marquee {
