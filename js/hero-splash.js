@@ -128,13 +128,14 @@
 
   const cellXY = (c, r) => [x0 + c * S, y0 + r * S];
 
-  /* Dots stop at the hero: the dark sections below are plain. One row past
-     its bottom edge is drawn so the grid doesn't end on a half-empty row; the
-     ecosystem band paints over the overhang. */
+  /* Dots stop at the hero: the dark sections below are plain. Two rows run
+     past its bottom edge so the grid doesn't end on a half-empty row and a
+     link on the last visible row can still reach down; the ecosystem band
+     paints over the overhang. */
   let dotRows = 0;                                        /* rows that have dots */
   function dotRowLimit() {
     const heroBottom = OY + hero.getBoundingClientRect().bottom - stage.getBoundingClientRect().top;
-    return Math.min(rows, Math.ceil((heroBottom - y0) / S) + 1);
+    return Math.min(rows, Math.ceil((heroBottom - y0) / S) + 2);
   }
   const key = (c, r) => c + ',' + r;
 
@@ -198,12 +199,14 @@
     const top = OY - stageTop;
     const r0 = Math.max(1, Math.floor((top - f.y0) / f.S) - 2);
     const r1 = Math.min(f.rows - 3, Math.ceil((top + window.innerHeight - f.y0) / f.S) + 2);
-    /* Shapes live in the hero only; the dark sections below keep the dots but
-       no links or rings. A link reaches 1.5 rows below its top cell, so the
-       last usable row sits that far above the hero's bottom edge. */
+    /* Shapes live in the hero only, but right down to its last row of dots:
+       any row whose shapes would still show above the bottom edge (a ring
+       reaches half a row up from its centre) is fair game, and what hangs
+       below the edge is cut off by the band that follows, so the field runs
+       off the bottom rather than stopping short of it. */
     const heroBottom = OY + hero.getBoundingClientRect().bottom - stageTop;
-    const rMax = Math.floor((heroBottom - f.y0) / f.S - 1.6);
-    return [r0, Math.max(r0, Math.min(r1, rMax))];         /* empty once past the hero */
+    const rEnd = Math.floor((heroBottom - f.y0) / f.S + 0.5) + 1;   /* exclusive */
+    return [r0, Math.max(r0, Math.min(r1, rEnd))];         /* empty once past the hero */
   }
   function capOf(f) {
     const b = bandOf(f);
