@@ -239,13 +239,6 @@ button { font: inherit; cursor: pointer; }
   box-shadow: none;
 }
 
-.btn--inverted {
-  background-color: var(--bg-darker);
-  border-color: var(--bg-darker);
-  color: #fff;
-}
-.btn--inverted:hover { background-color: #7e7e7e; border-color: #7e7e7e; }
-
 .btn--nav {
   font-size: 0.85rem;
   letter-spacing: 1px;
@@ -697,19 +690,10 @@ html.splash--returning [data-reveal] {
   color: var(--accent);
 }
 
-/* 7a. Mission --------------------------------------------------------------
-   Sits inside the stage between the hero and the ecosystem, so the dot field
-   runs behind it. Centred, no background of its own. */
-.mission {
-  position: relative;
-  z-index: 1;
-  min-height: 70vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;   /* box sits centred in the 70vh */
-  padding-block: clamp(2rem, 3.5vw, 3.5rem);
-  text-align: center;
-}
+/* 7a. Statement panel ------------------------------------------------------
+   A centred translucent panel holding a title and a paragraph, used by the
+   Founders page for its problem statement. (Named for the homepage mission
+   section it was first built for.) */
 
 /* Translucent panel, same surface language as the ecosystem cards. */
 .mission__inner {
@@ -768,12 +752,6 @@ html.splash--returning [data-reveal] {
   text-wrap: pretty;
 }
 .mission__body strong { color: #fff; font-weight: 500; }
-
-/* Problem and Mission sit side by side under the vision, left-aligned so the
-   longer copy stays readable against the centred lead. */
-
-/* The path forward, closing the section before the CTAs. */
-
 
 /* 7b. Ecosystem ------------------------------------------------------------
    A flat dark band. Unlike the other dark sections this one is opaque, so the
@@ -1264,13 +1242,6 @@ html.splash--returning [data-reveal] {
 }
 .roster__tile:hover { transform: translateY(-3px); }
 .roster__tile img { max-width: 100%; max-height: 56px; object-fit: contain; }
-.roster__note {
-  margin-top: clamp(1.5rem, 3vw, 2rem);
-  text-align: center;
-  font-family: var(--font-display);
-  font-size: clamp(1.25rem, 2.2vw, 1.75rem);
-  color: var(--accent);
-}
 
 /* 7g. Press ----------------------------------------------------------------
    An index of releases, and the release pages themselves. */
@@ -1371,7 +1342,6 @@ html.splash--returning [data-reveal] {
   letter-spacing: 0.06em;
   color: var(--accent);
 }
-
 
 /* 7h. Summit recaps ---------------------------------------------------------
    Event pages: a banner lockup, sponsor rows, an agenda, panel slides and a
@@ -1518,13 +1488,6 @@ html.splash--returning [data-reveal] {
   text-transform: uppercase;
   font-size: var(--fs-sm);
   letter-spacing: 0.06em;
-  color: var(--accent);
-}
-.day-label {
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  font-size: var(--fs-sm);
-  letter-spacing: 0.08em;
   color: var(--accent);
 }
 
@@ -1714,13 +1677,6 @@ html.splash--returning [data-reveal] {
   letter-spacing: -0.02em;
   color: var(--ink);
 }
-.card__tagline {
-  margin-top: 0.3rem;
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: clamp(1.05rem, 1.4vw, 1.2rem);
-  color: var(--rule-ink, var(--accent-ink));
-}
 .card__text {
   margin-top: 0.6rem;
   font-family: var(--font-ui);
@@ -1738,12 +1694,6 @@ html.splash--returning [data-reveal] {
   border-color: color-mix(in srgb, var(--accent) 40%, transparent);
 }
 .card--result:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
-
-/* Entity cards — each carries its own business's colour on a top rule. */
-.card--entity { border-top: 3px solid var(--rule); }
-.card--group    { --rule: var(--cyan);   --rule-ink: var(--accent-ink); }
-.card--ventures { --rule: var(--orange); --rule-ink: var(--orange); }
-.section--light .card--ventures { --rule-ink: #B4532B; }
 
 /* Feature rows: name on the left, what it means on the right. */
 .rows { border-top: 1px solid var(--line); }
@@ -1820,17 +1770,6 @@ html.splash--returning [data-reveal] {
   color: var(--ink-3);
 }
 .panel .fineprint { font-size: 0.9rem; color: var(--ink-3); }
-
-/* A disclaimer that has to be read, not skimmed: full ink, ruled off. */
-.notice {
-  margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
-  padding-left: 1rem;
-  border-left: 2px solid var(--accent-ink);
-  font-family: var(--font-ui);
-  font-size: 1rem;
-  line-height: 1.6;
-  color: var(--ink);
-}
 
 /* Investor pipeline: stages on a track, the last one filled. */
 .pipeline-block {
@@ -2049,45 +1988,6 @@ html.splash--returning [data-reveal] {
 
 .cards--5 { --cols: 5; }
 
-/* A step with its working detail: the explanation on the left, the list it
-   produces on the right. */
-.how { display: grid; gap: clamp(1rem, 2vw, 1.5rem); margin: 0; padding: 0; list-style: none; }
-.how-step {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-  align-items: start;
-  gap: clamp(1.5rem, 4vw, 4rem);
-  padding: clamp(1.75rem, 3.5vw, 2.75rem);
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-top: 3px solid var(--accent);
-  border-radius: 24px;
-}
-.how-step__num {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.16em;
-  color: var(--accent-ink);
-}
-.how-step__title {
-  margin-top: clamp(0.9rem, 1.8vw, 1.25rem);
-  font-family: var(--font-display);
-  font-size: clamp(1.5rem, 2.4vw, 2rem);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-}
-.how-step__main p {
-  margin-top: 0.9rem;
-  font-family: var(--font-ui);
-  font-size: 1rem;
-  line-height: 1.6;
-  color: var(--ink-2);
-}
-.how-step__main .how-step__key { color: var(--ink); font-weight: 500; }
-.how-step .notice { margin-top: 1.25rem; font-size: 0.95rem; }
-.how-step .pipeline { grid-template-columns: repeat(6, minmax(0, 1fr)); margin-top: 0.5rem; }
-
 /* Checked and crossed lists. */
 .marks { display: grid; gap: 0.8rem; margin: 0; padding: 0; list-style: none; }
 .marks li {
@@ -2123,9 +2023,6 @@ html.splash--returning [data-reveal] {
 /* Chips inside a closing call to action. */
 .cta-band .chips { justify-content: center; margin-top: clamp(1.25rem, 2.5vw, 1.75rem); }
 .card .grid-intro { margin: 1.25rem 0 0.75rem; font-size: 0.95rem; }
-
-/* A button in the Ventures colour, for the hand-off to the Ventures site. */
-.btn--ventures { --accent: var(--orange); }
 
 /* Team page ---------------------------------------------------------------
    Each person is a card in the site's panel style: the photo runs edge to
@@ -2430,7 +2327,6 @@ html.splash--returning [data-reveal] {
   .cards--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cards--5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   /* Half a step is too narrow for a six-stage track; stack the step. */
-  .how-step { grid-template-columns: 1fr; }
   .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   /* In two columns the third stage starts a new row, so its arrow would
      point back across the gap at nothing. */
@@ -2475,7 +2371,6 @@ html.splash--returning [data-reveal] {
 
 @media (max-width: 760px) {
   .row { grid-template-columns: 1fr; gap: 0.4rem; }
-  .how-step .pipeline { grid-template-columns: 1fr; }
   /* Seven stages will not fit across a phone: run the track down the side. */
   .pipeline { grid-template-columns: 1fr; }
   .pipeline li { padding: 0 0 1.15rem 2.1rem; text-align: left; }
