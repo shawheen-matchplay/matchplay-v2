@@ -6,9 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <!--
-    Two circles appear on the grid, diagonal to each other, then combine into
-    a MatchPlay link: the quarter of each circle that faces the other draws
-    away while the two bridging strokes draw in. Same geometry and drawing
+    Two circles appear on the grid, diagonal to each other, then stretch
+    toward each other and connect into a MatchPlay link: the side of each
+    circle that faces the other pulls out to a point, the points touch,
+    and the strokes settle into the link's two bridges. Same geometry and drawing
     style as the homepage hero (js/hero-splash.js): ring radius 0.5 x grid
     step, corner radius 0.5 x ring radius, stroke 0.1 x grid step, dots that
     exactly touch, the hero's grey ground before its dim.
@@ -64,7 +65,6 @@
     var D = S;                   // the two centres sit one cell apart on each axis
     var LW = S * 0.1;            // stroke
     var EASE_DRAW = "cubic-bezier(.45,0,.25,1)";
-    var EASE_UNDRAW = "cubic-bezier(.6,0,.8,1)";
 
     function el(name, attrs, parent) {
       var n = document.createElementNS(NS, name);
@@ -83,23 +83,90 @@
     var P = function (x, y) { return f(c1[0] + x) + " " + f(c1[1] + y); };
     var arc = function (r, large, sweep, x, y) { return " A " + f(r) + " " + f(r) + " 0 " + large + " " + sweep + " " + P(x, y); };
 
-    // The link, cut into the pieces that move. Arcs run the same way the
-    // hero's linkPath does, so the finished shape is identical to it.
-    var paths = {
-      keepA:   "M " + P(R, 0) + arc(R, 1, 0, 0, R),                       // circle A's 270
-      faceA:   "M " + P(0, R) + arc(R, 0, 0, R, 0),                       // circle A's quarter facing B
-      keepB:   "M " + P(D - R, D) + arc(R, 1, 0, D, D - R),               // circle B's 270
-      faceB:   "M " + P(D, D - R) + arc(R, 0, 0, D - R, D),               // circle B's quarter facing A
-      bridge1: "M " + P(0, R) + " L " + P(D - R - RHO, R) + arc(RHO, 0, 1, D - R, R + RHO) + " L " + P(D - R, D),
-      bridge2: "M " + P(D, D - R) + " L " + P(R + RHO, D - R) + arc(RHO, 0, 1, R, D - R - RHO) + " L " + P(R, 0)
-    };
-    // Each circle draws in as one stroke (its 270 then its facing quarter, in
-    // the same direction), then hands over to the two pieces above, which
-    // sit exactly on it, so the swap can't be seen.
-    paths.circleA = paths.keepA + arc(R, 0, 0, R, 0);
-    paths.circleB = paths.keepB + arc(R, 0, 0, D - R, D);
+    // ---- Geometry -----------------------------------------------------
+    // Everything below is in the link's own frame: circle A's centre at the
+    // origin, circle B's at (D, D). Angles are y-down: a point on a circle is
+    // centre + r(cos a, sin a).
+    var add = function (p, q) { return [p[0] + q[0], p[1] + q[1]]; };
+    var lerp = function (p, q, t) { return [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]; };
+    var on = function (c, r, deg) { var a = deg * Math.PI / 180; return [c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)]; };
 
-    var dotsG, linkG, parts = {}, dotEls = [];
+    // An arc as n cubic Beziers, as a flat list of points: p0 c c p1 c c p2 ...
+    function arcCubics(c, r, a0, a1, n) {
+      var pts = [on(c, r, a0)], step = (a1 - a0) / n;
+      var h = 4 / 3 * Math.tan(Math.abs(step) * Math.PI / 720) * r * Math.sign(step);
+      for (var i = 0; i < n; i++) {
+        var s0 = (a0 + i * step) * Math.PI / 180, s1 = (a0 + (i + 1) * step) * Math.PI / 180;
+        var p0 = on(c, r, a0 + i * step), p1 = on(c, r, a0 + (i + 1) * step);
+        pts.push(add(p0, [-Math.sin(s0) * h, Math.cos(s0) * h]), add(p1, [Math.sin(s1) * h, -Math.cos(s1) * h]), p1);
+      }
+      return pts;
+    }
+    // A straight run as one cubic, so it can morph to and from curves.
+    function lineCubic(p, q) { return [p, lerp(p, q, 1 / 3), lerp(p, q, 2 / 3), q]; }
+    var join = function (a, b) { return a.concat(b.slice(1)); };   // end of a is start of b
+    function d(pts) {
+      var out = "M " + P(pts[0][0], pts[0][1]);
+      for (var i = 1; i < pts.length; i += 3) out += " C " + P(pts[i][0], pts[i][1]) + " " + P(pts[i + 1][0], pts[i + 1][1]) + " " + P(pts[i + 2][0], pts[i + 2][1]);
+      return out;
+    }
+    var mix = function (A, B, t) { return A.map(function (p, i) { return lerp(p, B[i], t); }); };
+
+    var cA = [0, 0], cB = [D, D], MID = [D / 2, D / 2];
+    // The arcs that never move: each circle's 270 degrees facing away.
+    var keepA = "M " + P(R, 0) + arc(R, 1, 0, 0, R);
+    var keepB = "M " + P(D - R, D) + arc(R, 1, 0, D, D - R);
+
+    // A curve given as a function of u in 0..1, as n cubics whose handles
+    // follow its tangent, so it stays smooth however it bends.
+    function sample(fn, n) {
+      var pts = [fn(0)], e = 1e-4;
+      var tan = function (u) {
+        var p = fn(Math.max(0, u - e)), q = fn(Math.min(1, u + e)), h = Math.min(1, u + e) - Math.max(0, u - e);
+        return [(q[0] - p[0]) / h, (q[1] - p[1]) / h];
+      };
+      for (var i = 0; i < n; i++) {
+        var u0 = i / n, u1 = (i + 1) / n, p0 = fn(u0), p1 = fn(u1), t0 = tan(u0), t1 = tan(u1), k = (u1 - u0) / 3;
+        pts.push([p0[0] + t0[0] * k, p0[1] + t0[1] * k], [p1[0] - t1[0] * k, p1[1] - t1[1] * k], p1);
+      }
+      return pts;
+    }
+
+    // The quarter of each circle that faces the other, stretched by s (0 =
+    // still a quarter circle, 1 = its midpoint pulled out to the point halfway
+    // between the circles, where the two tips touch). Each point is pushed
+    // straight out from its centre, hardest at the midpoint and easing to
+    // nothing well before the ends, so the circle draws out into a teardrop
+    // and meets its fixed arc without a kink.
+    var REACH = Math.hypot(D / 2, D / 2) - R;
+    function face(c, from, s) {
+      return sample(function (u) {
+        return on(c, R + s * REACH * Math.pow((1 - Math.cos(2 * Math.PI * u)) / 2, 2.5), from - 90 * u);
+      }, 8);
+    }
+    var faceA0 = face(cA, 90, 0), faceA1 = face(cA, 90, 1);
+    var faceB0 = face(cB, -90, 0), faceB1 = face(cB, -90, 1);
+    var nA = (faceA0.length - 1) / 2;        // index of the tip
+
+    // The link's two bridges, cut at their waist into halves with the same
+    // structure (a straight run and 45 degrees of corner), so the touching
+    // tips can settle into them. Bridge 1 runs A to B along A's underside,
+    // bridge 2 back along B's top.
+    var k1 = [D - R - RHO, R + RHO], k2 = [R + RHO, D - R - RHO];          // corner centres
+    var line2 = function (p, q) { var m = lerp(p, q, 0.5); return join(lineCubic(p, m), lineCubic(m, q)); };
+    var br1 = join(join(line2([0, R], [D - R - RHO, R]), arcCubics(k1, RHO, -90, -45, 2)),
+                   join(arcCubics(k1, RHO, -45, 0, 2), line2([D - R, R + RHO], [D - R, D])));
+    var br2 = join(join(line2([D, D - R], [R + RHO, D - R]), arcCubics(k2, RHO, 90, 135, 2)),
+                   join(arcCubics(k2, RHO, 135, 180, 2), line2([R, D - R - RHO], [R, 0])));
+
+    // When the tips touch, the strokes trade halves at the touching point:
+    // A's first half carries on into B's second, and B's first into A's
+    // second. Same curves, regrouped, so nothing moves at the swap.
+    var bridge1Touch = join(faceA1.slice(0, nA + 1), faceB1.slice(nA)),
+        bridge2Touch = join(faceB1.slice(0, nA + 1), faceA1.slice(nA));
+
+    // ---- Drawing --------------------------------------------------------
+    var dotsG, linkG, dotEls = [], nodes = {};
     function build() {
       svg.innerHTML = "";
       dotsG = el("g", {}, svg);
@@ -116,75 +183,102 @@
           dotEls.push(el("circle", { cx: f(x), cy: f(y), r: f(R), fill: "var(--dot)", opacity: 0 }, dotsG));
         }
       }
-      parts = {};
-      [["circleA", COLOR_A], ["circleB", COLOR_B], ["faceA", COLOR_A], ["keepA", COLOR_A], ["faceB", COLOR_B], ["keepB", COLOR_B], ["bridge1", COLOR], ["bridge2", COLOR]].forEach(function (p) {
-        var node = el("path", { d: paths[p[0]], stroke: p[1] }, linkG);
-        var len = node.getTotalLength();
-        node.style.strokeDasharray = len;
-        node.style.strokeDashoffset = len;
-        parts[p[0]] = { node: node, len: len };
+      // Each circle draws in as one stroke, then hands over to its fixed 270
+      // and its moving quarter, which sit exactly on it.
+      nodes = {
+        circleA: el("path", { d: keepA + arc(R, 0, 0, R, 0), stroke: COLOR_A }, linkG),
+        circleB: el("path", { d: keepB + arc(R, 0, 0, D - R, D), stroke: COLOR_B }, linkG),
+        keepA: el("path", { d: keepA, stroke: COLOR_A, visibility: "hidden" }, linkG),
+        keepB: el("path", { d: keepB, stroke: COLOR_B, visibility: "hidden" }, linkG),
+        moveA: el("path", { d: d(faceA0), stroke: COLOR_A, visibility: "hidden" }, linkG),
+        moveB: el("path", { d: d(faceB0), stroke: COLOR_B, visibility: "hidden" }, linkG)
+      };
+      ["circleA", "circleB"].forEach(function (k) {
+        var len = nodes[k].getTotalLength();
+        nodes[k].style.strokeDasharray = len;
+        nodes[k].style.strokeDashoffset = len;
       });
     }
 
-    var running = [], timers = [];
+    var running = [], timers = [], raf = 0;
     function at(ms, fn) { timers.push(setTimeout(fn, ms / SPEED)); }
-    function draw(name, dur, from) {
-      var p = parts[name];
-      running.push(p.node.animate([{ strokeDashoffset: from === "end" ? -p.len : p.len }, { strokeDashoffset: 0 }],
+    function draw(name, dur) {
+      var n = nodes[name], len = n.getTotalLength();
+      running.push(n.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
         { duration: dur / SPEED, easing: EASE_DRAW, fill: "forwards" }));
     }
-    function undraw(name, dur, toward) {
-      var p = parts[name];
-      running.push(p.node.animate([{ strokeDashoffset: 0 }, { strokeDashoffset: toward === "end" ? -p.len : p.len }],
-        { duration: dur / SPEED, easing: EASE_UNDRAW, fill: "forwards" }));
+    // Drive a 0..1 progress through fn over dur ms with an easing.
+    function tween(dur, ease, fn, done) {
+      var t0 = performance.now();
+      (function frame(now) {
+        var t = Math.min(1, Math.max(0, now - t0) / (dur / SPEED));   // a frame stamp can predate t0
+        fn(ease(t));
+        if (t < 1) raf = requestAnimationFrame(frame); else if (done) done();
+      })(t0);
     }
-    function show(name) { parts[name].node.style.strokeDashoffset = 0; }
-    function hide(name) { parts[name].node.style.visibility = "hidden"; }
-    function recolor(name, color, dur) {
-      running.push(parts[name].node.animate([{ stroke: parts[name].node.getAttribute("stroke") }, { stroke: color }],
-        { duration: dur / SPEED, easing: "ease", fill: "forwards" }));
+    var easeOut = function (t) { return 1 - Math.pow(1 - t, 3); };
+    function recolor(n, color, dur) {
+      running.push(n.animate([{ stroke: n.getAttribute("stroke") }, { stroke: color }], { duration: dur / SPEED, easing: "ease", fill: "forwards" }));
+    }
+
+    function combine() {
+      ["keepA", "keepB", "moveA", "moveB"].forEach(function (k) { nodes[k].setAttribute("visibility", "visible"); });
+      nodes.circleA.setAttribute("visibility", "hidden");
+      nodes.circleB.setAttribute("visibility", "hidden");
+      // 1. reach: the facing sides pull toward each other, slowly at first,
+      //    then quicker as they close the gap, until the tips touch
+      tween(760, function (t) { return Math.pow(t, 2.2); }, function (t) {
+        nodes.moveA.setAttribute("d", d(mix(faceA0, faceA1, t)));
+        nodes.moveB.setAttribute("d", d(mix(faceB0, faceB1, t)));
+      }, function () {
+        // 2. connect: trade halves at the touching point (nothing moves)...
+        nodes.moveA.setAttribute("d", d(bridge1Touch));
+        nodes.moveB.setAttribute("d", d(bridge2Touch));
+        if (COLOR_A !== COLOR || COLOR_B !== COLOR) {
+          [nodes.keepA, nodes.keepB, nodes.moveA, nodes.moveB].forEach(function (n) { recolor(n, COLOR, 420); });
+        }
+        // 3. ...and settle into the link, opening its waist
+        tween(620, easeOut, function (t) {
+          nodes.moveA.setAttribute("d", d(mix(bridge1Touch, br1, t)));
+          nodes.moveB.setAttribute("d", d(mix(bridge2Touch, br2, t)));
+        });
+      });
     }
 
     function play() {
       running.forEach(function (a) { a.cancel(); }); running = [];
       timers.forEach(clearTimeout); timers = [];
+      cancelAnimationFrame(raf);
       build();
       // 1. the dots come up, staggered (as the hero's do)
-      dotEls.forEach(function (d) {
-        running.push(d.animate([{ opacity: 0, transform: "scale(.45)" }, { opacity: 1, transform: "scale(1)" }],
+      dotEls.forEach(function (dot) {
+        dot.style.transformBox = "fill-box"; dot.style.transformOrigin = "center";
+        running.push(dot.animate([{ opacity: 0, transform: "scale(.45)" }, { opacity: 1, transform: "scale(1)" }],
           { duration: 550 / SPEED, delay: (Math.random() * 700) / SPEED, easing: "cubic-bezier(.2,.8,.2,1)", fill: "forwards" }));
-        d.style.transformBox = "fill-box"; d.style.transformOrigin = "center";
       });
       // 2. two circles draw themselves in, diagonal to each other
       at(900,  function () { draw("circleA", 900); });
       at(1200, function () { draw("circleB", 900); });
-      // 3. they combine: the facing quarters draw away as the bridges draw in
-      at(2500, function () {
-        ["keepA", "faceA", "keepB", "faceB"].forEach(show);
-        hide("circleA"); hide("circleB");
-        undraw("faceA", 620, "start");
-        undraw("faceB", 620, "start");
-        draw("bridge1", 820);
-        draw("bridge2", 820);
-        if (COLOR_A !== COLOR) recolor("keepA", COLOR, 820);
-        if (COLOR_B !== COLOR) recolor("keepB", COLOR, 820);
-      });
+      // 3. they stretch toward each other and connect into a link
+      at(2550, combine);
       // 4. hold, then go round again
-      if (LOOP) at(5400, function () {
-        Object.keys(parts).forEach(function (k) {
-          running.push(parts[k].node.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500 / SPEED, fill: "forwards" }));
+      if (LOOP) at(5600, function () {
+        Object.keys(nodes).forEach(function (k) {
+          running.push(nodes[k].animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500 / SPEED, fill: "forwards" }));
         });
-        dotEls.forEach(function (d) { running.push(d.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500 / SPEED, fill: "forwards" })); });
+        dotEls.forEach(function (dot) { running.push(dot.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500 / SPEED, fill: "forwards" })); });
       });
-      if (LOOP) at(6100, play);
+      if (LOOP) at(6300, play);
     }
 
     document.getElementById("replay").addEventListener("click", play);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       // the finished link, no motion
       build();
-      dotEls.forEach(function (d) { d.setAttribute("opacity", 1); });
-      ["keepA", "keepB", "bridge1", "bridge2"].forEach(function (k) { parts[k].node.style.strokeDashoffset = 0; });
+      dotEls.forEach(function (dot) { dot.setAttribute("opacity", 1); });
+      ["keepA", "keepB", "moveA", "moveB"].forEach(function (k) { nodes[k].setAttribute("visibility", "visible"); });
+      nodes.circleA.setAttribute("visibility", "hidden"); nodes.circleB.setAttribute("visibility", "hidden");
+      nodes.moveA.setAttribute("d", d(br1)); nodes.moveB.setAttribute("d", d(br2));
     } else {
       play();
     }
