@@ -604,11 +604,14 @@
        a repeat visit opens on movement rather than a finished picture. The
        ambient loop takes over from there. */
     build(true, true);
-    /* One batch, staggered by CSS delay (chained timers get throttled). */
+    /* One batch, staggered by CSS delay (chained timers get throttled). Their
+       lives are short and spread out, so shapes start retiring, and the loop
+       starts replacing them, while the ramp is still drawing: the build-up
+       runs straight into the ambient churn instead of pausing between. */
     t(120, () => {
       const seed = Math.round(capOf(heroField) * 0.9);
       for (let k = 0; k < seed; k++) {
-        if (!spawnAmbient(heroField, { drawDur: rand(650, 950), life: rand(4000, 9500), delay: k * 75 })) break;
+        if (!spawnAmbient(heroField, { drawDur: rand(650, 950), life: rand(900, 5200), delay: k * 75 })) break;
       }
     });
     /* Timers rather than rAF: a tab opened in the background gets no animation
