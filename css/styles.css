@@ -1807,10 +1807,11 @@ html.splash--returning [data-reveal] {
 /* A set of boxes with a small label over it ("The MatchPlay process"). The
    wrapper keeps the label on the boxes when a section spaces out its parts. */
 .set__label {
-  margin-bottom: clamp(0.9rem, 1.6vw, 1.25rem);
+  margin-bottom: clamp(1.25rem, 2.2vw, 2rem);
   font-family: var(--font-mono);
-  font-size: 0.8rem;
-  letter-spacing: 0.16em;
+  font-size: clamp(1.15rem, 1.8vw, 1.6rem);
+  letter-spacing: 0.18em;
+  text-align: center;
   text-transform: uppercase;
   color: var(--accent-ink);
 }
