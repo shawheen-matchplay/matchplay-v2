@@ -1240,6 +1240,8 @@ html.splash--returning [data-reveal] {
   box-shadow: 0 0 0 4px #fff, 0 0 0 6px var(--accent);
 }
 .feature-quote--marks .feature-quote__name { font-size: 1.1rem; }
+.feature-quote--marks { max-width: 940px; }
+.feature-quote--marks blockquote p { font-size: clamp(1.45rem, 2.5vw, 2.3rem); line-height: 1.3; }
 
 /* Closing CTA */
 .cta-band {
