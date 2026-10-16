@@ -156,15 +156,25 @@
     // waist round the circle and back to the waist. rho is the corner radius
     // of the bridges, which sets how wide the waist is: RHO is the link
     // itself, a little more or less gives the wobble as it settles.
+    // e bends the back of each loop: above 0 it bulges outward, below 0 it
+    // flattens, hardest at the very back and fading to nothing where the
+    // loop meets its bridges. 0 is the exact circle.
     var line2 = function (p, q) { var m = lerp(p, q, 0.5); return join(lineCubic(p, m), lineCubic(m, q)); };
-    function sides(rho) {
+    function back(c, a0, a1, rear, e) {
+      if (!e) return arcCubics(c, R, a0, a1, 6);
+      return sample(function (u) {
+        var deg = a0 + (a1 - a0) * u, k = Math.cos((deg - rear) * Math.PI / 270);
+        return on(c, R * (1 + e * k * k), deg);
+      }, 6);
+    }
+    function sides(rho, e) {
       var k1 = [D - R - rho, R + rho], k2 = [R + rho, D - R - rho];      // corner centres
       return [
         join(join(join(arcCubics(k2, rho, 135, 180, 2), line2([R, D - R - rho], [R, 0])),
-                  arcCubics(cA, R, 0, -270, 6)),
+                  back(cA, 0, -270, -135, e)),
              join(line2([0, R], [D - R - rho, R]), arcCubics(k1, rho, -90, -45, 2))),
         join(join(join(arcCubics(k1, rho, -45, 0, 2), line2([D - R, R + rho], [D - R, D])),
-                  arcCubics(cB, R, -180, -450, 6)),
+                  back(cB, -180, -450, -315, e)),
              join(line2([D, D - R], [R + rho, D - R]), arcCubics(k2, rho, 90, 135, 2)))
       ];
     }
@@ -223,6 +233,13 @@
     var easeInOut = function (t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
     // A loose damped spring from rest, 0 to 1 over t in 0..1: shoots about
     // half again past 1, swings back under, and wobbles to rest by the end.
+    // A swing out and back that dies away, from 0 to 0: starts a beat in,
+    // so its first swing lands as the loops come round, then about half as
+    // big each way.
+    var wobble = function (t) {
+      var u = Math.max(0, t - 0.06);
+      return Math.sin(12 * u) * Math.exp(-2.3 * u) * (1 - Math.pow(t, 4));
+    };
     var spring = function (t) {
       if (t >= 1) return 1;
       var z = 0.22, w = 20, wd = w * Math.sqrt(1 - z * z);
@@ -249,9 +266,10 @@
         // 3. ...and the join bounces open: the circles relax into the link
         //    while its waist springs wide, pinches back, and wobbles to rest
         //    at the link's own width
-        var RHO0 = 12;
+        var RHO0 = 12, END = 0.15;
         tween(1400, function (t) { return t; }, function (t) {
-          var m = easeOut(Math.min(1, t / 0.3)), link = sides(RHO0 + (RHO - RHO0) * spring(t));
+          var m = easeOut(Math.min(1, t / 0.3));
+          var link = sides(RHO0 + (RHO - RHO0) * spring(t), t < 1 ? END * wobble(t) : 0);
           nodes.moveA.setAttribute("d", d(mix(touchA, link[0], m)));
           nodes.moveB.setAttribute("d", d(mix(touchB, link[1], m)));
         });
