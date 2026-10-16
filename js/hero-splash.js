@@ -79,7 +79,6 @@
   ];
 
   const rand = (a, b) => a + Math.random() * (b - a);
-  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 
   /* ---------- geometry ----------------------------------------------------
      The MatchPlay link: two 270-degree arcs joined by tangent lines with
@@ -176,8 +175,8 @@
   /* ---------- ambient shapes ----------------------------------------------
      Cell bookkeeping guarantees two things the design depends on:
        - a shape only ever wraps cells that actually have a dot
-       - shapes reserve their orthogonal neighbours, so they never touch,
-         cross, or chain into each other
+       - shapes reserve every neighbouring cell, so they never touch, cross,
+         or chain into each other
      ---------------------------------------------------------------------- */
   /* The field now spans the whole page, so working across every row would mean
      hundreds of concurrent shapes with nearly all of them off screen. Confine
@@ -185,11 +184,17 @@
      which keeps the on-screen density identical to before, at a fraction of
      the work. */
   function bandOf(f) {
-    if (!f.rows || !f.S) return [1, 2];
-    const top = OY - stage.getBoundingClientRect().top;
+    if (!f.rows || !f.S) return [1, 1];
+    const stageTop = stage.getBoundingClientRect().top;
+    const top = OY - stageTop;
     const r0 = Math.max(1, Math.floor((top - f.y0) / f.S) - 2);
     const r1 = Math.min(f.rows - 3, Math.ceil((top + window.innerHeight - f.y0) / f.S) + 2);
-    return [r0, Math.max(r0 + 1, r1)];
+    /* Shapes live in the hero only; the dark sections below keep the dots but
+       no links or rings. A link reaches 1.5 rows below its top cell, so the
+       last usable row sits that far above the hero's bottom edge. */
+    const heroBottom = OY + hero.getBoundingClientRect().bottom - stageTop;
+    const rMax = Math.floor((heroBottom - f.y0) / f.S - 1.6);
+    return [r0, Math.max(r0, Math.min(r1, rMax))];         /* empty once past the hero */
   }
   function capOf(f) {
     const b = bandOf(f);
@@ -203,34 +208,73 @@
     return f.population.filter(i => !i.dead && i.spot.r >= b[0] - 1 && i.spot.r <= b[1] + 1).length;
   }
 
+  /* A shape's middle, in grid cells: a ring's centre, or halfway along a link. */
+  const centreOf = spot => spot.dir === undefined
+    ? [spot.c, spot.r]
+    : [spot.c + 0.5, spot.r + spot.dir * 0.5];
+  const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+
+  /* The 3 x 3 block around each cell a shape sits on, so neighbours keep at
+     least a clear cell between them on every side, diagonals included. */
+  function blockAround(centres) {
+    const cells = new Set();
+    centres.forEach(([a, b]) => {
+      for (let dc = -1; dc <= 1; dc++)
+        for (let dr = -1; dr <= 1; dr++) cells.add(key(a + dc, b + dr));
+    });
+    return [...cells];
+  }
+
+  /* Even spread: gather several free spots and take the one furthest from
+     every shape already showing (best-candidate sampling), rather than the
+     first free one, which let shapes bunch up and leave holes. */
+  const CANDIDATES = 14;
   function claimSpot(f, kind) {
     const band = bandOf(f);
     const span = band[1] - band[0];
-    for (let i = 0; i < 70; i++) {
+    if (span <= 0) return null;
+    const live = f.population.filter(i => !i.dead).map(i => i.centre);
+    let best = null, bestScore = -1, found = 0;
+    for (let i = 0; i < 120 && found < CANDIDATES; i++) {
       const c = 1 + Math.floor(Math.random() * (f.cols - 3));
       const r = band[0] + Math.floor(Math.random() * span);
-      let cells;
-
+      let spot;
       if (kind === 'link') {
         const dir = Math.random() < 0.5 ? 1 : -1;         /* down-right or up-right */
         if (!f.dots.has(key(c, r)) || !f.dots.has(key(c + 1, r + dir))) continue;
-        cells = [];
-        [[c, r], [c + 1, r + dir]].forEach(([a, b]) => {
-          cells.push(key(a, b), key(a + 1, b), key(a - 1, b), key(a, b + 1), key(a, b - 1));
-        });
-        cells = [...new Set(cells)];
-        if (cells.some(k2 => f.used.has(k2) || f.excluded.has(k2))) continue;
-        cells.forEach(k2 => f.used.add(k2));
-        return { c, r, dir, cells };
+        spot = { c, r, dir, cells: blockAround([[c, r], [c + 1, r + dir]]) };
+      } else {
+        if (!f.dots.has(key(c, r))) continue;
+        spot = { c, r, cells: blockAround([[c, r]]) };
       }
-
-      if (!f.dots.has(key(c, r))) continue;
-      cells = [key(c, r), key(c + 1, r), key(c - 1, r), key(c, r + 1), key(c, r - 1)];
-      if (cells.some(k2 => f.used.has(k2) || f.excluded.has(k2))) continue;
-      cells.forEach(k2 => f.used.add(k2));
-      return { c, r, cells };
+      if (spot.cells.some(k2 => f.used.has(k2) || f.excluded.has(k2))) continue;
+      found++;
+      const centre = centreOf(spot);
+      const score = live.reduce((m, o) => Math.min(m, distance(centre, o)), Infinity);
+      if (score > bestScore) { best = spot; bestScore = score; }
     }
-    return null;                                          /* field is full */
+    if (!best) return null;                               /* field is full */
+    best.cells.forEach(k2 => f.used.add(k2));
+    return best;
+  }
+
+  /* Colour by neighbourhood: each colour is penalised for every shape of that
+     colour nearby (closer counts more) and, lightly, for how many are showing
+     overall. The cheapest wins, ties broken at random, so two shapes of one
+     colour rarely sit side by side and the palette stays balanced. */
+  const NEAR = 6;                                         /* cells */
+  function pickColor(f, centre) {
+    const live = f.population.filter(i => !i.dead);
+    let best = null, bestCost = Infinity;
+    COLORS.forEach(col => {
+      let cost = Math.random() * 0.01;
+      live.forEach(i => {
+        if (i.color !== col) return;
+        cost += 0.05 + Math.max(0, NEAR - distance(centre, i.centre));
+      });
+      if (cost < bestCost) { best = col; bestCost = cost; }
+    });
+    return best;
   }
 
   function makeShape(f, kind, spot, color) {
@@ -249,8 +293,10 @@
     const kind = opts.kind || (Math.random() < LINK_RATIO ? 'link' : 'ring');
     const spot = claimSpot(f, kind);
     if (!spot) return null;
-    const p = makeShape(f, kind, spot, pick(COLORS));
-    const item = { p, spot, dead: false };
+    const centre = centreOf(spot);
+    const color = pickColor(f, centre);
+    const p = makeShape(f, kind, spot, color);
+    const item = { p, spot, centre, color, dead: false };
     f.population.push(item);
     if (!opts.instant) {
       preparePath(p);

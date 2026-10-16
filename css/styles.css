@@ -798,7 +798,6 @@ html.splash--returning [data-reveal] {
 /* Cards ------------------------------------------------------------------- */
 .eco-card {
   position: relative;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   min-height: 400px;
@@ -814,36 +813,9 @@ html.splash--returning [data-reveal] {
   background: var(--surface-glass-hover);
   border-color: rgba(255, 255, 255, 0.18);
 }
-/* Accent rule across the top, drawn out on hover. */
-.eco-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--eco-accent);
-  transform: scaleX(0.15);
-  transform-origin: left;
-  transition: transform 0.5s var(--ease);
-}
-.eco-card:hover::before { transform: scaleX(1); }
-
-/* Blurred accent orb in the corner. */
-.eco-card__orb {
-  position: absolute;
-  right: -60px;
-  bottom: -120px;
-  width: 240px;
-  height: 240px;
-  border-radius: 50%;
-  background: var(--eco-accent);
-  filter: blur(80px);
-  opacity: 0.08;
-  transition: opacity 0.4s var(--ease);
-  pointer-events: none;
-}
-.eco-card:hover .eco-card__orb { opacity: 0.18; }
+/* The accent rule, the pointer glow and the tilt come from [data-tilt]
+   (see "Pointer cards" below); each card only picks its colour. */
+.eco-card[data-tilt] { --fx-accent: var(--eco-accent); }   /* outranks the shared [data-tilt] default */
 
 .eco-card--group { --eco-accent: var(--cyan); }
 .eco-card--ventures { --eco-accent: var(--orange); }
@@ -1215,6 +1187,20 @@ html.splash--returning [data-reveal] {
   gap: clamp(1.25rem, 3vw, 2.25rem);
   margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
 }
+
+/* The newsletter, folded into the bottom of the closing band. */
+.cta-band__subscribe {
+  margin-top: clamp(2rem, 4vw, 3rem);
+  padding-top: clamp(1.75rem, 3.5vw, 2.5rem);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.cta-band__subscribe-text {
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.68);
+}
+.cta-band__subscribe .blog-subscribe { margin-top: 1.25rem; }
 
 /* 7f. Logo roster ----------------------------------------------------------
    Names rather than marks until the logo files are exported; swap an <img>
@@ -1592,6 +1578,79 @@ html.splash--returning [data-reveal] {
 }
 .sec-actions--center { justify-content: center; }
 
+/* Pointer cards ----------------------------------------------------------
+   Any box with data-tilt. main.js gives it a decorative .fx layer and, for a
+   mouse or pen, tilts the box toward the pointer and sets --mx/--my to where
+   the pointer is. The layer carries a short accent rule along the top that
+   draws across on hover, and a blurred glow that rests low right and follows
+   the pointer while it is over the box. The layer sits at z-index -1 inside
+   the box's own stacking context: above its background, below its text. */
+[data-tilt] {
+  --fx-accent: var(--accent);
+  --fx-rest: 0.08;        /* glow opacity at rest, on hover, while tracking */
+  --fx-hover: 0.18;
+  --fx-track: 0.24;
+  position: relative;
+  isolation: isolate;
+  transition: transform 0.4s var(--ease), background-color 0.4s var(--ease),
+              border-color 0.4s var(--ease), box-shadow 0.4s var(--ease);
+}
+[data-tilt]:hover { transform: translateY(-4px); }
+.fx {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.fx::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--fx-accent);
+  transform: scaleX(0.15);
+  transform-origin: left;
+  transition: transform 0.5s var(--ease);
+}
+[data-tilt]:hover > .fx::before { transform: scaleX(1); }
+.fx__orb {
+  position: absolute;
+  left: var(--mx, calc(100% - 60px));
+  top: var(--my, 100%);
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: var(--fx-accent);
+  filter: blur(80px);
+  opacity: var(--fx-rest);
+  transform: translate(-50%, -50%);
+  transition: opacity 0.4s var(--ease), left 0.6s var(--ease), top 0.6s var(--ease);
+}
+[data-tilt]:hover .fx__orb { opacity: var(--fx-hover); }
+[data-tilt].is-tracking .fx__orb {
+  opacity: var(--fx-track);
+  transition: opacity 0.3s var(--ease), left 0.12s ease-out, top 0.12s ease-out;
+}
+/* On white a glass box has nothing to glow against: the glow runs stronger
+   and the lift reads through a soft shadow and a firmer edge. */
+.section--light [data-tilt] { --fx-rest: 0.06; --fx-hover: 0.18; --fx-track: 0.28; }
+.section--light [data-tilt]:hover {
+  border-color: rgba(10, 10, 10, 0.14);
+  box-shadow: 0 18px 40px -22px rgba(10, 10, 10, 0.28);
+}
+/* An accented panel's top rule is now the drawn one. */
+.panel--accent[data-tilt] { border-top: 1px solid var(--line); }
+
+/* Homepage: every box in a set is the same size. Columns are already equal
+   (minmax(0, 1fr)); equal rows make each box as tall as the tallest one. */
+.page--home .eco-grid,
+.page--home .steps,
+.page--home .cards,
+.page--home .flow,
+.page--home .voices { grid-auto-rows: 1fr; }
+
 /* Numbered steps */
 .steps {
   display: grid;
@@ -1602,14 +1661,15 @@ html.splash--returning [data-reveal] {
   padding: 0;
 }
 .step {
+  position: relative;
   display: flex;
   flex-direction: column;
   padding: clamp(1.5rem, 2.4vw, 2rem);
   background: var(--panel);
   border: 1px solid var(--line);
-  border-top: 3px solid var(--accent);
   border-radius: 20px;
 }
+.step:hover { background: var(--panel-hover); }
 .step__num {
   font-family: var(--font-mono);
   font-size: 0.75rem;
@@ -1638,6 +1698,9 @@ html.splash--returning [data-reveal] {
   line-height: 1.6;
   color: var(--ink-2);
 }
+/* A step can end in a link, which sits on the card's floor. */
+.step .text-link { align-self: flex-start; margin-top: auto; }
+.step__text:has(+ .text-link) { margin-bottom: clamp(1.25rem, 2.5vw, 1.75rem); }
 
 /* Cards */
 .cards {
@@ -1726,6 +1789,16 @@ html.splash--returning [data-reveal] {
   border: 1px solid var(--line);
   border-radius: 999px;
 }
+/* Homepage: a tag fills with the accent on hover. */
+.page--home .chips li {
+  transition: background-color 0.25s var(--ease), border-color 0.25s var(--ease),
+              color 0.25s var(--ease);
+}
+.page--home .chips li:hover {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
 
 /* Panels and two-up layouts */
 .panel {
@@ -1756,6 +1829,10 @@ html.splash--returning [data-reveal] {
   align-items: start;
   gap: clamp(1.5rem, 4vw, 4rem);
 }
+/* Two boxes side by side at one height, each ending in its own actions. */
+.split--even { align-items: stretch; grid-auto-rows: 1fr; }   /* equal when stacked, too */
+.split--even > .panel { display: flex; flex-direction: column; }
+.split--even > .panel .sec-actions { margin-top: auto; padding-top: clamp(1.5rem, 3vw, 2rem); }
 .split + .split,
 .cards + .split { margin-top: clamp(2.5rem, 5vw, 4rem); }
 
@@ -2014,6 +2091,8 @@ html.splash--returning [data-reveal] {
 /* Term-and-meaning pairs inside a panel. */
 .terms { display: grid; gap: 0.9rem; margin: 1rem 0 0; }
 .terms div { padding-top: 0.9rem; border-top: 1px solid var(--line); }
+.terms--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: clamp(1rem, 2.5vw, 2rem); }
+@media (max-width: 600px) { .terms--2 { grid-template-columns: 1fr; } }
 .terms dt { font-family: var(--font-ui); font-weight: 500; color: var(--ink); }
 .terms dd { margin: 0.2rem 0 0; font-family: var(--font-ui); font-size: 0.95rem; line-height: 1.55; color: var(--ink-2); }
 
@@ -2279,6 +2358,12 @@ html.splash--returning [data-reveal] {
   border-radius: var(--radius-card);
   padding: var(--space-lg);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+/* On a white band the white card needs an edge instead of a shadow. */
+.section--light .testimonial {
+  background: #F6F7F8;
+  border: 1px solid var(--line);
+  box-shadow: none;
 }
 .testimonial__quote {
   font-size: 1rem;
