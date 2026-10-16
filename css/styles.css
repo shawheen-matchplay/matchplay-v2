@@ -1126,6 +1126,40 @@ html.splash--returning [data-reveal] {
 .story__name { display: block; color: #fff; font-weight: 500; }
 .story__by em { font-style: italic; color: var(--accent); }
 
+/* Founder stories as a grid of cards, each a video with the line that
+   matters beside it. Tokenized, so the grid sits on either band. */
+.story-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 1rem;
+}
+.story-card {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1rem, 1.8vw, 1.5rem);
+  margin: 0;
+  padding: clamp(0.7rem, 1vw, 0.9rem);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+}
+.story-card .story__video { border-radius: 12px; background: var(--panel); border-color: var(--line); }
+.story-card__text { display: flex; flex-direction: column; gap: 0.75rem; }
+.story-card blockquote { margin: 0; }
+.story-card blockquote p {
+  font-family: var(--font-display);
+  font-size: clamp(0.98rem, 1.15vw, 1.08rem);
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.story-card .story__by { margin: 0; font-size: 0.85rem; color: var(--ink-2); }
+.story-card .story__name { color: var(--ink); }
+@media (max-width: 991px) { .story-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .story-card { grid-template-columns: 1fr; } }
+
 /* Featured quote on the light band */
 .feature-quote { margin: 0; max-width: 880px; margin-inline: auto; text-align: center; }
 .feature-quote blockquote { margin: 0; }
@@ -1629,19 +1663,21 @@ html.splash--returning [data-reveal] {
 /* An accented panel's top rule is now the drawn one. */
 .panel--accent[data-tilt] { border-top: 1px solid var(--line); }
 
-/* Homepage: every box in a set is the same size. Columns are already equal
+/* Full-screen pages (page--screens: the homepage, the founders draft).
+   Every box in a set is the same size. Columns are already equal
    (minmax(0, 1fr)); equal rows make each box as tall as the tallest one. */
-.page--home .eco-grid,
-.page--home .steps,
-.page--home .cards,
-.page--home .flow,
-.page--home .voices { grid-auto-rows: 1fr; }
+.page--screens .eco-grid,
+.page--screens .steps,
+.page--screens .cards,
+.page--screens .flow,
+.page--screens .voices { grid-auto-rows: 1fr; }
 
-/* Homepage: every section fills one screen, its content centred in it; the
-   closing call to action and the newsletter share one screen between them.
+/* Every section fills one screen, its content centred in it; on the
+   homepage the closing call to action and the newsletter share one screen.
    min-height, so a section with more than a screen of content still grows. */
-.page--home .ecosystem,
-.page--home .section {
+.page--screens .ecosystem,
+.page--screens .page-hero,
+.page--screens .section {
   min-height: 100vh;
   min-height: 100svh;
   display: flex;
@@ -1650,15 +1686,17 @@ html.splash--returning [data-reveal] {
   /* centring supplies the breathing room, so the padding can be leaner */
   padding-block: clamp(3.5rem, 8vh, 6rem);
 }
-.page--home #start,
-.page--home #subscribe {
+.page--screens #start,
+.page--screens #subscribe {
   min-height: 50vh;
   min-height: 50svh;
   padding-block: clamp(1rem, 2.5vh, 2rem);
 }
-.page--home #start .cta-band { padding-block: clamp(2rem, 5vh, 3.5rem); }
-/* Every call to action on the homepage sits centred. */
-.page--home .sec-actions { justify-content: center; }
+.page--screens #start .cta-band { padding-block: clamp(2rem, 5vh, 3.5rem); }
+/* Every call to action sits centred. */
+.page--screens .sec-actions { justify-content: center; }
+/* A page hero still clears the fixed nav before it centres. */
+.page--screens .page-hero { padding-top: calc(var(--nav-h, 96px) + clamp(1rem, 3vh, 2rem)); }
 
 /* Numbered steps */
 .steps {
@@ -1795,12 +1833,12 @@ html.splash--returning [data-reveal] {
   border: 1px solid var(--line);
   border-radius: 999px;
 }
-/* Homepage: a tag fills with the accent on hover. */
-.page--home .chips li {
+/* A tag fills with the accent on hover. */
+.page--screens .chips li {
   transition: background-color 0.25s var(--ease), border-color 0.25s var(--ease),
               color 0.25s var(--ease);
 }
-.page--home .chips li:hover {
+.page--screens .chips li:hover {
   color: #fff;
   background: var(--accent);
   border-color: var(--accent);
@@ -1828,6 +1866,7 @@ html.splash--returning [data-reveal] {
   color: var(--ink-2);
 }
 .panel .sec-actions { margin-top: clamp(1.5rem, 3vw, 2rem); }
+.panel__title + .chips { margin-top: 1.1rem; }
 
 .split {
   display: grid;
@@ -1841,6 +1880,7 @@ html.splash--returning [data-reveal] {
 .split--even > .panel .sec-actions { margin-top: auto; padding-top: clamp(1.5rem, 3vw, 2rem); }
 .split + .split,
 .cards + .split { margin-top: clamp(2.5rem, 5vw, 4rem); }
+.steps + .split { margin-top: clamp(1.25rem, 2.5vw, 2rem); }   /* one set, continued */
 
 .fineprint {
   margin-top: clamp(1rem, 2vw, 1.5rem);
@@ -2098,13 +2138,13 @@ html.splash--returning [data-reveal] {
 .terms { display: grid; gap: 0.9rem; margin: 1rem 0 0; }
 .terms div { padding-top: 0.9rem; border-top: 1px solid var(--line); }
 /* Name and meaning on one line. */
-.terms--inline { gap: 0.6rem; }
+.terms--inline { gap: 0.5rem; }
 .terms--inline div {
   display: grid;
   grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
   align-items: baseline;
   gap: 1rem;
-  padding-top: 0.6rem;
+  padding-top: 0.5rem;
 }
 .terms--inline dd { margin: 0; }
 @media (max-width: 600px) { .terms--inline div { grid-template-columns: 1fr; gap: 0.2rem; } }
