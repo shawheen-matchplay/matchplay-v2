@@ -131,11 +131,14 @@
       + 'L ' + tp([R, 0]) + ' Z';
   }
 
-  /* a full circle as a path, so it can be dash-drawn like the links */
+  /* a full circle as a path, so it can be dash-drawn like the links. Four
+     quarter arcs: with half circles, rounding the end points let the browser
+     put each half's centre up to half a pixel off, so rings came out a
+     touch taller than wide. */
   function ringPath(c, r) {
-    return 'M ' + (c[0] + r).toFixed(2) + ' ' + c[1].toFixed(2) +
-      ' A ' + r + ' ' + r + ' 0 1 0 ' + (c[0] - r).toFixed(2) + ' ' + c[1].toFixed(2) +
-      ' A ' + r + ' ' + r + ' 0 1 0 ' + (c[0] + r).toFixed(2) + ' ' + c[1].toFixed(2) + ' Z';
+    const pt = (dx, dy) => (c[0] + dx).toFixed(2) + ' ' + (c[1] + dy).toFixed(2);
+    const q = ' A ' + r.toFixed(2) + ' ' + r.toFixed(2) + ' 0 0 0 ';
+    return 'M ' + pt(r, 0) + q + pt(0, -r) + q + pt(-r, 0) + q + pt(0, r) + q + pt(r, 0) + ' Z';
   }
 
   /* ---------- the merge ----------------------------------------------------
@@ -255,23 +258,27 @@
         const link = sides(12 + (RHO - 12) * spring(t), e > 0 ? e * 0.4 : e);
         return [d(mix(A1, link[0], m)), d(mix(B1, link[1], m))];
       },
-      /* A link or ring popping in on its own, once drawn, t 0..1, in this
-         frame (a ring is centred on the origin). The link's waist springs
-         wider and back while its loops wobble; the ring squashes along one
-         axis and back. Both keep close to their size and end exactly on the
-         plain shape. */
-      linkPop(t) {
-        const w = t < 1 ? wobble(t) : 0, e = 0.15 * w;
-        const s = sides(RHO + 22 * w, e > 0 ? e * 0.4 : e);
-        return join(s[0], s[1]);
+      /* A link or ring popping into shape, in this frame (a ring is centred
+         on the origin). k is how far off true it is: 1 is how it draws in
+         (the ring a little oval, the link pinched at the waist with its
+         loops a little flat), 0 the plain shape, below 0 an overshoot the
+         other way, kept small so nothing grows much. */
+      linkForm(k) {
+        if (k < 0) k *= 0.5;
+        const s = sides(RHO - 15 * k, -0.12 * k);
+        const loop = join(s[0], s[1]);
+        /* start where the plain link does, ring A's right-hand point */
+        return loop.slice(12).concat(loop.slice(1, 13));
       },
-      ringPop(t, axis) {
-        const a = t < 1 ? 0.09 * wobble(t) : 0;
+      ringForm(k, axis) {
+        if (k < 0) k *= 0.5;
         return sample(u => {
-          const deg = axis - 360 * u;
-          return on([0, 0], R * (1 + a * Math.cos(2 * (deg - axis) * Math.PI / 180)), deg);
+          const deg = -360 * u, sin = Math.sin((deg - axis) * Math.PI / 180);
+          return on([0, 0], R * (1 - 0.12 * k * sin * sin), deg);
         }, 8);
       },
+      /* off true, through a pop: the spring that settles the merges, t 0..1 */
+      popK: t => 1 - spring(t),
       d
     };
   })();
@@ -478,49 +485,51 @@
     const p = makeShape(f, kind, spot, color);
     const item = { p, spot, centre, color, dead: false, fill: !!opts.fill };
     f.population.push(item);
-    if (!opts.instant) {
-      preparePath(p);
-      const draw = opts.drawDur || rand(750, 1100);
-      drawPath(p, draw, opts.delay);
-      /* the draw eases out to a near stop over its last tenth: pop then */
-      item.pop = setTimeout(() => pop(f, item, kind), (opts.delay || 0) + draw * 0.9);
-    }
+    if (!opts.instant) popIn(f, item, kind, opts.drawDur || rand(750, 1100), opts.delay || 0);
     item.timer = setTimeout(() => retireAmbient(f, item), (opts.life || rand(3000, 5000)) + (opts.delay || 0));
     return item;
   }
 
-  /* Once drawn, a ring or link pops: see MERGE.linkPop / ringPop. Drawn
-     frame by frame onto the shape's own path, which gets its plain outline
-     back at the end. */
+  /* A ring or link draws in a little off true (see MERGE.linkForm /
+     ringForm) and, as the line closes, springs into its exact shape, the
+     way a merge settles. The path is measured as length 1 while it moves, so
+     the drawing dash keeps up with the changing outline; it gets its plain
+     outline back at the end. */
   const POP_MS = 1400;
-  function pop(f, item, kind) {
-    if (item.dead) return;
+  function popIn(f, item, kind, draw, delay) {
     const p = item.p, spot = item.spot, k = f.R / 100;
     const c = cellOf(f, spot.c, spot.r);
-    let map, shape;
+    let map, form;
     if (kind === 'link') {                                /* placed as in spawnMerge */
       const sin = spot.dir === 1 ? 0 : -1, cos = spot.dir === 1 ? 1 : 0;
       map = q => [c[0] + k * (q[0] * cos - q[1] * sin), c[1] + k * (q[0] * sin + q[1] * cos)];
-      shape = MERGE.linkPop;
+      form = MERGE.linkForm;
     } else {
       const axis = rand(0, 180);
       map = q => [c[0] + k * q[0], c[1] + k * q[1]];
-      shape = t => MERGE.ringPop(t, axis);
+      form = kk => MERGE.ringForm(kk, axis);
     }
     const plain = p.getAttribute('d');
-    p.style.transition = 'none';
-    p.style.strokeDasharray = 'none';
-    const t0 = performance.now();
-    (function frame(now) {
-      if (item.dead) return;
-      const t = Math.min(1, Math.max(0, now - t0) / POP_MS);   /* a frame stamp can predate t0 */
-      if (t < 1) {
-        p.setAttribute('d', MERGE.d(shape(t), map));
-        item.raf = requestAnimationFrame(frame);
-      } else {
-        p.setAttribute('d', plain);
-      }
-    })(t0);
+    p.setAttribute('d', MERGE.d(form(1), map));
+    p.setAttribute('pathLength', 1);
+    p.style.strokeDasharray = 1;
+    p.style.strokeDashoffset = 1;
+    drawPath(p, draw, delay);
+    /* the spring takes over two thirds of the way through the draw */
+    item.pop = setTimeout(() => {
+      const t0 = performance.now();
+      (function frame(now) {
+        if (item.dead) return;
+        const t = Math.min(1, Math.max(0, now - t0) / POP_MS);   /* a frame stamp can predate t0 */
+        if (t < 1) {
+          p.setAttribute('d', MERGE.d(form(MERGE.popK(t)), map));
+          item.raf = requestAnimationFrame(frame);
+        } else {
+          p.removeAttribute('pathLength');
+          p.setAttribute('d', plain);
+        }
+      })(t0);
+    }, delay + draw * 0.65);
   }
 
   const pickKind = () => {
@@ -579,6 +588,7 @@
     /* Hold on to this shape's own grid: a rebuild in the meantime swaps in a
        new one, and releasing these cells there would free another shape's. */
     const used = f.used;
+    item.p.removeAttribute('pathLength');                 /* undraw measures in real length */
     if (item.merging) {                                   /* mid-merge: fade it */
       item.p.style.transition = 'opacity ' + dur + 'ms ease';
       item.p.style.opacity = 0;
