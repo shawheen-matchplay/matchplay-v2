@@ -141,7 +141,7 @@
     var REACH = Math.hypot(D / 2, D / 2) - R;
     function face(c, from, s) {
       return sample(function (u) {
-        return on(c, R + s * REACH * Math.pow((1 - Math.cos(2 * Math.PI * u)) / 2, 2.5), from - 90 * u);
+        return on(c, R + s * REACH * Math.pow((1 - Math.cos(2 * Math.PI * u)) / 2, 1.5), from - 90 * u);
       }, 8);
     }
     var faceA0 = face(cA, 90, 0), faceA1 = face(cA, 90, 1);
@@ -171,6 +171,7 @@
       svg.innerHTML = "";
       dotsG = el("g", {}, svg);
       linkG = el("g", { fill: "none", "stroke-width": LW, "stroke-linecap": "round", "stroke-linejoin": "round" }, svg);
+      linkG.style.transformBox = "fill-box"; linkG.style.transformOrigin = "center";   // the bounce scales about the link's middle
       dotEls = [];
       if (DOTS) {
         // uniform dots that exactly touch, a quarter of cells left empty,
@@ -216,7 +217,14 @@
         if (t < 1) raf = requestAnimationFrame(frame); else if (done) done();
       })(t0);
     }
-    var easeOut = function (t) { return 1 - Math.pow(1 - t, 3); };
+    var easeInOut = function (t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+    // A damped spring from rest: picks up speed, runs a little past 1, and
+    // settles back (about 10% overshoot, at rest by the end).
+    var spring = function (t) {
+      if (t >= 1) return 1;
+      var z = 0.6, w = 8.5, wd = w * Math.sqrt(1 - z * z);
+      return 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + z * w / wd * Math.sin(wd * t));
+    };
     function recolor(n, color, dur) {
       running.push(n.animate([{ stroke: n.getAttribute("stroke") }, { stroke: color }], { duration: dur / SPEED, easing: "ease", fill: "forwards" }));
     }
@@ -225,9 +233,9 @@
       ["keepA", "keepB", "moveA", "moveB"].forEach(function (k) { nodes[k].setAttribute("visibility", "visible"); });
       nodes.circleA.setAttribute("visibility", "hidden");
       nodes.circleB.setAttribute("visibility", "hidden");
-      // 1. reach: the facing sides pull toward each other, slowly at first,
-      //    then quicker as they close the gap, until the tips touch
-      tween(760, function (t) { return Math.pow(t, 2.2); }, function (t) {
+      // 1. reach: the facing sides draw out toward each other, picking up
+      //    speed, then easing off as the tips come together
+      tween(1000, easeInOut, function (t) {
         nodes.moveA.setAttribute("d", d(mix(faceA0, faceA1, t)));
         nodes.moveB.setAttribute("d", d(mix(faceB0, faceB1, t)));
       }, function () {
@@ -237,11 +245,19 @@
         if (COLOR_A !== COLOR || COLOR_B !== COLOR) {
           [nodes.keepA, nodes.keepB, nodes.moveA, nodes.moveB].forEach(function (n) { recolor(n, COLOR, 420); });
         }
-        // 3. ...and settle into the link, opening its waist
-        tween(620, easeOut, function (t) {
+        // 3. ...then spring open into the link, the waist running a touch
+        //    wide and settling back, while the whole link gives a small bounce
+        tween(950, spring, function (t) {
           nodes.moveA.setAttribute("d", d(mix(bridge1Touch, br1, t)));
           nodes.moveB.setAttribute("d", d(mix(bridge2Touch, br2, t)));
         });
+        running.push(linkG.animate([
+          { transform: "scale(1)" },
+          { transform: "scale(1.045)", offset: 0.38 },
+          { transform: "scale(0.99)", offset: 0.68 },
+          { transform: "scale(1.004)", offset: 0.86 },
+          { transform: "scale(1)" }
+        ], { duration: 900 / SPEED, easing: "ease-in-out" }));
       });
     }
 
@@ -262,13 +278,13 @@
       // 3. they stretch toward each other and connect into a link
       at(2550, combine);
       // 4. hold, then go round again
-      if (LOOP) at(5600, function () {
+      if (LOOP) at(5900, function () {
         Object.keys(nodes).forEach(function (k) {
           running.push(nodes[k].animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500 / SPEED, fill: "forwards" }));
         });
         dotEls.forEach(function (dot) { running.push(dot.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500 / SPEED, fill: "forwards" })); });
       });
-      if (LOOP) at(6300, play);
+      if (LOOP) at(6600, play);
     }
 
     document.getElementById("replay").addEventListener("click", play);
