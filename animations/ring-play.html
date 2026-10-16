@@ -11,9 +11,9 @@
     reach for each other, all the way to touching (pull it away at any point
     and they let go); let go near one and they merge into a link with the same stretch, touch and bounce as link-merge.html, in
     the colour of the ring you dropped it on. Links float and turn and can
-    be dragged too (from a touch screen), and split back into two rings on
-    their own after a few seconds, or straight away when a mouse passes over
-    them (flung apart) or with a double-tap. Same proportions as the hero: ring radius R, corner radius
+    be dragged too, and split back into two rings on their own after a few
+    seconds (or straight away with a double-click or double-tap). A moving
+    mouse pushes rings and links out of its way. Same proportions as the hero: ring radius R, corner radius
     R/2, stroke R/5, centres of a link 2 sqrt 2 R apart.
 
     Options in the URL, e.g. ring-play.html?rings=10
@@ -46,7 +46,7 @@
 </head>
 <body>
   <svg id="stage" role="img" aria-label="Floating rings that can be dragged together to form MatchPlay links"></svg>
-  <p class="hint">Drag a ring onto another to link them. Hover a link to fling it apart.</p>
+  <p class="hint">Drag a ring onto another to link them. Links split apart after a few seconds.</p>
   <button class="reset" type="button" id="reset">Reset</button>
 
   <script>
@@ -166,6 +166,7 @@
     var MIN = 2 * R + LW + GAP;          /* closest two ring centres get */
     var ATTRACT = CAN + R * 2.6;         /* a dragged ring starts to reach within this */
     var CRUISE = R * 0.35, WANDER = R * 0.6;
+    var SWEEP = R * 2.6;                 /* how near a moving mouse has to pass to push */
     var SPLIT_AFTER = [3000, 5000];      /* ms a link holds before it splits on its own */
 
     var f2 = function (n) { return n.toFixed(2); };
@@ -290,13 +291,13 @@
 
     /* A link pinches back into two touching rings, which spring apart and
        wobble round again; the second takes a new colour. */
-    function startSplit(L, from) {          /* from: a pointer that flung it apart */
+    function startSplit(L) {
       if (L.busy) return;
       L.busy = true;
       var c = Math.cos(L.ang) * HALF, s = Math.sin(L.ang) * HALF;
       var elB = shapeEl(L.color);
       layer.insertBefore(elB, L.el.nextSibling);
-      splits.push({ L: L, elB: elB, t0: performance.now(), ca: [L.x - c, L.y - s], cb: [L.x + c, L.y + s], from: from });
+      splits.push({ L: L, elB: elB, t0: performance.now(), ca: [L.x - c, L.y - s], cb: [L.x + c, L.y + s] });
     }
     function stepSplit(sp, now) {
       var L = sp.L, deg = L.ang * DEG - 45, t = Math.min(1, Math.max(0, now - sp.t0) / 260), k = easeIn(t);
@@ -305,7 +306,7 @@
       place(L.el, sp.ca[0], sp.ca[1], deg); place(sp.elB, sp.ca[0], sp.ca[1], deg);
       if (t < 1) return false;
       remove(L);
-      var push = sp.from ? R * 13 : R * 6, ux = Math.cos(L.ang), uy = Math.sin(L.ang);
+      var push = R * 6, ux = Math.cos(L.ang), uy = Math.sin(L.ang);
       var a = makeRing(sp.ca[0], sp.ca[1], L.color, L.el);
       var others = COLORS.filter(function (col) { return col !== L.color; });
       var b = makeRing(sp.cb[0], sp.cb[1], others[Math.floor(Math.random() * others.length)], sp.elB);
@@ -314,30 +315,31 @@
         var ring = r[0];
         ring.s = 1; ring.sv = 0; ring.goal = 0; ring.face = r[2];   /* released from the touch */
         ring.vx = L.vx + ux * push * r[1]; ring.vy = L.vy + uy * push * r[1];
-        if (sp.from) {                                    /* and away from the pointer */
-          var ax = ring.x - sp.from[0], ay = ring.y - sp.from[1], al = Math.hypot(ax, ay) || 1;
-          ring.vx += ax / al * R * 7; ring.vy += ay / al * R * 7;
-        }
       });
       return true;
     }
 
     /* ---- dragging ------------------------------------------------------ */
-    var drag = null, preview = null, lastTap = null, down = null;
+    var drag = null, preview = null, lastTap = null, down = null, mouse = null;
+    svg.addEventListener("pointerleave", function () { mouse = null; });
     function point(e) {
       var r = svg.getBoundingClientRect();
       return [(e.clientX - r.left) * W / r.width, (e.clientY - r.top) * H / r.height];
+    }
+    /* the point on a shape's spine nearest p: a ring's spine is its centre,
+       a link's the segment between its centres, so its waist counts too */
+    function nearest(b, p) {
+      var cs = circlesOf(b), c0 = cs[0], c1 = cs[cs.length - 1];
+      var sx = c1[0] - c0[0], sy = c1[1] - c0[1], len2 = sx * sx + sy * sy;
+      var u = len2 ? Math.max(0, Math.min(1, ((p[0] - c0[0]) * sx + (p[1] - c0[1]) * sy) / len2)) : 0;
+      return [c0[0] + sx * u, c0[1] + sy * u];
     }
     function hit(p) {
       for (var i = bodies.length - 1; i >= 0; i--) {
         var b = bodies[i];
         if (b.busy) continue;
-        var cs = circlesOf(b), c0 = cs[0], c1 = cs[cs.length - 1];
-        /* distance to the segment between its centres: a ring is a point, a
-           link a capsule, so its waist counts too */
-        var sx = c1[0] - c0[0], sy = c1[1] - c0[1], len2 = sx * sx + sy * sy;
-        var u = len2 ? Math.max(0, Math.min(1, ((p[0] - c0[0]) * sx + (p[1] - c0[1]) * sy) / len2)) : 0;
-        if (Math.hypot(p[0] - c0[0] - sx * u, p[1] - c0[1] - sy * u) < R + LW * 1.5) return b;
+        var n = nearest(b, p);
+        if (Math.hypot(p[0] - n[0], p[1] - n[1]) < R + LW * 1.5) return b;
       }
       return null;
     }
@@ -355,10 +357,17 @@
     svg.addEventListener("pointermove", function (e) {
       var p = point(e);
       if (!drag) {
-        var h = hit(p);
-        /* a link under a passing mouse flies apart (touch has no hover) */
-        if (h && h.kind === "link" && e.pointerType === "mouse" && !e.buttons) { startSplit(h, p); h = null; }
-        svg.classList.toggle("can-grab", !!h);
+        /* a passing mouse sweeps shapes aside (see step) */
+        var now0 = performance.now();
+        if (e.pointerType === "mouse") {
+          if (mouse) {
+            var mdt = Math.max(1, now0 - mouse.t) / 1000;
+            mouse.vx = mouse.vx * 0.5 + (p[0] - mouse.x) / mdt * 0.5;
+            mouse.vy = mouse.vy * 0.5 + (p[1] - mouse.y) / mdt * 0.5;
+            mouse.x = p[0]; mouse.y = p[1]; mouse.t = now0;
+          } else mouse = { x: p[0], y: p[1], vx: 0, vy: 0, t: now0 };
+        }
+        svg.classList.toggle("can-grab", !!hit(p));
         return;
       }
       if (e.pointerId !== drag.id) return;
@@ -412,6 +421,27 @@
           best.face = phi; b.face = phi + Math.PI;
           best.vx *= 0.9; best.vy *= 0.9;                   /* it waits for you */
         }
+      }
+
+      /* the moving mouse pushes what it passes out of its way, harder the
+         faster it goes; a still one pushes nothing, so a ring can be eased
+         up to and grabbed */
+      if (mouse && !drag && now - mouse.t < 120) {
+        var msp = Math.min(Math.hypot(mouse.vx, mouse.vy), R * 40);
+        bodies.forEach(function (b) {
+          if (b.busy || b.dragged) return;
+          var n = nearest(b, [mouse.x, mouse.y]), ax = n[0] - mouse.x, ay = n[1] - mouse.y, dd = Math.hypot(ax, ay);
+          if (dd >= SWEEP) return;
+          var f = 1 - dd / SWEEP, ux = dd ? ax / dd : 0, uy = dd ? ay / dd : 0;
+          var mx = mouse.vx / (msp || 1), my = mouse.vy / (msp || 1);   /* partly along the sweep */
+          var dx = ux * 0.5 + mx * 0.5, dy = uy * 0.5 + my * 0.5, dl = Math.hypot(dx, dy) || 1;
+          var acc = f * msp * 7;
+          b.vx += dx / dl * acc * dt; b.vy += dy / dl * acc * dt;
+          if (b.kind === "link") {                          /* off-centre pushes turn it */
+            var ox = n[0] - b.x, oy = n[1] - b.y;
+            b.va += (ox * dy - oy * dx) / dl / (HALF * HALF) * acc * dt * 0.6;
+          }
+        });
       }
 
       bodies.forEach(function (b) {
