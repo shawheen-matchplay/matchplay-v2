@@ -2318,7 +2318,7 @@ html.splash--returning [data-reveal] {
 .member__photo {
   display: block;
   width: 100%;
-  aspect-ratio: 466 / 573;           /* the headshots' own shape */
+  aspect-ratio: 1;                   /* the headshots are square */
   object-fit: cover;
   background: var(--line);
 }
