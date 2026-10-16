@@ -1425,6 +1425,8 @@ html.splash--returning [data-reveal] {
 /* Release page: a single readable column. */
 .release { max-width: 792px; margin-inline: auto; }
 .release__title { text-align: left; margin-top: 0.75rem; }
+/* The headline stands clear of the release text, which starts a good step below it. */
+.release__head { margin-bottom: clamp(2.25rem, 4.5vw, 3.5rem); }
 /* Paragraphs sit a clear line apart (more than the 1.75 leading inside
    them); a heading opens more room above and stays close to what follows;
    a quote's attribution stays with its quote. */
@@ -1477,6 +1479,8 @@ html.splash--returning [data-reveal] {
   letter-spacing: 0.06em;
   color: var(--accent);
 }
+/* The same link above the dateline, so a reader can go back without scrolling. */
+.release__back--top { margin-top: 0; margin-bottom: clamp(1.25rem, 2.5vw, 1.75rem); }
 
 /* 7h. Summit recaps ---------------------------------------------------------
    Event pages: a banner lockup, sponsor rows, an agenda, panel slides and a
