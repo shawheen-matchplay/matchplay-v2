@@ -265,11 +265,11 @@ def build_index(posts, header, footer, fonts):
       </div>
     </section>
 
-    <!-- ===== All articles ===== -->
+    <!-- ===== All blog posts ===== -->
     <section class="section section--light" id="posts">
       <div class="container container--wide">
         <header class="sec-head reveal">
-          <h2 class="sec-head__title">All <em>articles.</em></h2>
+          <h2 class="sec-head__title">All <em>blog posts.</em></h2>
         </header>
         <!-- every post is in the HTML; main.js shows %(per)d at a time -->
         <div class="post-grid" data-paginate="%(per)d">
