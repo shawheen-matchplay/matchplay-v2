@@ -186,7 +186,7 @@ default; "Deep Tech" not "Energy"). Pipeline track with a rolling golf ball
 alternating left/right. Footer (rebuilt Oct 2026): brand column (logo, "The
 Venture Standard.", newsletter field hidden on the homepage), columns
 Founders / Investors / Events / Company that all point to real pages or
-anchors, bottom bar with copyright, Terms, Privacy, Log In, Apply. No email in
+anchors, bottom bar with copyright left, Terms and Privacy right (no Log In or Apply). No email in
 the footer. Company LinkedIn not added yet (URL unknown; ask Shawheen).
 
 ## 5. The homepage hero (`js/hero-splash.js`)

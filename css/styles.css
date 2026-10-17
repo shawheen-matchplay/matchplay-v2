@@ -3024,11 +3024,7 @@ html.splash--returning [data-reveal] {
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.45);
 }
-.footer__legal { display: flex; gap: var(--space-md); margin-right: auto; }   /* Log In and Apply sit right */
-.footer__app { display: flex; gap: var(--space-md); }
-.footer__app a { transition: color var(--dur); }
-.footer__app a:hover { color: #fff; }
-.footer__app .footer__app-apply { color: var(--accent); }
+.footer__legal { display: flex; gap: var(--space-md); }   /* copyright left, Terms and Privacy right */
 .footer__legal a { transition: color var(--dur); }
 .footer__legal a:hover { color: #fff; }
 
