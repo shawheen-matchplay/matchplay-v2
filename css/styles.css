@@ -2624,7 +2624,7 @@ html.splash--returning [data-reveal] {
   flex: none;
   align-items: center;
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: calc(0.78rem + 2px);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   white-space: nowrap;
