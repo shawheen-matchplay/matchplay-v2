@@ -170,8 +170,11 @@ glow). Chips turn blue with white text on hover.
   same glass without the bend (they can't use `url()` there).
 - Dropdowns and the phone menu use the same glass as the pill.
 - Hover **lens**: one glass drop slides on a spring between nav links
-  (including Log In and Apply). No displacement on the lens: it blurred the
-  link text.
+  (including Log In and Apply) and travels down into the Events/About
+  dropdown items and back up (2D spring, takes the target's corners, target
+  re-measured each frame while the menu slides open). Over Apply it sits
+  inside the blue border. No displacement on the lens: it blurred the link
+  text.
 - **CTA buttons** (`.btn--primary`, `.hero__cta`, `.btn--nav`,
   `.nav__mobile-cta`): solid accent at 100% with a soft inner glow; **no
   outer glow, no white rim line**. Hover: fill drains to clear glass inside an

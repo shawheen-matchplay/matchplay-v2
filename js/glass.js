@@ -102,16 +102,20 @@
 
   /* ---- the lens ------------------------------------------------------- */
   // One glass drop under the pointer's link. It appears where you first
-  // point, then slides to each link you move to on a spring, stretching
-  // along the way and squashing a little as it settles; it fades when the
-  // pointer leaves the pill.
+  // point, then travels to each link you move to on a spring (across the
+  // pill, and down from Events or About into their dropdowns and back up),
+  // stretching along the way and squashing a little as it settles, and
+  // taking the corners of what it lands on; it fades when the pointer
+  // leaves the nav. The target is measured every frame while it travels,
+  // because a dropdown is still sliding open when you reach it.
   if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
     var lens = document.createElement("span");
     lens.className = "nav__lens";
     lens.setAttribute("aria-hidden", "true");
     nav.appendChild(lens);
     var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    var x = 0, w = 0, vx = 0, vw = 0, tx = 0, tw = 0, ty = 0, th = 0, on = false, raf = 0, last = 0, cta = false;
+    var x = 0, y = 0, w = 0, h = 0, vx = 0, vy = 0, vw = 0, vh = 0;
+    var tx = 0, ty = 0, tw = 0, th = 0, on = false, raf = 0, last = 0, cta = false, el = null;
     var draw = function (sx, sy) {
       // Over Apply the drop sits inside the button's border: it never runs
       // past its right edge (the spring overshoots a little as it settles)
@@ -119,36 +123,49 @@
       var dw = w;
       if (cta) { dw = Math.min(w, tx + tw - x); sx = 1; }
       lens.style.width = Math.max(0, dw).toFixed(1) + "px";
-      lens.style.height = th + "px";
-      lens.style.transform = "translate(" + x.toFixed(1) + "px," + ty + "px) scale(" + sx.toFixed(3) + "," + sy.toFixed(3) + ")";
+      lens.style.height = Math.max(0, h).toFixed(1) + "px";
+      lens.style.transform = "translate(" + x.toFixed(1) + "px," + y.toFixed(1) + "px) scale(" + sx.toFixed(3) + "," + sy.toFixed(3) + ")";
     };
+    // where the drop goes for a link, in the pill's own coordinates (from
+    // inside its border, clientLeft/Top)
+    var measure = function () {
+      var a = el.getBoundingClientRect(), b = nav.getBoundingClientRect();
+      tx = a.left - b.left - nav.clientLeft; tw = a.width;
+      ty = a.top - b.top - nav.clientTop; th = a.height;
+      if (cta) {                                     // inside the blue border, not on it
+        var bw = parseFloat(getComputedStyle(el).borderTopWidth) || 0;
+        tx += bw; tw -= 2 * bw; ty += bw; th -= 2 * bw;
+      }
+    };
+    var spring = function (to, at, v, dt) { return v + (420 * (to - at) - 30 * v) * dt; };
     var tick = function (now) {
       var dt = Math.min(1 / 30, Math.max(0, now - last) / 1000);
       last = now;
-      var ax = 420 * (tx - x) - 30 * vx, aw = 420 * (tw - w) - 30 * vw;
-      vx += ax * dt; vw += aw * dt; x += vx * dt; w += vw * dt;
-      var s = Math.min(0.14, Math.abs(vx) / 3500);                  // stretch with speed
-      draw(1 + s, 1 - s * 0.8);
-      if (Math.abs(tx - x) > 0.3 || Math.abs(vx) > 2 || Math.abs(tw - w) > 0.3 || Math.abs(vw) > 2) raf = requestAnimationFrame(tick);
-      else { x = tx; w = tw; vx = vw = 0; draw(1, 1); raf = 0; }
+      measure();
+      vx = spring(tx, x, vx, dt); vy = spring(ty, y, vy, dt); vw = spring(tw, w, vw, dt); vh = spring(th, h, vh, dt);
+      x += vx * dt; y += vy * dt; w += vw * dt; h += vh * dt;
+      // stretch along the way it is going, narrower across it
+      var ax = Math.min(0.14, Math.abs(vx) / 3500), ay = Math.min(0.14, Math.abs(vy) / 2500);
+      draw(1 + ax - ay * 0.8, 1 + ay - ax * 0.8);
+      var moving = [tx - x, ty - y, tw - w, th - h].some(function (d) { return Math.abs(d) > 0.3; }) ||
+                   [vx, vy, vw, vh].some(function (v) { return Math.abs(v) > 2; });
+      if (moving) raf = requestAnimationFrame(tick);
+      else { x = tx; y = ty; w = tw; h = th; vx = vy = vw = vh = 0; draw(1, 1); raf = 0; }
     };
     var target = function (link) {
-      var a = link.getBoundingClientRect(), b = nav.getBoundingClientRect();
-      // the lens is placed from inside the pill's border (clientLeft/Top)
-      tx = a.left - b.left - nav.clientLeft; tw = a.width;
-      ty = Math.round(a.top - b.top - nav.clientTop); th = Math.round(a.height);
+      el = link;
       cta = link.classList.contains("btn--nav");
-      if (cta) {                                     // inside the blue border, not on it
-        var bw = parseFloat(getComputedStyle(link).borderTopWidth) || 0;
-        tx += bw; tw -= 2 * bw; ty += Math.round(bw); th -= 2 * Math.round(bw);
-      }
       lens.classList.toggle("is-cta", cta);
-      if (!on || still) { x = tx; w = tw; vx = vw = 0; draw(1, 1); }
+      // a pill, or a menu row's corners; capped at half the height so the
+      // change between them animates evenly (999px would snap at the end)
+      lens.style.borderRadius = Math.min(parseFloat(getComputedStyle(link).borderTopLeftRadius) || 0, link.offsetHeight / 2) + "px";
+      measure();
+      if (!on || still) { x = tx; y = ty; w = tw; h = th; vx = vy = vw = vh = 0; draw(1, 1); }
       on = true;
       lens.classList.add("is-on");
       if (!still && !raf) { last = performance.now(); raf = requestAnimationFrame(tick); }
     };
-    Array.prototype.forEach.call(nav.querySelectorAll(".nav__menu > li > .nav__link, .nav__actions .nav__link, .nav__actions .btn--nav"), function (link) {
+    Array.prototype.forEach.call(nav.querySelectorAll(".nav__menu > li > .nav__link, .nav__dropdown-menu a, .nav__actions .nav__link, .nav__actions .btn--nav"), function (link) {
       link.addEventListener("pointerenter", function () { target(link); });
       link.addEventListener("focus", function () { target(link); });
     });

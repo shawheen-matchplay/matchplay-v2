@@ -82,7 +82,7 @@
   border-radius: 999px;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.25s ease;
+  transition: opacity 0.25s ease, border-radius 0.25s ease;
   background: rgba(255, 255, 255, 0.07);
   -webkit-backdrop-filter: saturate(1.4) brightness(1.15);
           backdrop-filter: var(--lg-filter, saturate(1.4) brightness(1.15));
@@ -102,7 +102,8 @@
     inset 0 0 0 1px rgba(255, 255, 255, 0.09);
 }
 @media (hover: hover) and (pointer: fine) {
-  .glass .nav__link:hover { background: transparent; }
+  .glass .nav__link:hover,
+  .glass .nav__dropdown-menu a:hover { background: transparent; }   /* the lens shows the hover */
 }
 
 /* Whiter type on the glass; the page you are on stays blue. */
