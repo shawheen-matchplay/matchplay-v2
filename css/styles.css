@@ -1864,11 +1864,17 @@ html.splash--returning [data-reveal] {
   padding-bottom: clamp(2.5rem, 6vh, 4.5rem);
 }
 /* The homepage's closing call to action and the newsletter: one dark
-   screen, the two boxes stacked one over the other at one size (the same
+   section, the two boxes stacked one over the other at one size (the same
    width, and the height of the taller, main.js data-match). */
 .page--screens #start > .container {
   justify-content: center;
   gap: clamp(1rem, 2.5vh, 1.75rem);
+}
+/* The ring toy starts right where the newsletter box ends: no screen of
+   its own and nothing below the boxes (the two grounds are the same dark). */
+.page--screens #start {
+  min-height: 0;
+  padding-bottom: 0;
 }
 .page--screens #start .cta-band,
 .page--screens .subscribe__panel {
