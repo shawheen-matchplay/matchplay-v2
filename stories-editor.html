@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Stories Editor — MatchPlay</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Internal tool: keep it out of search. -->
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="assets/favicon.png" type="image/png" sizes="512x512">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <!--
+    Stories editor. The founder quotes (the scrolling strips on the homepage
+    and at the top of Founders) and the founder story cards (video, short
+    quote, company link, on Founders) come from one list,
+    tools/stories/founders.json. This page edits that list and commits it
+    (plus any new photo, in assets/founders/) straight to the repo; the
+    build-blog workflow runs tools/stories/build.py and republishes.
+
+    Each founder: Visible on or off, and Show as quote only, video card only,
+    or both. The list's order is the order on the site.
+
+    Same lock as the blog editor: the GitHub token is encrypted with the
+    shared password. To set or change it, run node tools/blog/editor-setup.mjs
+    (it writes both editors).
+  -->
+  <style>
+    :root {
+      --bg: #F3F4F6; --card: #FFFFFF; --ink: #0A0A0A; --ink-2: #4B5160; --ink-3: #8A90A0;
+      --line: #E1E4EA; --accent: #1ED2F4; --danger: #C2362B; --ok: #1C7C46;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 Inter, system-ui, sans-serif; }
+    [hidden] { display: none !important; }
+    h1, h2 { font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+    label { display: block; font-weight: 500; font-size: 0.875rem; margin-bottom: 0.35rem; }
+    .hint { color: var(--ink-3); font-size: 0.8rem; font-weight: 400; }
+    input[type=text], input[type=url], input[type=password], select, textarea {
+      width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--line); border-radius: 10px;
+      background: #fff; color: var(--ink); font: inherit;
+    }
+    input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+    textarea { resize: vertical; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+      padding: 0.6rem 1.15rem; border: 0; border-radius: 999px; cursor: pointer;
+      background: var(--accent); color: #062A33; font: 600 0.88rem Inter, sans-serif;
+    }
+    .btn:disabled { opacity: 0.55; cursor: progress; }
+    .btn--ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+    .btn--small { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
+    .btn--danger { background: transparent; color: var(--danger); border: 1px solid var(--line); }
+    .btn--danger.is-armed { background: var(--danger); color: #fff; border-color: var(--danger); }
+    .err { color: var(--danger); font-size: 0.85rem; margin-top: 0.4rem; }
+    .err:empty { display: none; }
+    .status { font-size: 0.9rem; color: var(--ink-2); margin: 0; }
+    .status:empty { display: none; }
+    .status.is-ok { color: var(--ok); }
+    .status.is-err { color: var(--danger); }
+    .status a { color: inherit; }
+
+    /* Lock screen */
+    .lock { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+    .lock__card { width: min(400px, 100%); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 2rem; display: grid; gap: 1rem; }
+    .lock__card p { margin: 0; color: var(--ink-2); }
+
+    /* Bar */
+    .bar {
+      position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+      padding: 0.85rem max(16px, 2rem); background: rgba(243,244,246,0.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
+    }
+    .bar__title { font-size: 1.05rem; }
+    .bar__title span { color: var(--ink-3); font-weight: 400; }
+    .bar__actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .dirty { color: var(--ink-3); font-size: 0.85rem; }
+
+    /* Layout: the list and the open founder on the left, the preview on the right */
+    .layout { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 1.5rem; padding: 1.25rem max(16px, 2rem) 3rem; }
+    .col { display: grid; gap: 0.75rem; align-content: start; }
+    .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+    .row {
+      display: grid; grid-template-columns: auto 44px minmax(0, 1fr) auto; gap: 0.75rem; align-items: center;
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.6rem 0.75rem;
+    }
+    .row.is-open { outline: 2px solid var(--accent); outline-offset: -1px; }
+    .row.is-hidden { background: var(--bg); border-style: dashed; }
+    .row.is-hidden .row__photo, .row.is-hidden .row__who { opacity: 0.5; }
+    .row__move { display: grid; gap: 2px; }
+    .row__move button { width: 26px; height: 20px; border: 1px solid var(--line); background: #fff; border-radius: 6px; cursor: pointer; font-size: 0.7rem; line-height: 1; color: var(--ink-2); }
+    .row__move button:disabled { opacity: 0.35; cursor: default; }
+    .row__photo { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: var(--bg); }
+    .row__who { min-width: 0; cursor: pointer; }
+    .row__name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row__meta { color: var(--ink-3); font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row__controls { display: flex; gap: 0.5rem; align-items: center; }
+    .row__controls select { width: auto; padding: 0.35rem 0.5rem; font-size: 0.82rem; }
+    .switch { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; color: var(--ink-2); margin: 0; cursor: pointer; font-weight: 500; }
+    .switch input { width: 34px; height: 20px; appearance: none; border-radius: 999px; background: var(--line); position: relative; cursor: pointer; margin: 0; transition: background 0.2s; }
+    .switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    .switch input:checked { background: var(--ok); }
+    .switch input:checked::after { transform: translateX(14px); }
+    .badge { display: inline-block; padding: 0.05rem 0.45rem; border-radius: 999px; background: var(--ink-2); color: #fff; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: 0.1em; }
+
+    /* The open founder */
+    .group { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.15rem; display: grid; gap: 0.9rem; }
+    .group > h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-3); font-weight: 500; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+    .photo { display: flex; gap: 0.9rem; align-items: center; }
+    .photo img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--bg); border: 1px solid var(--line); }
+    .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: #fff; }
+    .seg label { margin: 0; }
+    .seg input { position: absolute; opacity: 0; pointer-events: none; }
+    .seg span { display: inline-block; padding: 0.45rem 0.9rem; font-size: 0.85rem; font-weight: 500; cursor: pointer; color: var(--ink-2); }
+    .seg input:checked + span { background: var(--ink); color: #fff; }
+    .seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .form-foot { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; }
+    .empty { color: var(--ink-3); font-size: 0.9rem; padding: 1rem; text-align: center; border: 1px dashed var(--line); border-radius: var(--radius); }
+
+    /* Preview */
+    .preview { position: sticky; top: 72px; height: calc(100vh - 96px); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: #fff; }
+    .preview iframe { width: 100%; height: 100%; border: 0; display: block; }
+    @media (max-width: 1100px) {
+      .layout { grid-template-columns: 1fr; }
+      .preview { position: static; height: 80vh; }
+    }
+    @media (max-width: 560px) {
+      .row { grid-template-columns: auto 40px minmax(0, 1fr); }
+      .row__controls { grid-column: 1 / -1; justify-content: flex-end; flex-wrap: wrap; }
+      .row2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== Lock ===== -->
+  <main class="lock" id="lock">
+    <form class="lock__card" id="lock-form">
+      <h1>Stories editor</h1>
+      <p id="lock-note">Enter the editor password to edit founder quotes and story cards.</p>
+      <div>
+        <label for="pw">Password</label>
+        <input type="password" id="pw" autocomplete="current-password" required>
+        <p class="err" id="lock-err" role="alert"></p>
+      </div>
+      <button class="btn" type="submit" id="unlock">Unlock</button>
+    </form>
+  </main>
+
+  <!-- ===== Editor ===== -->
+  <div id="app" hidden>
+    <header class="bar">
+      <h1 class="bar__title">Founder stories <span id="count"></span></h1>
+      <div class="bar__actions">
+        <span class="dirty" id="dirty"></span>
+        <button class="btn btn--ghost" type="button" id="add">Add founder</button>
+        <button class="btn" type="button" id="save" disabled>Save changes</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <div class="col">
+        <p class="status" id="status" role="status"></p>
+        <ul class="list" id="list"></ul>
+
+        <form class="group" id="form" novalidate hidden>
+          <h2 id="form-title">Founder</h2>
+          <div class="row2">
+            <div><label for="f-name">Name</label><input type="text" id="f-name"></div>
+            <div><label for="f-title">Title <span class="hint">— e.g. CEO, Cofounder</span></label><input type="text" id="f-title"></div>
+          </div>
+          <div class="row2">
+            <div><label for="f-company">Company</label><input type="text" id="f-company"></div>
+            <div><label for="f-url">Company website <span class="hint">— optional</span></label><input type="url" id="f-url" placeholder="https://"></div>
+          </div>
+          <div>
+            <label for="f-photo">Photo <span class="hint">— shown on the quote; cropped square from the centre</span></label>
+            <div class="photo"><img id="f-photo-img" alt=""><input type="file" id="f-photo" accept="image/*"></div>
+          </div>
+          <div>
+            <label>Show as</label>
+            <div class="seg" role="radiogroup" aria-label="Show as">
+              <label><input type="radio" name="f-show" value="quote"><span>Quote only</span></label>
+              <label><input type="radio" name="f-show" value="video"><span>Video card only</span></label>
+              <label><input type="radio" name="f-show" value="both"><span>Both</span></label>
+            </div>
+          </div>
+          <div>
+            <label for="f-quote">Quote <span class="hint">— the scrolling quotes on the homepage and Founders; no quote marks needed</span></label>
+            <textarea id="f-quote" rows="4"></textarea>
+          </div>
+          <div>
+            <label for="f-video">YouTube video <span class="hint">— any YouTube link to it</span></label>
+            <input type="text" id="f-video" placeholder="https://www.youtube.com/watch?v=…">
+          </div>
+          <div>
+            <label for="f-cardquote">Video card quote <span class="hint">— a shorter line for the video card; empty uses the quote above</span></label>
+            <textarea id="f-cardquote" rows="2"></textarea>
+          </div>
+          <div class="form-foot">
+            <label class="switch"><input type="checkbox" id="f-visible"> Visible on the site</label>
+            <button class="btn btn--danger btn--small" type="button" id="f-delete">Delete founder</button>
+          </div>
+        </form>
+        <p class="empty" id="pick">Pick a founder to edit, or add one.</p>
+      </div>
+
+      <div class="preview" aria-label="Preview">
+        <iframe id="preview" title="Preview"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    "use strict";
+
+    /* Set by tools/blog/editor-setup.mjs. Never edit by hand. */
+    /* VAULT:start */ var VAULT = {"v":1,"iterations":600000,"salt":"xWPnwnGIJgyBkHIZ6ioO1A==","iv":"uxpa5Ea1wYbYaNzk","data":"hyvzn3dWgrip6eiSVX0zTHqt+gHrcOluzuoxA0ppQ1w8J5PzgtxkjYCXPtsygK3Xnyriyq3TPQxLlp+/ymNgT1nH/CpwYJJCrOfEQ05sIE9g6KUF2sL0BEpmlwIZy36/ln6OBCwDTvgnuhjFTw54YNZxjF8XFkvD2ZuYELFQrKnnTMi5sSNUmHuQwYAwcOjXd16JZtPJYYrhv70iIwocbwMA/T6QA7rZhpVqMQdmNd3z0/VMF9nPyvzv01s="}; /* VAULT:end */
+
+    var DATA_PATH = "tools/stories/founders.json";
+    var $ = function (id) { return document.getElementById(id); };
+    var cfg = null;                      // { token, owner, repo, branch } once unlocked
+    var founders = [];                   // the list as edited
+    var saved = "";                      // the list as last loaded or saved, to tell changes
+    var photos = {};                     // founder id -> { blob, ext, url } for new photos
+    var openId = null;
+    var previewDoc = null;
+
+    /* ---------- small helpers ------------------------------------------ */
+    function esc(s) {
+      return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+    function b64ToBytes(s) {
+      var bin = atob(s), out = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out;
+    }
+    function blobToBase64(blob) {
+      return new Promise(function (resolve, reject) {
+        var r = new FileReader();
+        r.onload = function () { resolve(String(r.result).split(",")[1]); };
+        r.onerror = reject;
+        r.readAsDataURL(blob);
+      });
+    }
+    function textToBase64(s) { return blobToBase64(new Blob([s], { type: "text/plain" })); }
+    function slugify(s) {
+      return String(s).toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "")
+        .replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+    }
+    // a YouTube link (watch, youtu.be, embed, shorts) or a bare id -> the id
+    function youtubeId(s) {
+      s = String(s || "").trim();
+      if (/^[\w-]{11}$/.test(s)) return s;
+      var m = s.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/|\/live\/)([\w-]{11})/);
+      return m ? m[1] : "";
+    }
+    function stripQuotes(s) { return String(s || "").trim().replace(/^["“”]+|["“”]+$/g, "").trim(); }
+    function byId(id) { return founders.filter(function (f) { return f.id === id; })[0]; }
+    function photoUrl(f) { return photos[f.id] ? photos[f.id].url : (f.photo || ""); }
+    function role(f) { return [f.title, f.company].filter(Boolean).join(", "); }
+
+    /* ---------- unlock ---------------------------------------------------- */
+    async function decryptVault(password) {
+      var base = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+      var key = await crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: b64ToBytes(VAULT.salt), iterations: VAULT.iterations, hash: "SHA-256" },
+        base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+      var plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64ToBytes(VAULT.iv) }, key, b64ToBytes(VAULT.data));
+      return JSON.parse(new TextDecoder().decode(plain));
+    }
+    if (!VAULT) {
+      $("lock-note").textContent = "The editor isn’t set up yet. Run node tools/blog/editor-setup.mjs in the repo to set its password.";
+      $("pw").disabled = true;
+      $("unlock").disabled = true;
+    }
+    $("lock-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      $("lock-err").textContent = "";
+      $("unlock").disabled = true;
+      $("unlock").textContent = "Unlocking…";
+      try {
+        cfg = await decryptVault($("pw").value);
+        $("pw").value = "";
+        start();
+      } catch (err) {
+        $("lock-err").textContent = "That password didn’t work.";
+      }
+      $("unlock").disabled = false;
+      $("unlock").textContent = "Unlock";
+    });
+
+    /* ---------- GitHub ---------------------------------------------------- */
+    async function gh(path, opts) {
+      opts = opts || {};
+      var res = await fetch("https://api.github.com/repos/" + cfg.owner + "/" + cfg.repo + path, {
+        method: opts.method || "GET",
+        cache: "no-store",
+        headers: {
+          "Authorization": "Bearer " + cfg.token,
+          "Accept": opts.raw ? "application/vnd.github.raw+json" : "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28"
+        },
+        body: opts.body ? JSON.stringify(opts.body) : undefined
+      });
+      if (!res.ok) {
+        var detail = "";
+        try { detail = (await res.json()).message || ""; } catch (e) {}
+        throw new Error("GitHub said " + res.status + (detail ? ": " + detail : ""));
+      }
+      return res.json();
+    }
+    // one commit: files [{ path, blob | text }]
+    async function commit(files, message) {
+      var tree = [];
+      status("Uploading " + files.length + (files.length === 1 ? " file…" : " files…"));
+      for (var i = 0; i < files.length; i++) {
+        var content = files[i].blob ? await blobToBase64(files[i].blob) : await textToBase64(files[i].text);
+        var blob = await gh("/git/blobs", { method: "POST", body: { content: content, encoding: "base64" } });
+        tree.push({ path: files[i].path, mode: "100644", type: "blob", sha: blob.sha });
+      }
+      status("Publishing…");
+      for (var attempt = 0; attempt < 2; attempt++) {    // retry once if main moved meanwhile
+        var head = await gh("/git/ref/heads/" + cfg.branch);
+        var base = await gh("/git/commits/" + head.object.sha);
+        var newTree = await gh("/git/trees", { method: "POST", body: { base_tree: base.tree.sha, tree: tree } });
+        var made = await gh("/git/commits", { method: "POST", body: { message: message, tree: newTree.sha, parents: [head.object.sha] } });
+        try {
+          await gh("/git/refs/heads/" + cfg.branch, { method: "PATCH", body: { sha: made.sha } });
+          return made.sha;
+        } catch (err) {
+          if (attempt === 1) throw err;
+        }
+      }
+    }
+
+    /* ---------- status and changes ------------------------------------------ */
+    function status(msg, kind) {
+      $("status").className = "status" + (kind ? " is-" + kind : "");
+      $("status").innerHTML = msg || "";
+    }
+    function serialise() { return JSON.stringify({ founders: founders }, null, 2) + "\n"; }
+    function isDirty() { return serialise() !== saved || Object.keys(photos).length > 0; }
+    function changed() {
+      var d = isDirty();
+      $("save").disabled = !d;
+      $("dirty").textContent = d ? "Unsaved changes" : "";
+      renderList();
+      renderPreview();
+    }
+    window.addEventListener("beforeunload", function (e) {
+      if (cfg && isDirty()) { e.preventDefault(); e.returnValue = ""; }
+    });
+
+    /* ---------- the list ---------------------------------------------------- */
+    var SHOW = { quote: "Quote only", video: "Video card only", both: "Both" };
+    function renderList() {
+      var ul = $("list");
+      var shown = founders.filter(function (f) { return f.visible; }).length;
+      $("count").textContent = "· " + founders.length + (shown < founders.length ? " (" + (founders.length - shown) + " hidden)" : "");
+      ul.innerHTML = "";
+      founders.forEach(function (f, i) {
+        var li = document.createElement("li");
+        li.className = "row" + (f.visible ? "" : " is-hidden") + (f.id === openId ? " is-open" : "");
+        var url = photoUrl(f);
+        li.innerHTML =
+          '<div class="row__move"><button type="button" data-up aria-label="Move up"' + (i === 0 ? " disabled" : "") + '>&#9650;</button>' +
+          '<button type="button" data-down aria-label="Move down"' + (i === founders.length - 1 ? " disabled" : "") + '>&#9660;</button></div>' +
+          '<img class="row__photo" alt="" src="' + esc(url) + '"' + (url ? "" : " hidden") + '>' + (url ? "" : '<span class="row__photo"></span>') +
+          '<div class="row__who" data-open><div class="row__name">' + (f.visible ? "" : '<span class="badge">Hidden</span> ') + esc(f.name || "New founder") + '</div>' +
+          '<div class="row__meta">' + esc(role(f) || "—") + '</div></div>' +
+          '<div class="row__controls">' +
+          '<select data-show aria-label="Show as">' + Object.keys(SHOW).map(function (k) {
+            return '<option value="' + k + '"' + (f.show === k ? " selected" : "") + ">" + SHOW[k] + "</option>";
+          }).join("") + "</select>" +
+          '<label class="switch" title="Visible on the site"><input type="checkbox" data-visible' + (f.visible ? " checked" : "") + '> Visible</label>' +
+          '<button class="btn btn--ghost btn--small" type="button" data-open>Edit</button></div>';
+        li.querySelector("[data-up]").addEventListener("click", function () { move(i, -1); });
+        li.querySelector("[data-down]").addEventListener("click", function () { move(i, 1); });
+        li.querySelector("[data-show]").addEventListener("change", function (e) { f.show = e.target.value; if (f.id === openId) fillForm(f); changed(); });
+        li.querySelector("[data-visible]").addEventListener("change", function (e) { f.visible = e.target.checked; if (f.id === openId) fillForm(f); changed(); });
+        Array.prototype.forEach.call(li.querySelectorAll("[data-open]"), function (b) {
+          b.addEventListener("click", function () { open(f.id); });
+        });
+        ul.appendChild(li);
+      });
+    }
+    function move(i, by) {
+      var j = i + by;
+      if (j < 0 || j >= founders.length) return;
+      var f = founders.splice(i, 1)[0];
+      founders.splice(j, 0, f);
+      changed();
+    }
+
+    /* ---------- the open founder ---------------------------------------------- */
+    function open(id) {
+      openId = id;
+      var f = byId(id);
+      $("form").hidden = !f;
+      $("pick").hidden = !!f;
+      if (f) { fillForm(f); $("form").scrollIntoView({ block: "nearest" }); }
+      renderList();
+      renderPreview();
+    }
+    function fillForm(f) {
+      $("form-title").textContent = f.name || "New founder";
+      $("f-name").value = f.name || "";
+      $("f-title").value = f.title || "";
+      $("f-company").value = f.company || "";
+      $("f-url").value = f.companyUrl || "";
+      $("f-quote").value = f.quote || "";
+      $("f-cardquote").value = f.cardQuote || "";
+      $("f-video").value = f.video ? "https://www.youtube.com/watch?v=" + f.video : "";
+      $("f-visible").checked = !!f.visible;
+      Array.prototype.forEach.call(document.querySelectorAll('input[name="f-show"]'), function (r) { r.checked = r.value === f.show; });
+      var url = photoUrl(f);
+      $("f-photo-img").src = url || "";
+      $("f-photo-img").hidden = !url;
+      $("f-photo").value = "";
+      $("f-delete").textContent = "Delete founder";
+      $("f-delete").classList.remove("is-armed");
+      $("f-delete").dataset.confirm = "";
+    }
+    // the form, back into the open founder (on every edit)
+    function readForm() {
+      var f = byId(openId);
+      if (!f) return;
+      f.name = $("f-name").value.trim();
+      f.title = $("f-title").value.trim();
+      f.company = $("f-company").value.trim();
+      f.companyUrl = $("f-url").value.trim();
+      f.quote = stripQuotes($("f-quote").value);
+      f.cardQuote = stripQuotes($("f-cardquote").value);
+      f.video = youtubeId($("f-video").value) || ($("f-video").value.trim() ? f.video : "");
+      f.visible = $("f-visible").checked;
+      var pick = document.querySelector('input[name="f-show"]:checked');
+      if (pick) f.show = pick.value;
+      $("form-title").textContent = f.name || "New founder";
+      changed();
+    }
+    $("form").addEventListener("input", readForm);
+    $("form").addEventListener("change", function (e) { if (e.target.id !== "f-photo") readForm(); });
+
+    // Photo: centre-cropped to a 480px square, WebP where the browser can encode it.
+    $("f-photo").addEventListener("change", async function () {
+      var file = $("f-photo").files[0], f = byId(openId);
+      if (!file || !f) return;
+      var bmp = await createImageBitmap(file);
+      var side = Math.min(bmp.width, bmp.height), size = Math.min(480, side);
+      var c = document.createElement("canvas");
+      c.width = c.height = size;
+      var g = c.getContext("2d");
+      g.fillStyle = "#fff"; g.fillRect(0, 0, size, size);
+      g.drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, size, size);
+      var blob = await new Promise(function (r) { c.toBlob(r, "image/webp", 0.86); });
+      var ext = "webp";
+      if (!blob || blob.type !== "image/webp") { blob = await new Promise(function (r) { c.toBlob(r, "image/jpeg", 0.88); }); ext = "jpg"; }
+      photos[f.id] = { blob: blob, ext: ext, url: URL.createObjectURL(blob) };
+      $("f-photo-img").src = photos[f.id].url;
+      $("f-photo-img").hidden = false;
+      changed();
+    });
+
+    $("f-delete").addEventListener("click", function () {
+      var b = $("f-delete");
+      if (b.dataset.confirm !== "1") {
+        b.dataset.confirm = "1";
+        b.classList.add("is-armed");
+        b.textContent = "Delete for good?";
+        setTimeout(function () { if (b.dataset.confirm === "1") { b.dataset.confirm = ""; b.classList.remove("is-armed"); b.textContent = "Delete founder"; } }, 3000);
+        return;
+      }
+      founders = founders.filter(function (f) { return f.id !== openId; });
+      delete photos[openId];
+      open(null);
+      changed();
+    });
+
+    $("add").addEventListener("click", function () {
+      var id = "founder-" + Date.now().toString(36);
+      founders.unshift({ id: id, visible: true, show: "quote", name: "", title: "", company: "", companyUrl: "", photo: "", quote: "", cardQuote: "", video: "" });
+      open(id);
+      changed();
+      $("f-name").focus();
+    });
+
+    /* ---------- preview ------------------------------------------------------- */
+    // The site's own stylesheet, in a same-origin frame: the open founder's
+    // quote card and video card as they will look.
+    function setupPreview() {
+      var frame = $("preview");
+      frame.srcdoc = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">' +
+        '<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Libre+Baskerville:ital@0;1&family=Sora:wght@600&display=swap" rel="stylesheet">' +
+        '<link rel="stylesheet" href="css/styles.css">' +
+        '<style>body{margin:0} .pv-label{font:500 12px/1 Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#8A90A0;margin:0 0 14px}' +
+        '.pv-quote .marquee__track{display:flex;justify-content:center;padding:6px 0;animation:none}' +
+        '.pv-section{padding:32px 24px} .pv-note{font:14px/1.5 Inter,sans-serif;color:#8A90A0;margin:0}</style>' +
+        '</head><body><main id="pv"></main></body></html>';
+      frame.addEventListener("load", function () { previewDoc = frame.contentDocument; renderPreview(); });
+    }
+    function renderPreview() {
+      if (!previewDoc) return;
+      var root = previewDoc.getElementById("pv");
+      var f = byId(openId);
+      if (!f) { root.innerHTML = '<section class="pv-section"><p class="pv-note">Pick a founder to see their quote and video card.</p></section>'; return; }
+      var out = "";
+      if (!f.visible) out += '<section class="pv-section"><p class="pv-note">Hidden: this founder is not on the site.</p></section>';
+      if (f.show !== "video") {
+        var photo = photoUrl(f);
+        out += '<section class="section section--light pv-section pv-quote"><p class="pv-label">Quote (homepage and Founders)</p>' +
+          '<div class="marquee"><ul class="marquee__track"><li class="testimonial">' +
+          '<p class="testimonial__quote">&ldquo;' + esc(f.quote || "The quote goes here.") + '&rdquo;</p>' +
+          '<div class="testimonial__person">' + (photo ? '<img class="testimonial__avatar" src="' + esc(photo) + '" alt="">' : "") +
+          '<div><div class="testimonial__name">' + esc(f.name || "Name") + '</div><div class="testimonial__role">' + esc(role(f) || "Title, Company") + '</div></div></div>' +
+          '</li></ul></div></section>';
+      }
+      if (f.show !== "quote") {
+        var vid = f.video;
+        out += '<section class="section pv-section"><p class="pv-label">Video card (Founders)</p><div class="story-grid"><figure class="story-card">' +
+          '<div class="story__video">' + (vid
+            ? '<iframe src="https://www.youtube-nocookie.com/embed/' + esc(vid) + '" title="Video" loading="lazy" allowfullscreen allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>'
+            : "") + '</div>' +
+          '<div class="story-card__text"><blockquote><p>&ldquo;' + esc(f.cardQuote || f.quote || "The video card quote goes here.") + '&rdquo;</p></blockquote>' +
+          '<p class="story__by"><span class="story__name">' + esc(f.name || "Name") + "</span>" + esc(role(f) || "Title, Company") + "</p>" +
+          (f.companyUrl ? '<a class="text-link story__site" href="' + esc(f.companyUrl) + '" target="_blank" rel="noopener">' + esc(f.company || f.companyUrl) + ' <span aria-hidden="true">&#8599;</span></a>' : "") +
+          "</div></figure></div></section>";
+      }
+      // keep the video frame when only the text changed, so it does not reload
+      var oldFrame = root.querySelector(".story__video iframe");
+      root.innerHTML = out;
+      var newFrame = root.querySelector(".story__video iframe");
+      if (oldFrame && newFrame && oldFrame.src === newFrame.src) newFrame.replaceWith(oldFrame);
+    }
+
+    /* ---------- save ---------------------------------------------------------- */
+    function validate() {
+      for (var i = 0; i < founders.length; i++) {
+        var f = founders[i], who = f.name || "A new founder";
+        if (!f.name) return "Every founder needs a name.";
+        if (f.show !== "video" && !f.quote) return who + " is shown as a quote but has no quote.";
+        if (f.show !== "quote" && !f.video) return who + " is shown as a video card but has no YouTube video (or the link isn’t one).";
+        if (f.companyUrl && !/^https?:\/\//.test(f.companyUrl)) return who + "’s company website should start with https://";
+      }
+      return "";
+    }
+    $("save").addEventListener("click", async function () {
+      var problem = validate();
+      if (problem) { status(problem, "err"); return; }
+      $("save").disabled = true;
+      try {
+        var files = [];
+        // new photos, named after the founder (plus a stamp, so a live page never shows a half-swapped file)
+        Object.keys(photos).forEach(function (id) {
+          var f = byId(id);
+          if (!f) return;
+          var name = (slugify(f.name) || id) + "-" + Date.now().toString(36) + "." + photos[id].ext;
+          f.photo = "assets/founders/" + name;
+          files.push({ path: f.photo, blob: photos[id].blob });
+        });
+        // a new founder's id follows their name
+        founders.forEach(function (f) {
+          if (/^founder-/.test(f.id) && f.name) {
+            var base = slugify(f.name) || f.id, id = base, n = 2;
+            while (founders.some(function (o) { return o !== f && o.id === id; })) id = base + "-" + n++;
+            f.id = id;
+          }
+        });
+        var text = serialise();
+        files.push({ path: DATA_PATH, text: text });
+        var sha = await commit(files, "Founder stories: update\n\nSaved with the stories editor.");
+        saved = text;
+        photos = {};
+        status("Saved. The homepage and Founders update in a minute or two. " +
+          '<a href="https://github.com/' + cfg.owner + "/" + cfg.repo + "/commit/" + sha + '" target="_blank" rel="noopener">See the change</a>.', "ok");
+      } catch (err) {
+        status(esc(err.message || String(err)), "err");
+      }
+      changed();
+    });
+
+    /* ---------- start ----------------------------------------------------------- */
+    async function start() {
+      $("lock").hidden = true;
+      $("app").hidden = false;
+      setupPreview();
+      status("Loading…");
+      try {
+        var data = await gh("/contents/" + DATA_PATH + "?ref=" + cfg.branch, { raw: true });
+        founders = (data.founders || []).map(function (f) {
+          return Object.assign({ visible: true, show: "both", name: "", title: "", company: "", companyUrl: "", photo: "", quote: "", cardQuote: "", video: "" }, f);
+        });
+        saved = serialise();
+        status("");
+        open(null);
+        changed();
+      } catch (err) {
+        status("Couldn’t load the founders. " + esc(err.message || String(err)), "err");
+      }
+    }
+
+    // For testing without a password: ?debug=1 adds window.storiesEditor
+    // with a way in using a token of your own (unlockWith({ token, owner, repo, branch })).
+    if (/[?&]debug=1/.test(location.search)) {
+      window.storiesEditor = { unlockWith: function (c) { cfg = c; start(); }, youtubeId: youtubeId, founders: function () { return founders; } };
+    }
+  })();
+  </script>
+</body>
+</html>

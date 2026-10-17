@@ -89,6 +89,7 @@ code over it.
 | Blog | `blog.html`, `blog/<slug>.html` | **generated**, see §7. Title "The Warm Intro" / "A MatchPlay Blog" |
 | Legal | `terms.html`, `privacy.html`, `acceptable-use.html`, `copyright-trademark.html` | text carried over verbatim from the old site's `/legal/*` (Oct 2026); release column with a tab row between the four. Wording is legal text: don't edit it without Shawheen's say-so |
 | Blog editor | `blog-editor.html` | password-protected publishing UI for the marketing contractor |
+| Stories editor | `stories-editor.html` | founder quotes and video cards (see §7) |
 | Animations (standalone) | `animations/link-merge.html`, `animations/ring-play-{a,b,c}.html` + `ring-play.js` | |
 
 - `css/styles.css`: everything. Numbered sections (header/nav, hero, cards,
@@ -266,6 +267,22 @@ around the MatchPlay mark (white ball + two white links).
   posts. Hide/Publish toggles `"hidden": true` in the post JSON; `build.py`
   skips hidden posts (no page, not in the index or related). `?debug=1` exposes `blogEditor.toHtml/toMarkdown/unlockWith(cfg)` for
   testing (stub `fetch` for api.github.com; never test against the real repo).
+
+### Founder stories (quotes and video cards)
+
+- One list, `tools/stories/founders.json`: name, title, company, companyUrl,
+  photo, quote (the scrolling strips on the homepage and Founders hero),
+  cardQuote and video (YouTube id) for the story cards on Founders, `show`
+  (`quote` | `video` | `both`) and `visible`. List order = site order.
+- `python3 tools/stories/build.py` writes the strips and cards between
+  `<!-- stories:quotes|cards:start/end -->` markers in `index.html` and
+  `founders.html`; never hand-edit between them. An empty strip or grid
+  hides the element marked `data-stories-hide` around it.
+- `stories-editor.html`: same lock as the blog editor (one vault;
+  `editor-setup.mjs` writes both pages). Saves commit the JSON and new
+  photos (`assets/founders/`); the build-blog workflow also runs the stories
+  build. `?debug=1` exposes `storiesEditor.unlockWith(cfg)` for testing.
+- Anthony Dann's featured quote on Founders is not part of this (hand-written).
 
 ## 8. Media and tools
 

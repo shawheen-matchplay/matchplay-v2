@@ -11,7 +11,7 @@
         Permissions:       Contents → Read and write   (nothing else)
         Expiration:        your call; rerun this script with a new token when it lapses
    2. From the repo root:  node tools/blog/editor-setup.mjs
-   3. Commit and push blog-editor.html.
+   3. Commit and push blog-editor.html and stories-editor.html.
 
    Use a long password (four or more random words): the encrypted token is in
    a public file, so the password is what keeps it safe. To revoke access,
@@ -27,7 +27,8 @@ import readline from "node:readline";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const PAGE = path.join(ROOT, "blog-editor.html");
+// Both editors share the lock: one token, one password.
+const PAGES = ["blog-editor.html", "stories-editor.html"].map((p) => path.join(ROOT, p));
 const ITERATIONS = 600000;
 const BRANCH = "main";
 
@@ -83,13 +84,16 @@ async function main() {
   if ((await ask("Same password again: ", true)) !== password) throw new Error("The passwords didn't match.");
 
   const vault = await encrypt({ token, owner, repo, branch: BRANCH }, password);
-  const page = fs.readFileSync(PAGE, "utf8");
   const marker = /\/\* VAULT:start \*\/[\s\S]*?\/\* VAULT:end \*\//;
-  if (!marker.test(page)) throw new Error("Couldn't find the VAULT markers in blog-editor.html.");
-  fs.writeFileSync(PAGE, page.replace(marker, `/* VAULT:start */ var VAULT = ${JSON.stringify(vault)}; /* VAULT:end */`));
+  for (const PAGE of PAGES) {
+    if (!fs.existsSync(PAGE)) continue;
+    const page = fs.readFileSync(PAGE, "utf8");
+    if (!marker.test(page)) throw new Error(`Couldn't find the VAULT markers in ${path.basename(PAGE)}.`);
+    fs.writeFileSync(PAGE, page.replace(marker, `/* VAULT:start */ var VAULT = ${JSON.stringify(vault)}; /* VAULT:end */`));
+  }
 
-  console.log("\nDone. blog-editor.html now opens with that password.");
-  console.log("Commit and push it:  git add blog-editor.html && git commit -m \"Blog editor: set password\" && git push");
+  console.log("\nDone. blog-editor.html and stories-editor.html now open with that password.");
+  console.log("Commit and push them:  git add blog-editor.html stories-editor.html && git commit -m \"Editors: set password\" && git push");
 }
 
 main().catch((err) => { console.error("\n" + err.message); process.exit(1); });
