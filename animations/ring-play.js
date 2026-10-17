@@ -7,8 +7,9 @@
                                         for each other and merge by themselves
      window.RING_PLAY = { mode: "c" }   as a, and rings that drift close also
                                         merge by themselves
-   Every way, only rings of the same colour merge, and links split back
-   into two rings after 2-3 seconds (one of them taking a new colour).
+   Every way, rings only merge within a colour family (see FAMILY), and
+   links split back into their two rings, each its own colour again, after
+   2-3 seconds.
 
    The merge is the one in link-merge.html and the hero: a stretch, a
    touch and a bounce, worked out in its own frame (ring radius 100) and
@@ -36,6 +37,11 @@
   /* the six MatchPlay brand colours, and only these:
      open, ventures, masters, studios, invitational, challenge */
   var COLORS = ["#1ED2F4", "#F97D4A", "#DDF01A", "#9590FF", "#8DEBD1", "#D25AFF"];
+  /* Rings merge within a colour family: the blues (open, invitational), the
+     warms (ventures, masters) and the violets (studios, challenge). Twice the
+     partners a single colour would have, so links form more often. */
+  var FAMILY = { "#1ED2F4": 0, "#8DEBD1": 0, "#F97D4A": 1, "#DDF01A": 1, "#9590FF": 2, "#D25AFF": 2 };
+  var kin = function (A, B) { return FAMILY[A.color] === FAMILY[B.color]; };
   var STILL = window.matchMedia("(prefers-reduced-motion: reduce)").matches;   /* no drifting */
   var NS = "http://www.w3.org/2000/svg";
   var svg = document.getElementById("stage");
@@ -152,7 +158,8 @@
   var CRUISE = R * 0.35, WANDER = R * 0.6;
   var AVOID_R = R * 4.5;               /* how near the mouse can come before shapes move off */
   var SPLIT_AFTER = [2000, 3000];      /* ms a link holds before it splits on its own */
-  var MEET = CAN + R * 0.4;            /* (b, c) same-colour rings this close (touching) merge */
+  var MEET = CAN + R * 0.4;            /* (b, c) rings of a family this close (touching) merge */
+  var DRAW = R * 9;                    /* (b, c) and within this they drift toward each other */
   var COOL = 2500;                     /* (b, c) ms after a split before a ring merges again */
 
   var f2 = function (n) { return n.toFixed(2); };
@@ -270,6 +277,7 @@
         b.el.remove(); remove(a); remove(b);
         var mx = a.x + Math.cos(m.phi) * HALF, my = a.y + Math.sin(m.phi) * HALF;
         var L = makeLink(mx, my, m.phi, a.color, a.el);
+        L.colorB = b.color;                                 /* b's own colour, back when it splits */
         L.vx = (a.vx + b.vx) * 0.25; L.vy = (a.vy + b.vy) * 0.25;
         return true;
       }
@@ -296,8 +304,7 @@
     remove(L);
     var push = R * 6, ux = Math.cos(L.ang), uy = Math.sin(L.ang);
     var a = makeRing(sp.ca[0], sp.ca[1], L.color, L.el);
-    var others = COLORS.filter(function (col) { return col !== L.color; });
-    var b = makeRing(sp.cb[0], sp.cb[1], others[Math.floor(Math.random() * others.length)], sp.elB);
+    var b = makeRing(sp.cb[0], sp.cb[1], L.colorB || L.color, sp.elB);   /* back to its own colour */
     sp.elB.setAttribute("stroke", b.color);
     [[a, -1, L.ang], [b, 1, L.ang + Math.PI]].forEach(function (r) {
       var ring = r[0];
@@ -388,7 +395,7 @@
     if (drag && drag.b.kind === "ring" && !drag.b.busy) {
       var b = drag.b, best = null, bestD = ATTRACT;
       bodies.forEach(function (o) {
-        if (o === b || o.kind !== "ring" || o.busy || o.color !== b.color) return;   /* only its own colour */
+        if (o === b || o.kind !== "ring" || o.busy || !kin(o, b)) return;   /* only its colour family */
         var dd = Math.hypot(o.x - b.x, o.y - b.y);
         if (dd < bestD) { best = o; bestD = dd; }
       });
@@ -422,7 +429,7 @@
       });
     }
 
-    /* (b, c) rings of one colour that touch merge: closest pairs first, one partner
+    /* (b, c) rings of one colour family that touch merge: closest pairs first, one partner
        each, and not straight after a split. The merge starts the moment they
        meet (its reach draws them the rest of the way), so a pair never hangs
        half-stretched waiting to touch. */
@@ -434,7 +441,13 @@
       var cands = [];
       for (var i0 = 0; i0 < free.length; i0++) for (var j0 = i0 + 1; j0 < free.length; j0++) {
         var dd0 = Math.hypot(free[j0].x - free[i0].x, free[j0].y - free[i0].y);
-        if (dd0 < MEET && free[i0].color === free[j0].color) cands.push([dd0, free[i0], free[j0]]);
+        if (!kin(free[i0], free[j0])) continue;
+        if (dd0 < MEET) { cands.push([dd0, free[i0], free[j0]]); continue; }
+        if (dd0 < DRAW) {                                    /* nearby kin drift together a little */
+          var pull = R * 2.4 * (1 - dd0 / DRAW) * dt, ux0 = (free[j0].x - free[i0].x) / dd0, uy0 = (free[j0].y - free[i0].y) / dd0;
+          free[i0].vx += ux0 * pull; free[i0].vy += uy0 * pull;
+          free[j0].vx -= ux0 * pull; free[j0].vy -= uy0 * pull;
+        }
       }
       cands.sort(function (x, y) { return x[0] - y[0]; });
       cands.forEach(function (c) {
