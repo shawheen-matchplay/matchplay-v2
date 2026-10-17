@@ -173,6 +173,39 @@
     nav.addEventListener("focusout", function (e) { if (!nav.contains(e.relatedTarget)) { on = false; lens.classList.remove("is-on"); } });
   }
 
+  /* ---- bubbly CTA (trial: the homepage hero's button) ----------------- */
+  // Pointing at it, the button swells a little like a drop of glass and
+  // wobbles as it settles: squashed wide, then tall, then still, the same
+  // give as the nav lens. Leaving, it shrinks back with a smaller wobble.
+  // Two springs: m, the size (to 1.04 while hovered), and q, the squash
+  // (pushed on enter and leave, settling back to 0).
+  if (window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    Array.prototype.forEach.call(document.querySelectorAll(".hero__cta"), function (btn) {
+      var m = 1, vm = 0, q = 0, vq = 0, goal = 1, frame = 0, then = 0;
+      function step(now) {
+        var dt = Math.min(1 / 30, Math.max(0, now - then) / 1000);
+        then = now;
+        vm += (300 * (goal - m) - 14 * vm) * dt;
+        vq += (520 * (0 - q) - 11 * vq) * dt;
+        m += vm * dt; q += vq * dt;
+        btn.style.transform = "scale(" + (m * (1 + q)).toFixed(4) + "," + (m * (1 - q * 0.8)).toFixed(4) + ")";
+        if (Math.abs(goal - m) > 0.0005 || Math.abs(vm) > 0.005 || Math.abs(q) > 0.0005 || Math.abs(vq) > 0.005) {
+          frame = requestAnimationFrame(step);
+        } else {
+          m = goal; q = vm = vq = 0; frame = 0;
+          btn.style.transform = goal === 1 ? "" : "scale(" + goal + ")";
+        }
+      }
+      function kick(to, push) {
+        goal = to; vq += push;
+        if (!frame) { then = performance.now(); frame = requestAnimationFrame(step); }
+      }
+      btn.addEventListener("pointerenter", function () { kick(1.04, 2.6); });
+      btn.addEventListener("pointerleave", function () { kick(1, -1.2); });
+    });
+  }
+
   /* ---- tint and sheen ------------------------------------------------- */
   // Over a white section the tint deepens so the white type holds; the sheen
   // slides back and forth as the page scrolls.
