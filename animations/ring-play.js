@@ -231,7 +231,7 @@
     }
     bodies = []; merges = []; splits = []; drag = null; preview = null;
     var n = parseInt(q.get("rings"), 10);
-    if (!(n > 0)) n = Math.round(W * H / (R * R * 55) * DENSITY);
+    if (!(n > 0)) n = Math.round(W * H / (R * R * 55) * DENSITY * (W < 600 ? 1.1 : 1));   /* a phone: 10% denser */
     n = Math.max(4, Math.min(90, n));
     var pad = R + LW + 8;
     var drawIn = function (pe, delay) {     /* draw in, measured as length 1, the hidden dash clear of the ends */
