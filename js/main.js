@@ -242,7 +242,9 @@
         var node = getComputedStyle(li, "::after");
         var r = parseFloat(node.width) / 2 || 9;
         var top = parseFloat(node.top) || 0;
-        return [li.offsetLeft + (vertical ? r : li.offsetWidth / 2), li.offsetTop + top + r];
+        // where the node actually sits across its stage (centred, either way)
+        var left = parseFloat(node.left) + (parseFloat(node.marginLeft) || 0);
+        return [li.offsetLeft + (isNaN(left) ? li.offsetWidth / 2 - r : left) + r, li.offsetTop + top + r];
       });
       // the filled track starts at the first node and grows along one axis
       fill.style.left = (pts[0][0] - (vertical ? 1 : 0)) + "px";

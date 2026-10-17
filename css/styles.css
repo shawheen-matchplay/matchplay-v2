@@ -2966,17 +2966,20 @@ html.splash--returning [data-reveal] {
 
 @media (max-width: 760px) {
   .row { grid-template-columns: 1fr; gap: 0.4rem; }
-  /* Seven stages will not fit across a phone: run the track down the side. */
+  /* Seven stages will not fit across a phone: run the track down the
+     middle, the stages either side of it in turn. */
   .pipeline { grid-template-columns: 1fr; }
-  .pipeline li { padding: 0 0 1.15rem 2.1rem; text-align: left; }
+  .pipeline li { padding: 0 0 1.15rem; }
+  .pipeline li:nth-child(odd)  { padding-right: calc(50% + 1.1rem); text-align: right; }
+  .pipeline li:nth-child(even) { padding-left: calc(50% + 1.1rem); text-align: left; }
   .pipeline li::before,
   .pipeline li:first-child::before,
   .pipeline li:last-child::before {
-    top: 0; bottom: 0; left: 0.5rem; right: auto; width: 2px; height: auto;
+    top: 0; bottom: 0; left: calc(50% - 1px); right: auto; width: 2px; height: auto;
   }
   .pipeline li:first-child::before { top: 0.55rem; }
   .pipeline li:last-child::before  { bottom: auto; height: 0.55rem; }
-  .pipeline li::after { top: 0.05rem; left: 0; margin-left: 0; }
+  .pipeline li::after { top: 0.05rem; left: 50%; margin-left: -0.55rem; }
 }
 
 @media (max-width: 600px) {
