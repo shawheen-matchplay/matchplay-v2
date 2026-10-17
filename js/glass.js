@@ -135,7 +135,7 @@
       lens.classList.add("is-on");
       if (!still && !raf) { last = performance.now(); raf = requestAnimationFrame(tick); }
     };
-    Array.prototype.forEach.call(nav.querySelectorAll(".nav__menu > li > .nav__link, .nav__actions .nav__link"), function (link) {
+    Array.prototype.forEach.call(nav.querySelectorAll(".nav__menu > li > .nav__link, .nav__actions .nav__link, .nav__actions .btn--nav"), function (link) {
       link.addEventListener("pointerenter", function () { target(link); });
       link.addEventListener("focus", function () { target(link); });
     });

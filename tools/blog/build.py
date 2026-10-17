@@ -89,12 +89,13 @@ def head(title, desc, canonical, fonts, prefix, extra="", og_type="website", ima
              '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
              '<link rel="preconnect" href="https://cdn.prod.website-files.com" crossorigin>',
              '<link href="%s" rel="stylesheet">' % fonts,
-             '<link rel="stylesheet" href="%scss/styles.css">' % prefix]
+             '<link rel="stylesheet" href="%scss/styles.css">' % prefix,
+             '<link rel="stylesheet" href="%scss/glass.css">' % prefix]
     if jsonld:
         # "</" must not appear inside a script element
         tags.append('<script type="application/ld+json">%s</script>'
                     % json.dumps(jsonld, ensure_ascii=False, indent=1).replace("</", "<\\/"))
-    return "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  " + "\n  ".join(t for t in tags if t) + "\n</head>\n<body>\n"
+    return "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  " + "\n  ".join(t for t in tags if t) + "\n</head>\n<body class=\"glass\">\n"
 
 
 def card(p, prefix, cls="post-card", heading="h3"):
@@ -220,6 +221,7 @@ def build_post(p, posts, header, footer, fonts):
   %(footer)s
 
   <script src="../js/main.js"></script>
+  <script src="../js/glass.js"></script>
 </body>
 </html>
 """ % {"header": header, "footer": footer, "blog": BLOG_NAME, "title": esc(p["title"]),
@@ -288,6 +290,7 @@ def build_index(posts, header, footer, fonts):
   %(footer)s
 
   <script src="js/main.js"></script>
+  <script src="js/glass.js"></script>
 </body>
 </html>
 """ % {"header": header, "footer": footer, "blog": BLOG_NAME, "desc": esc(desc),
