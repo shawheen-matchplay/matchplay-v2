@@ -232,7 +232,11 @@ around the MatchPlay mark (white ball + two white links).
     phones), 10% denser on phones; no instructions shown.
   - C: A plus automatic merges.
   - Capsule collisions (nothing ever overlaps, mid-merge included); merges and
-    splits keep momentum. `?debug=1` exposes `window.ringPlay`.
+    splits keep momentum.
+  - After a split, only the two halves are kept from re-merging with each other
+    (6 s, no pull between them); each may join any other ring at once. A
+    blanket cooldown left rings frozen against a neighbour before merging.
+    Links stay joined 2.3–4.6 s (asked: never more than 5 s). `?debug=1` exposes `window.ringPlay`.
 - Motion preferences learned: fluid, never pause or stop mid-motion; ramps
   like a spring (ease in, slow, ease out); bounce at the join, not the whole
   shape; no exterior glows; nothing should grow noticeably during a bounce.

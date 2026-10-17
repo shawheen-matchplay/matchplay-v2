@@ -164,7 +164,8 @@
   var SPLIT_AFTER = [2000, 3000];      /* ms a link holds before it splits on its own */
   var MEET = CAN + R * 0.4;            /* (b, c) rings of a family this close (touching) merge */
   var DRAW = R * 9;                    /* (b, c) and within this they drift toward each other */
-  var COOL = 2500;                     /* (b, c) ms after a split before a ring merges again */
+  var COOL = 6000;                     /* (b, c) ms after a split before a ring may merge with its old partner
+                                          (any other ring it may join straight away) */
 
   var f2 = function (n) { return n.toFixed(2); };
   /* points (in the merge frame, less an origin) to a path, scaled */
@@ -379,10 +380,11 @@
     var a = makeRing(ca[0], ca[1], L.color, L.el);
     var b = makeRing(cb[0], cb[1], L.colorB || L.color, sp.elB);   /* back to its own colour */
     sp.elB.setAttribute("stroke", b.color);
+    a.exMate = b; b.exMate = a;
     [[a, -1, L.ang], [b, 1, L.ang + Math.PI]].forEach(function (r) {
       var ring = r[0], ox = ux * HALF * r[1], oy = uy * HALF * r[1];
       ring.s = 1; ring.sv = 0; ring.goal = 0; ring.face = r[2];   /* released from the touch */
-      ring.cool = performance.now() + COOL;
+      ring.cool = performance.now() + COOL;                       /* from its old partner only */
       /* each keeps the link's momentum: its travel, plus its own end's speed
          from the spin, plus the push apart */
       ring.vx = L.vx - L.va * oy + ux * push * r[1];
@@ -535,18 +537,22 @@
     }
 
     /* (b, c) rings of one colour family that touch merge: closest pairs first, one partner
-       each, and not straight after a split. The merge starts the moment they
-       meet (its reach draws them the rest of the way), so a pair never hangs
-       half-stretched waiting to touch. */
+       each. The merge starts the moment they meet (its reach draws them the
+       rest of the way), so a pair never hangs half-stretched waiting to
+       touch. Only the two halves of a link that just split are kept apart
+       for a while (and not drawn together); either may join any other ring
+       at once. A cooldown on the ring itself left it frozen against a
+       neighbour for seconds before they merged. */
     pairs = [];
     if (AUTO) {
       var free = bodies.filter(function (b) {               /* not one in your hand, nor what it reaches for */
-        return b.kind === "ring" && !b.busy && !b.dragged && !(now < b.cool) && !(preview && b === preview.a);
+        return b.kind === "ring" && !b.busy && !b.dragged && !(now < b.cool && !b.exMate) && !(preview && b === preview.a);
       });
+      var exes = function (A, B) { return (now < A.cool && A.exMate === B) || (now < B.cool && B.exMate === A); };
       var cands = [];
       for (var i0 = 0; i0 < free.length; i0++) for (var j0 = i0 + 1; j0 < free.length; j0++) {
         var dd0 = Math.hypot(free[j0].x - free[i0].x, free[j0].y - free[i0].y);
-        if (!kin(free[i0], free[j0])) continue;
+        if (!kin(free[i0], free[j0]) || exes(free[i0], free[j0])) continue;
         if (dd0 < MEET) { cands.push([dd0, free[i0], free[j0]]); continue; }
         if (dd0 < DRAW) {                                    /* nearby kin drift together a little */
           var pull = R * 2.4 * (1 - dd0 / DRAW) * dt, ux0 = (free[j0].x - free[i0].x) / dd0, uy0 = (free[j0].y - free[i0].y) / dd0;
