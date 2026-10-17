@@ -197,6 +197,41 @@
     nav.addEventListener("focusout", function (e) { if (!nav.contains(e.relatedTarget)) { on = false; lens.classList.remove("is-on"); } });
   }
 
+  /* ---- dropdowns wobble open -------------------------------------------- */
+  // As Events or About opens, its panel gives the lens's wobble (103%),
+  // out from just under the nav item. It is played on the separate scale
+  // property, so it rides on the panel's own centring and slide-in
+  // (transform). The panel is translated left by half its width, so a
+  // transform-origin at its own 0 0 is its top centre on screen.
+  if (window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    Array.prototype.forEach.call(document.querySelectorAll(".nav__dropdown"), function (dd) {
+      var menu = dd.querySelector(".nav__dropdown-menu");
+      if (!menu || !menu.animate) return;
+      var open = false, run = null, frames = [];
+      for (var i = 0; i <= 90; i++) {
+        var k = wobbleAt(WOBBLE_MS * i / 90, 0.03);
+        frames.push({ scale: k[0].toFixed(4) + " " + k[1].toFixed(4) });
+      }
+      menu.style.transformOrigin = "0 0";
+      function opened() {
+        if (open) return;
+        open = true;
+        if (run) run.cancel();
+        run = menu.animate(frames, { duration: WOBBLE_MS });
+      }
+      function closed(e) {
+        if (e.type === "focusout" && dd.contains(e.relatedTarget)) return;
+        if (e.type === "pointerleave" && dd.contains(document.activeElement)) return;
+        open = false;
+      }
+      dd.addEventListener("pointerenter", opened);
+      dd.addEventListener("focusin", opened);
+      dd.addEventListener("pointerleave", closed);
+      dd.addEventListener("focusout", closed);
+    });
+  }
+
   /* ---- bubbly CTAs ------------------------------------------------------ */
   // Every pill call to action (the hero's, the solid pills across the
   // pages; not Apply in the nav) gives the wobble when pointed at, and half of
