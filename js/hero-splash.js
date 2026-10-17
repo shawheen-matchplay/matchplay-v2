@@ -86,11 +86,10 @@
 
   /* Extra lone rings that fill the gaps between the other shapes, as a share
      of the main count: 0 = none, 0.5 = half as many again on top. Separate
-     from MIX and UNIFORMITY: these always take the emptiest spot they can
-     find, and like every shape keep a clear cell between themselves and
-     anything else. Try values with ?fill=0.6 in the address. */
+     from MIX and UNIFORMITY: each finds the gaps in the field and drops into
+     the middle of one picked at random (claimGap), and like every shape keeps
+     a clear cell between itself and anything else. Try values with ?fill=0.6 in the address. */
   const RING_FILL = param('fill', 0.4, 2);
-  const FILL_CANDIDATES = 16;
 
   /* Concurrent shapes per grid cell. Every field derives its own cap from this,
      so the hero and the ecosystem section hold the same density whatever their
@@ -429,8 +428,8 @@
      every shape already showing (best-candidate sampling), rather than the
      first free one, which let shapes bunch up and leave holes. */
   const CANDIDATES = 1 + Math.round(UNIFORMITY * 15);
-  function claimSpot(f, kind, candidates) {
-    candidates = candidates || CANDIDATES;
+  function claimSpot(f, kind) {
+    const candidates = CANDIDATES;
     const band = bandOf(f);
     const span = band[1] - band[0];
     if (span <= 0) return null;
@@ -458,6 +457,47 @@
     if (!best) return null;                               /* field is full */
     best.cells.forEach(k2 => f.used.add(k2));
     return best;
+  }
+
+  /* Gap-filling rings: find the gaps, then fill one at random. Every free
+     ring spot is scored by its distance to the nearest shape; a gap is a
+     spot that scores at least GAP_MIN and no neighbour beats (the middle of
+     an empty patch). One gap is picked at random, the bigger ones a little
+     more likely (weight = size squared), and the ring goes in its middle.
+     Always taking the single emptiest spot instead spread the rings into an
+     even lattice. */
+  const GAP_MIN = 3;                                      /* cells to the nearest shape */
+  function claimGap(f) {
+    const band = bandOf(f);
+    if (band[1] - band[0] <= 0) return null;
+    const live = f.population.filter(i => !i.dead).map(i => i.centre);
+    const free = new Map();                               /* key -> { spot, d } */
+    for (let r = band[0]; r < band[1]; r++) {
+      for (let c = 1; c < f.cols - 2; c++) {
+        if (!f.dots.has(key(c, r))) continue;
+        const spot = { c, r, own: [key(c, r)], cells: blockAround([[c, r]]) };
+        if (spot.cells.some(k2 => f.used.has(k2))) continue;
+        if (offLimits(f, spot).some(k2 => f.excluded.has(k2) || (f.clear && f.clear.has(k2)))) continue;
+        const d = live.reduce((m, o) => Math.min(m, distance([c, r], o)), Infinity);
+        free.set(key(c, r), { spot, d });
+      }
+    }
+    const gaps = [];
+    free.forEach(g => {
+      if (g.d < GAP_MIN) return;
+      for (let dc = -1; dc <= 1; dc++)
+        for (let dr = -1; dr <= 1; dr++) {
+          const n = free.get(key(g.spot.c + dc, g.spot.r + dr));
+          if (n && n.d > g.d) return;                     /* not the middle of its patch */
+        }
+      gaps.push(g);
+    });
+    if (!gaps.length) return null;                        /* no gap worth filling */
+    const total = gaps.reduce((s, g) => s + Math.min(g.d, 12) ** 2, 0);
+    let pick = Math.random() * total, chosen = gaps[gaps.length - 1];
+    for (const g of gaps) { pick -= Math.min(g.d, 12) ** 2; if (pick <= 0) { chosen = g; break; } }
+    chosen.spot.cells.forEach(k2 => f.used.add(k2));
+    return chosen.spot;
   }
 
   /* Colour by neighbourhood: each colour is penalised for every shape of that
@@ -494,7 +534,7 @@
     if (!f.layer || !f.dots) return null;
     let kind = opts.fill ? 'ring' : opts.kind || pickKind();
     if (kind === 'merge' && opts.instant) kind = 'link';  /* nobody to watch it merge */
-    const spot = claimSpot(f, kind, opts.fill ? FILL_CANDIDATES : 0);
+    const spot = opts.fill ? claimGap(f) : claimSpot(f, kind);
     if (!spot) return null;
     const centre = centreOf(spot);
     const color = pickColor(f, centre);
