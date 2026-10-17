@@ -129,13 +129,13 @@
     nav.appendChild(lens);
     var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     var x = 0, y = 0, w = 0, h = 0, vx = 0, vy = 0, vw = 0, vh = 0;
-    var tx = 0, ty = 0, tw = 0, th = 0, on = false, raf = 0, last = 0, cta = false, el = null, popAt = -1;
+    var tx = 0, ty = 0, tw = 0, th = 0, on = false, raf = 0, last = 0, cta = false, el = null, popAt = -1, popAmp = 0.05;
     var draw = function (sx, sy) {
       // Over Apply the drop sits inside the button's border: it never runs
       // past its right edge (the spring overshoots a little as it settles)
       // and does not stretch sideways there.
       var dw = w;
-      if (cta) { dw = Math.min(w, tx + tw - x); sx = 1; }
+      if (cta) dw = Math.min(w, tx + tw - x);
       lens.style.width = Math.max(0, dw).toFixed(1) + "px";
       lens.style.height = Math.max(0, h).toFixed(1) + "px";
       lens.style.transform = "translate(" + x.toFixed(1) + "px," + y.toFixed(1) + "px) scale(" + sx.toFixed(3) + "," + sy.toFixed(3) + ")";
@@ -144,8 +144,13 @@
     // inside its border, clientLeft/Top)
     var measure = function () {
       var a = el.getBoundingClientRect(), b = nav.getBoundingClientRect();
-      tx = a.left - b.left - nav.clientLeft; tw = a.width;
-      ty = a.top - b.top - nav.clientTop; th = a.height;
+      // the link's own size, without a wobble it may be playing (the lens
+      // plays the same wobble itself; measuring it in would scale it twice)
+      var m = window.DOMMatrix ? new DOMMatrix(getComputedStyle(el).transform) : { a: 1, d: 1 };
+      var sw = m.a || 1, shh = m.d || 1;
+      tw = a.width / sw; th = a.height / shh;
+      tx = a.left + a.width / 2 - tw / 2 - b.left - nav.clientLeft;
+      ty = a.top + a.height / 2 - th / 2 - b.top - nav.clientTop;
       if (cta) {                                     // inside the blue border, not on it
         var bw = parseFloat(getComputedStyle(el).borderTopWidth) || 0;
         tx += bw; tw -= 2 * bw; ty += bw; th -= 2 * bw;
@@ -160,10 +165,13 @@
       x += vx * dt; y += vy * dt; w += vw * dt; h += vh * dt;
       // stretch along the way it is going, narrower across it
       var ax = Math.min(0.14, Math.abs(vx) / 3500), ay = Math.min(0.14, Math.abs(vy) / 2500);
-      // the wobble it gives as it first appears (not over Apply's border)
-      var popping = popAt >= 0 && now - popAt < WOBBLE_MS && !cta;
-      var wb = popping ? wobbleAt(now - popAt, 0.05) : [1, 1];   // 105%, stronger than the hero button's 102%
-      draw((1 + ax - ay * 0.8) * wb[0], (1 + ay - ax * 0.8) * wb[1]);
+      // the wobble: as it first appears (105%), or over Apply in step with
+      // the button's own (102%), so the drop stays inside its border. Over
+      // Apply it does not stretch with speed.
+      var popping = popAt >= 0 && now - popAt < WOBBLE_MS;
+      var wb = popping ? wobbleAt(now - popAt, popAmp) : [1, 1];
+      if (cta) draw(wb[0], wb[1]);
+      else draw((1 + ax - ay * 0.8) * wb[0], (1 + ay - ax * 0.8) * wb[1]);
       var moving = [tx - x, ty - y, tw - w, th - h].some(function (d) { return Math.abs(d) > 0.3; }) ||
                    [vx, vy, vw, vh].some(function (v) { return Math.abs(v) > 2; });
       if (moving || popping) raf = requestAnimationFrame(tick);
@@ -178,7 +186,8 @@
       lens.style.borderRadius = Math.min(parseFloat(getComputedStyle(link).borderTopLeftRadius) || 0, link.offsetHeight / 2) + "px";
       measure();
       if (!on || still) { x = tx; y = ty; w = tw; h = th; vx = vy = vw = vh = 0; draw(1, 1); }
-      if (!on && !still) popAt = performance.now();   // first link of a visit: wobble in
+      if (!still && cta) { popAt = performance.now(); popAmp = 0.02; }        // with Apply's own wobble
+      else if (!on && !still) { popAt = performance.now(); popAmp = 0.05; }  // first link of a visit
       on = true;
       lens.classList.add("is-on");
       if (!still && !raf) { last = performance.now(); raf = requestAnimationFrame(tick); }
@@ -191,28 +200,31 @@
     nav.addEventListener("focusout", function (e) { if (!nav.contains(e.relatedTarget)) { on = false; lens.classList.remove("is-on"); } });
   }
 
-  /* ---- bubbly CTA (trial: the homepage hero's button) ----------------- */
-  // Pointing at it, the button gives one soft wobble like a drop of glass:
-  // 102% wide, then 102% tall, a faint echo, and back to its own size (it
-  // does not stay bigger while hovered). Leaving, half that. Set as fixed
-  // steps rather than a spring, so the tall swing matches the wide one
-  // without the extra bounces a spring needs to get there.
+  /* ---- bubbly CTAs ------------------------------------------------------ */
+  // Every pill call to action (the hero's, the solid pills across the
+  // pages, Apply in the nav) gives the wobble when pointed at, and half of
+  // it when left. Played from wobbleAt() itself, sampled finely, so it
+  // matches the nav lens exactly when the lens wobbles with Apply.
   if (window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
       !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    var wobble = function (a) {
-      return WOBBLE.map(function (k) {
-        return { transform: "scale(" + (1 + k[0] * a / 0.02).toFixed(4) + "," + (1 + k[1] * a / 0.02).toFixed(4) + ")" };
-      });
+    var wobbleFrames = function (a) {
+      var out = [];
+      for (var i = 0; i <= 90; i++) {
+        var k = wobbleAt(WOBBLE_MS * i / 90, a);
+        out.push({ transform: "scale(" + k[0].toFixed(4) + "," + k[1].toFixed(4) + ")" });
+      }
+      return out;
     };
-    Array.prototype.forEach.call(document.querySelectorAll(".hero__cta"), function (btn) {
+    var ENTER = wobbleFrames(0.02), LEAVE = wobbleFrames(0.01);
+    Array.prototype.forEach.call(document.querySelectorAll(".hero__cta, .btn--primary.btn--pill, .btn--nav"), function (btn) {
       var run = null;
-      function play(a, ms) {
+      function play(frames, ms) {
         if (!btn.animate) return;
         if (run) run.cancel();
-        run = btn.animate(wobble(a), { duration: ms, easing: "ease-in-out" });
+        run = btn.animate(frames, { duration: ms });
       }
-      btn.addEventListener("pointerenter", function () { play(0.02, WOBBLE_MS); });
-      btn.addEventListener("pointerleave", function () { play(0.01, 380); });
+      btn.addEventListener("pointerenter", function () { play(ENTER, WOBBLE_MS); });
+      btn.addEventListener("pointerleave", function () { play(LEAVE, WOBBLE_MS * 0.85); });
     });
   }
 
