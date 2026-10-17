@@ -255,7 +255,8 @@ around the MatchPlay mark (white ball + two white links).
   editor's Markdown (HTML it can't express stays as raw `<…>` lines); the web
   address is fixed once published. Save and Delete are single commits that
   also remove images no other post uses; `build.py` deletes pages of removed
-  posts. `?debug=1` exposes `blogEditor.toHtml/toMarkdown/unlockWith(cfg)` for
+  posts. Hide/Publish toggles `"hidden": true` in the post JSON; `build.py`
+  skips hidden posts (no page, not in the index or related). `?debug=1` exposes `blogEditor.toHtml/toMarkdown/unlockWith(cfg)` for
   testing (stub `fetch` for api.github.com; never test against the real repo).
 
 ## 8. Media and tools

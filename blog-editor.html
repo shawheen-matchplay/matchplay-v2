@@ -104,6 +104,12 @@
     .btn--danger { background: transparent; color: var(--danger); border: 1px solid var(--line); }
     .btn--danger.is-armed { background: var(--danger); color: #fff; border-color: var(--danger); }
     .post.is-busy { opacity: 0.55; pointer-events: none; }
+    .post.is-hidden { background: var(--bg); border-style: dashed; }
+    .post.is-hidden img { opacity: 0.45; }
+    .badge {
+      display: inline-block; vertical-align: 0.1em; padding: 0.1rem 0.45rem; border-radius: 999px;
+      background: var(--ink-2); color: #fff; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+    }
     @media (max-width: 640px) {
       .post { grid-template-columns: 84px minmax(0, 1fr); }
       .post img { width: 84px; }
@@ -587,7 +593,7 @@
       $("draft-state").textContent = "";
       status("");
       var editing = mode.kind === "edit";
-      $("mode-title").textContent = editing ? "Editing" : "New article";
+      $("mode-title").textContent = editing ? (mode.post.hidden ? "Editing a hidden article" : "Editing") : "New article";
       $("publish").textContent = editing ? "Save changes" : "Publish article";
       $("clear").textContent = editing ? "Discard changes" : "Start over";
       $("slug").readOnly = editing;
@@ -728,22 +734,50 @@
       ul.innerHTML = "";
       posts.forEach(function (p) {
         var li = document.createElement("li");
-        li.className = "post";
+        li.className = "post" + (p.hidden ? " is-hidden" : "");
         var img = p.cover ? "assets/blog/" + (p.cover.webp || p.cover.jpg) : "";
         li.innerHTML =
           '<img src="' + esc(img) + '" alt="" loading="lazy">' +
-          '<div><div class="post__title">' + esc(p.title) + "</div>" +
+          '<div><div class="post__title">' + (p.hidden ? '<span class="badge">Hidden</span> ' : "") + esc(p.title) + "</div>" +
           '<div class="post__meta">' + esc(p.author || "") + " · " + esc(niceDate(p.datePublished)) +
-          ' · <a href="blog/' + esc(p.slug) + '.html" target="_blank" rel="noopener">View</a></div></div>' +
+          (p.hidden ? " · not on the blog" : ' · <a href="blog/' + esc(p.slug) + '.html" target="_blank" rel="noopener">View</a>') + "</div></div>" +
           '<div class="post__actions"><button class="btn btn--ghost" type="button" data-edit>Edit</button>' +
+          '<button class="btn btn--ghost" type="button" data-hide>' + (p.hidden ? "Publish" : "Hide") + "</button>" +
           '<button class="btn btn--danger" type="button" data-delete>Delete</button></div>';
         li.querySelector("[data-edit]").addEventListener("click", function () { openEditor({ kind: "edit", post: p }); });
+        li.querySelector("[data-hide]").addEventListener("click", function () { setHidden(p, !p.hidden, li); });
         li.querySelector("[data-delete]").addEventListener("click", function (e) {
           if (!confirmClick(e.currentTarget, "Delete for good?")) return;
           deletePost(p, li);
         });
         ul.appendChild(li);
       });
+    }
+
+    /* ---------- hide and publish again ------------------------------------- */
+    // Hidden articles keep their file, pictures and web address but are left
+    // out of the blog (build.py skips "hidden": true and removes the page).
+    async function setHidden(p, hide, row) {
+      row.classList.add("is-busy");
+      try {
+        var post = Object.assign({}, p, { dateModified: new Date().toISOString() });
+        if (hide) post.hidden = true; else delete post.hidden;
+        var sha = await commit([{ path: "tools/blog/posts/" + p.slug + ".json", text: JSON.stringify(post, null, 2) + "\n" }], [],
+          (hide ? "Blog: hide “" : "Blog: publish again “") + p.title + "”\n\n" + (hide ? "Hidden" : "Published again") + " with the blog editor.", listStatus);
+        posts = posts.map(function (x) { return x.slug === p.slug ? post : x; });
+        renderList();
+        // Other articles whose text links here would now point at a missing page.
+        var linking = hide ? posts.filter(function (x) {
+          return x.slug !== p.slug && !x.hidden && new RegExp('href="(?:[^"]*/)?' + p.slug + '(?:\\.html)?(?:[#?][^"]*)?"').test(x.body || "");
+        }) : [];
+        var warn = linking.length ? " Heads up: " + linking.map(function (x) { return "“" + esc(x.title) + "”"; }).join(", ") +
+          (linking.length === 1 ? " links" : " link") + " to it in the text; edit " + (linking.length === 1 ? "that link" : "those links") + " out while it’s hidden." : "";
+        listStatus((hide ? "Hid “" + esc(p.title) + "”. It comes off the blog in a minute or two; Publish brings it back." + warn + " " :
+          "Published “" + esc(p.title) + "” again. It’s back on the blog in a minute or two. ") + commitLink(sha) + ".", "ok");
+      } catch (err) {
+        row.classList.remove("is-busy");
+        listStatus("Couldn’t " + (hide ? "hide" : "publish") + " “" + esc(p.title) + "”. " + esc(err.message || String(err)), "err");
+      }
     }
 
     /* ---------- talking to GitHub ----------------------------------------- */
@@ -912,7 +946,8 @@
           posts = posts.map(function (p) { return p.slug === post.slug ? post : p; });
         }
         var live = '<a href="blog/' + esc(f.slug) + '.html" target="_blank" rel="noopener">/blog/' + esc(f.slug) + "</a>";
-        showList((editing ? "Saved “" + esc(f.title) + "”. The page updates in a minute or two at " :
+        showList(editing && post.hidden ? "Saved “" + esc(f.title) + "”. It’s still hidden; Publish puts it on the blog. " + commitLink(sha) + "." :
+          (editing ? "Saved “" + esc(f.title) + "”. The page updates in a minute or two at " :
           "Published. The site rebuilds in a minute or two, then the article is live at ") + live + ". " + commitLink(sha) + ".");
       } catch (err) {
         status(esc(err.message || String(err)), "err");

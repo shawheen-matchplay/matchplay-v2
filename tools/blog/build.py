@@ -30,8 +30,12 @@ esc = lambda s: html.escape(s or "", quote=True)
 
 
 def load_posts():
+    # A post with "hidden": true (set by the blog editor's Hide) is kept in
+    # tools/blog/posts but left out of the blog: no page, not in the index or
+    # anyone's "Keep reading". Its old page is removed below.
     posts = [json.load(io.open(f, encoding="utf-8"))
              for f in glob.glob(os.path.join(ROOT, "tools/blog/posts/*.json"))]
+    posts = [p for p in posts if not p.get("hidden")]
     return sorted(posts, key=lambda p: (p["datePublished"], p["slug"]), reverse=True)
 
 
@@ -304,7 +308,7 @@ if __name__ == "__main__":
     for p in posts:
         build_post(p, posts, *chrome("../"))
     build_index(posts, *chrome(""))
-    # a deleted post's page goes too
+    # a deleted or hidden post's page goes too
     slugs = set(p["slug"] for p in posts)
     for f in glob.glob(os.path.join(ROOT, "blog", "*.html")):
         if os.path.basename(f)[:-5] not in slugs:
