@@ -2984,6 +2984,9 @@ html.splash--returning [data-reveal] {
   color: var(--accent);
 }
 .footer__news.is-done + .footer__news-done { display: block; }
+/* a signup that didn't reach the sheet: the same line, in the ventures orange */
+.footer__news.is-error + .footer__news-done,
+.subscribe__form.is-error ~ .subscribe__success { color: var(--orange); }
 .page--home .footer__news,
 .page--home .footer__news-done { display: none; }   /* the homepage has its own box */
 

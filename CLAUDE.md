@@ -100,7 +100,7 @@ code over it.
   (`[data-marquee]`, duplicated for a seamless loop), pipeline golf ball
   (`.pipeline-run[data-ball]`), matched heights (`[data-match]`), pointer
   cards (`[data-tilt]`, desktop and touch), pagination (`[data-paginate]`),
-  subscribe forms (`[data-subscribe]`; **no backend yet**: success is local only).
+  subscribe forms (`[data-subscribe]`; signups go to a Google Sheet, see §10).
 - `js/hero-splash.js`: the homepage hero field (§6).
 - `.claude/launch.json` + `.claude/serve.js`: the preview server ("static",
   port 4599, clean URLs like the real host: `/founders` serves `founders.html`).
@@ -291,8 +291,11 @@ around the MatchPlay mark (white ball + two white links).
 ## 10. Open items
 
 - Company LinkedIn URL for the footer (ask).
-- Subscribe forms have no backend (Webflow's handler was dropped); success is
-  local only.
+- Newsletter signups (temporary): both forms POST to a Google Apps Script web
+  app that appends rows to the "MatchPlay newsletter signups" sheet in
+  shawheen@matchplaygroup.com's Drive (`tools/newsletter/signup-sheet.gs`,
+  set-up steps inside). Until `NEWSLETTER_ENDPOINT` in `js/main.js` is set,
+  the forms thank people and save nothing. Replace with a real email tool later.
 - Analytics (the old gtag) and the cookie banner were not carried over.
 - README.md still describes the Webflow extraction; rewrite when convenient.
 - Possible: soften the Capital Partners "Diligence-backed" card copy to match

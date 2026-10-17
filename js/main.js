@@ -527,12 +527,46 @@
   // No backend yet — show the success state locally. Wire up a real
   // endpoint (fetch POST) where indicated when a backend exists.
   // (The homepage's box, and the footer's field on every other page.)
+  // Signups go to a Google Sheet through a small Apps Script web app
+  // (tools/newsletter/signup-sheet.gs, which has the set-up steps). The
+  // thank-you only shows once the sheet has the address. Form-encoded, so the
+  // request needs no CORS preflight; Apps Script answers with JSON.
+  var NEWSLETTER_ENDPOINT = "";
   Array.prototype.forEach.call(document.querySelectorAll("[data-subscribe]"), function (form) {
+    var note = form.parentElement.querySelector(".subscribe__success, .footer__news-done");
+    var thanks = note ? note.innerHTML : "";
+    var button = form.querySelector('[type="submit"]');
+    function show(ok, msg) {
+      form.classList.add("is-done");
+      form.classList.toggle("is-error", !ok);
+      if (note) note.innerHTML = msg;
+    }
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       if (!form.reportValidity()) return;
-      form.classList.add("is-done");
-      form.reset();
+      if (!NEWSLETTER_ENDPOINT) {                       // not set up yet: thank them, save nothing
+        console.warn("Newsletter: no endpoint set; nothing was saved.");
+        show(true, thanks);
+        form.reset();
+        return;
+      }
+      var data = new URLSearchParams({
+        email: form.elements.email.value.trim(),
+        page: location.pathname,
+        form: form.classList.contains("footer__news") ? "footer" : "homepage"
+      });
+      button.disabled = true;
+      fetch(NEWSLETTER_ENDPOINT, { method: "POST", body: data })
+        .then(function (res) { return res.json(); })
+        .then(function (r) {
+          if (!r.ok) throw new Error(r.error);
+          show(true, thanks);
+          form.reset();
+        })
+        .catch(function () {
+          show(false, "That didn&rsquo;t go through &mdash; please try again.");
+        })
+        .then(function () { button.disabled = false; });
     });
   });
 })();
