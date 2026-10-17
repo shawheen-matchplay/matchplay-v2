@@ -87,6 +87,7 @@ code over it.
 | Press | `press.html`, `press-*.html` | "All press" link at top and bottom |
 | Summits | `summit-2024.html` (`page--purple`), `summit-2025.html` | |
 | Blog | `blog.html`, `blog/<slug>.html` | **generated**, see §7. Title "The Warm Intro" / "The MatchPlay Blog" |
+| Legal | `terms.html`, `privacy.html`, `acceptable-use.html`, `copyright-trademark.html` | text carried over verbatim from the old site's `/legal/*` (Oct 2026); release column with a tab row between the four. Wording is legal text: don't edit it without Shawheen's say-so |
 | Blog editor | `blog-editor.html` | password-protected publishing UI for the marketing contractor |
 | Animations (standalone) | `animations/link-merge.html`, `animations/ring-play-{a,b,c}.html` + `ring-play.js` | |
 
