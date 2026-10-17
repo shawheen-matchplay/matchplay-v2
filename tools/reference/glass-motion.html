@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Glass Motion Reference</title>
+<!--
+  Glass motion: a portable copy of the MatchPlay nav and button motion
+  (from js/glass.js and css/glass.css, October 2026), with generic class
+  names and every tuning number in one SETTINGS block. Open this page to see
+  it run; copy the CSS block and the JS block to reuse it.
+
+  1. Nav lens: one glass bubble that springs between nav links, stretches
+     in the direction it travels, wobbles once (103%) when it first appears,
+     travels down into dropdown items only when the mouse moves down, and
+     sits inside the border of a nav CTA without wobbling.
+  2. Dropdowns: unfold from the bottom edge of their nav item (starting at
+     its width, a sliver tall) into the full menu with a slight spring, and
+     fold back to that edge when they close.
+  3. Pill CTAs: one soft wobble on hover (101% wide, then 101% tall, a
+     faint echo), half that when the pointer leaves.
+
+  Markup contract
+    <nav class="gm-nav">                      the pill; the lens is added inside it
+      <a class="gm-link">                     a nav link (the lens visits it)
+      <div class="gm-dropdown">               a link with a menu
+        <button class="gm-link">              its nav item
+        <div class="gm-dropdown__menu">       the menu (absolutely positioned)
+          <a>                                 menu items (the lens visits them)
+      <a class="gm-link gm-nav-cta">          a nav call to action: the lens sits
+                                              inside its border and never wobbles
+    <a class="gm-cta">                        a pill call to action anywhere: wobbles
+
+  Mouse and pen only ((hover: hover) and (pointer: fine)). With
+  prefers-reduced-motion the lens jumps instead of springing, and nothing
+  wobbles, grows or shrinks.
+-->
+<style>
+  /* ===== demo page only ===== */
+  :root { --accent: #1ED2F4; --bg: #0E0E11; }
+  body { margin: 0; min-height: 100vh; background: var(--bg); color: #fff; font: 15px/1.5 system-ui, sans-serif; }
+  .demo { max-width: 960px; margin: 0 auto; padding: 32px 16px 80px; }
+  .demo h1 { font-weight: 500; font-size: 1.4rem; margin: 120px 0 8px; }
+  .demo p { color: rgba(255, 255, 255, 0.6); max-width: 60ch; }
+  .demo .row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 32px; }
+
+  /* ===== copy from here: CSS ===== */
+
+  /* The nav pill. The lens is positioned against it (position: relative)
+     and drawn above the links but below nothing interactive (pointer-events
+     none). */
+  .gm-nav {
+    position: relative;
+    display: flex; align-items: center; gap: 4px;
+    width: max-content; margin: 0 auto; padding: 7px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: rgba(24, 24, 28, 0.7);
+    -webkit-backdrop-filter: blur(10px) saturate(1.7);
+            backdrop-filter: blur(10px) saturate(1.7);
+  }
+  .gm-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 12px; border: 0; border-radius: 999px; background: none;
+    color: rgba(255, 255, 255, 0.92); font: 500 0.85rem/1.2 ui-monospace, monospace;
+    letter-spacing: 1px; text-transform: uppercase; text-decoration: none; cursor: pointer;
+  }
+  .gm-link:hover { color: #fff; }
+  @media not ((hover: hover) and (pointer: fine)) {
+    .gm-link:hover { background: rgba(255, 255, 255, 0.07); }   /* no lens on touch */
+  }
+  .gm-nav-cta { background: var(--accent); border: 1px solid var(--accent); color: #fff; }
+
+  /* The lens: one glass drop, placed and sized by the script. */
+  .gm-lens {
+    position: absolute; top: 0; left: 0; z-index: 1;
+    border-radius: 999px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    background: rgba(255, 255, 255, 0.07);
+    -webkit-backdrop-filter: saturate(1.4) brightness(1.15);
+            backdrop-filter: saturate(1.4) brightness(1.15);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.5),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.14),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.09),
+      0 4px 14px rgba(0, 0, 0, 0.22);
+    will-change: transform, width;
+  }
+  .gm-lens.is-on { opacity: 1; }
+  /* over a nav CTA: no shadow outside the drop, so nothing shows past the border */
+  .gm-lens.is-cta {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.5),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.14),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  }
+
+  /* Dropdowns: open on hover or keyboard focus. The script adds the grow
+     and shrink on top of this fade; without the script it still works. */
+  .gm-dropdown { position: relative; }
+  .gm-dropdown__menu {
+    position: absolute;
+    top: calc(100% + 10.8px);
+    left: 50%;
+    transform: translate(-50%, 6px);
+    width: max-content;               /* as wide as its widest item */
+    display: grid; padding: 7px;
+    border-radius: 16px;
+    background: rgba(24, 24, 28, 0.92);
+    -webkit-backdrop-filter: blur(10px) saturate(1.7);
+            backdrop-filter: blur(10px) saturate(1.7);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 18px 44px rgba(0, 0, 0, 0.36);
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+  }
+  /* an invisible bridge so the pointer can cross the gap without closing it */
+  .gm-dropdown__menu::before { content: ""; position: absolute; top: -14px; left: 0; right: 0; height: 12.6px; }
+  .gm-dropdown:hover .gm-dropdown__menu,
+  .gm-dropdown:focus-within .gm-dropdown__menu { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+  .gm-dropdown__menu a {
+    padding: 8px 13px; border-radius: 999px;   /* pill rows, the lens's shape */
+    color: rgba(255, 255, 255, 0.92); font: 500 0.85rem/1.2 ui-monospace, monospace;
+    letter-spacing: 1px; text-transform: uppercase; text-decoration: none; white-space: nowrap;
+  }
+  .gm-dropdown__menu a:hover { color: #fff; }
+
+  /* A pill call to action. The wobble is the script's; this is just the look. */
+  .gm-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 26px; border-radius: 999px;
+    background: var(--accent); color: #fff; text-decoration: none;
+    font: 700 1rem/1 ui-monospace, monospace; letter-spacing: 1.5px; text-transform: uppercase;
+  }
+
+  /* ===== to here ===== */
+</style>
+</head>
+<body>
+  <div class="demo">
+    <nav class="gm-nav" aria-label="Demo">
+      <a class="gm-link" href="#">Founders</a>
+      <a class="gm-link" href="#">Investors</a>
+      <div class="gm-dropdown">
+        <button class="gm-link" type="button" aria-haspopup="true">Events &#9662;</button>
+        <div class="gm-dropdown__menu">
+          <a href="#">Match House</a>
+          <a href="#">2025 NYC Summit</a>
+          <a href="#">2024 ATX Summit</a>
+        </div>
+      </div>
+      <div class="gm-dropdown">
+        <button class="gm-link" type="button" aria-haspopup="true">About &#9662;</button>
+        <div class="gm-dropdown__menu">
+          <a href="#">Press</a>
+          <a href="#">Partners</a>
+          <a href="#">Team</a>
+        </div>
+      </div>
+      <a class="gm-link gm-nav-cta" href="#">Apply</a>
+    </nav>
+
+    <h1>Glass motion reference</h1>
+    <p>Hover the nav: the bubble wobbles in, springs between links and travels into the dropdowns once you move down. Hover the buttons below for the CTA wobble. The settings are at the top of the script.</p>
+    <div class="row">
+      <a class="gm-cta" href="#">Apply for Diligence &#8599;</a>
+      <a class="gm-cta" href="#">Subscribe</a>
+    </div>
+  </div>
+
+<script>
+/* ===== copy from here: JS ===== */
+(function () {
+  "use strict";
+
+  var SETTINGS = {
+    WOBBLE_MS: 450,           // one wobble, start to rest
+    LENS_WOBBLE: 0.03,        // the lens's wobble as it first appears: 103%
+    CTA_WOBBLE: 0.01,         // pill CTAs on hover: 101% (half that on leave)
+    SPRING_K: 420,            // lens spring stiffness
+    SPRING_C: 30,             // lens spring damping
+    STRETCH_X: 3500,          // px/s of sideways speed per unit of stretch (smaller = more)
+    STRETCH_Y: 2500,          // same, up and down
+    STRETCH_MAX: 0.14,        // most the lens stretches with speed (14%)
+    GROW_MS: 380,             // dropdown unfolding
+    GROW_EASE: "cubic-bezier(0.34, 1.25, 0.64, 1)",   // with a slight overshoot
+    SHRINK_MS: 260,           // dropdown folding back
+    SHRINK_EASE: "cubic-bezier(0.45, 0, 0.55, 1)",
+    SLIVER_PX: 4              // how tall the menu is when folded against its nav item
+  };
+
+  var FINE = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  var STILL = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---- the wobble ------------------------------------------------------
+     Wide, then tall, a faint echo, back to its own size: even steps, eased
+     as a whole. Values are for a 2% peak and scaled to the one asked for. */
+  var WOBBLE = [[0, 0], [0.02, -0.015], [-0.015, 0.02], [0.005, -0.004], [0, 0]];
+  function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+  function wobbleAt(ms, peak) {             // [scaleX, scaleY] at ms into the wobble
+    var p = easeInOut(Math.min(1, Math.max(0, ms / SETTINGS.WOBBLE_MS))) * (WOBBLE.length - 1);
+    var i = Math.min(WOBBLE.length - 2, Math.floor(p)), f = p - i, k = peak / 0.02;
+    return [1 + k * (WOBBLE[i][0] + (WOBBLE[i + 1][0] - WOBBLE[i][0]) * f),
+            1 + k * (WOBBLE[i][1] + (WOBBLE[i + 1][1] - WOBBLE[i][1]) * f)];
+  }
+  function wobbleFrames(peak) {             // the same wobble as Web Animations keyframes
+    var out = [];
+    for (var i = 0; i <= 90; i++) {
+      var s = wobbleAt(SETTINGS.WOBBLE_MS * i / 90, peak);
+      out.push({ transform: "scale(" + s[0].toFixed(4) + "," + s[1].toFixed(4) + ")" });
+    }
+    return out;
+  }
+
+  /* ---- 1. the nav lens ------------------------------------------------- */
+  Array.prototype.forEach.call(FINE ? document.querySelectorAll(".gm-nav") : [], function (nav) {
+    var lens = document.createElement("span");
+    lens.className = "gm-lens";
+    lens.setAttribute("aria-hidden", "true");
+    nav.appendChild(lens);
+
+    var x = 0, y = 0, w = 0, h = 0, vx = 0, vy = 0, vw = 0, vh = 0;   // where it is, and how fast
+    var tx = 0, ty = 0, tw = 0, th = 0;                                // where it is going
+    var on = false, raf = 0, last = 0, cta = false, el = null, popAt = -1;
+
+    function draw(sx, sy) {
+      var dw = cta ? Math.min(w, tx + tw - x) : w;   // over a CTA, never past its right edge
+      lens.style.width = Math.max(0, dw).toFixed(1) + "px";
+      lens.style.height = Math.max(0, h).toFixed(1) + "px";
+      lens.style.transform = "translate(" + x.toFixed(1) + "px," + y.toFixed(1) + "px) scale(" + sx.toFixed(3) + "," + sy.toFixed(3) + ")";
+    }
+    // The target in the pill's own coordinates (from inside its border).
+    // Measured every frame while travelling, because a dropdown is still
+    // opening when you reach it; any scale the link is playing is taken
+    // back out so it is not counted twice.
+    function measure() {
+      var a = el.getBoundingClientRect(), b = nav.getBoundingClientRect();
+      var m = window.DOMMatrix ? new DOMMatrix(getComputedStyle(el).transform) : { a: 1, d: 1 };
+      tw = a.width / (m.a || 1); th = a.height / (m.d || 1);
+      tx = a.left + a.width / 2 - tw / 2 - b.left - nav.clientLeft;
+      ty = a.top + a.height / 2 - th / 2 - b.top - nav.clientTop;
+      if (cta) {                                 // inside the CTA's border, not on it
+        var bw = parseFloat(getComputedStyle(el).borderTopWidth) || 0;
+        tx += bw; tw -= 2 * bw; ty += bw; th -= 2 * bw;
+      }
+    }
+    function spring(to, at, v, dt) { return v + (SETTINGS.SPRING_K * (to - at) - SETTINGS.SPRING_C * v) * dt; }
+    function tick(now) {
+      var dt = Math.min(1 / 30, Math.max(0, now - last) / 1000);
+      last = now;
+      measure();
+      vx = spring(tx, x, vx, dt); vy = spring(ty, y, vy, dt); vw = spring(tw, w, vw, dt); vh = spring(th, h, vh, dt);
+      x += vx * dt; y += vy * dt; w += vw * dt; h += vh * dt;
+      // stretch along the way it is going, narrower across it
+      var ax = Math.min(SETTINGS.STRETCH_MAX, Math.abs(vx) / SETTINGS.STRETCH_X);
+      var ay = Math.min(SETTINGS.STRETCH_MAX, Math.abs(vy) / SETTINGS.STRETCH_Y);
+      var popping = popAt >= 0 && now - popAt < SETTINGS.WOBBLE_MS;
+      var wb = popping ? wobbleAt(now - popAt, SETTINGS.LENS_WOBBLE) : [1, 1];
+      if (cta) draw(1, 1);
+      else draw((1 + ax - ay * 0.8) * wb[0], (1 + ay - ax * 0.8) * wb[1]);
+      var moving = [tx - x, ty - y, tw - w, th - h].some(function (d) { return Math.abs(d) > 0.3; }) ||
+                   [vx, vy, vw, vh].some(function (v) { return Math.abs(v) > 2; });
+      if (moving || popping) raf = requestAnimationFrame(tick);
+      else { x = tx; y = ty; w = tw; h = th; vx = vy = vw = vh = 0; popAt = -1; draw(1, 1); raf = 0; }
+    }
+    function target(link) {
+      el = link;
+      cta = link.classList.contains("gm-nav-cta");
+      lens.classList.toggle("is-cta", cta);
+      measure();
+      if (!on || STILL) { x = tx; y = ty; w = tw; h = th; vx = vy = vw = vh = 0; draw(1, 1); }   // appear in place
+      if (cta) popAt = -1;                                               // no wobble over a CTA
+      else if (!on && !STILL) popAt = performance.now();                 // first link of a visit: wobble in
+      on = true;
+      lens.classList.add("is-on");
+      if (!STILL && !raf) { last = performance.now(); raf = requestAnimationFrame(tick); }
+    }
+
+    // nav links (and dropdown buttons): as the pointer comes onto them
+    Array.prototype.forEach.call(nav.querySelectorAll(".gm-link"), function (link) {
+      link.addEventListener("pointerenter", function () { target(link); });
+      link.addEventListener("focus", function () { target(link); });
+    });
+    // dropdown items: only when the mouse really moves onto them, below the
+    // nav item (a menu opening under a still pointer must not pull the lens)
+    Array.prototype.forEach.call(nav.querySelectorAll(".gm-dropdown__menu a"), function (link) {
+      var parent = link.closest(".gm-dropdown").querySelector(".gm-link");
+      link.addEventListener("pointermove", function (e) {
+        if (!e.movementX && !e.movementY) return;
+        if (e.clientY <= parent.getBoundingClientRect().bottom) return;
+        if (el !== link || !on) target(link);
+      });
+      link.addEventListener("focus", function () { target(link); });
+    });
+    nav.addEventListener("pointerleave", function () { on = false; lens.classList.remove("is-on"); });
+    nav.addEventListener("focusout", function (e) {
+      if (!nav.contains(e.relatedTarget)) { on = false; lens.classList.remove("is-on"); }
+    });
+  });
+
+  /* ---- 2. dropdowns unfold from their nav item -------------------------
+     Played on the separate scale and translate properties, so they ride on
+     the menu's own centring (transform: translate(-50%, ...)). With the menu
+     translated left by half its width, transform-origin 0 0 is its top
+     centre on screen. */
+  Array.prototype.forEach.call(FINE && !STILL ? document.querySelectorAll(".gm-dropdown") : [], function (dd) {
+    var menu = dd.querySelector(".gm-dropdown__menu"), btn = dd.querySelector(".gm-link");
+    if (!menu || !btn || !menu.animate) return;
+    var open = false, run = null, fade = null;
+    var HOLD = "translate(-50%, 0)";              // the menu's resting centring; its 6px slide is held off
+    menu.style.transformOrigin = "0 0";
+
+    function folded() {                           // a sliver against the nav item's bottom edge
+      var li = dd.getBoundingClientRect(), b = btn.getBoundingClientRect();
+      var top = li.top + (parseFloat(getComputedStyle(menu).top) || 0);
+      var w = menu.offsetWidth, h = menu.offsetHeight;
+      if (!w || !h) return null;
+      return { scale: (b.width / w).toFixed(4) + " " + (SETTINGS.SLIVER_PX / h).toFixed(4), translate: "0 " + (b.bottom - top).toFixed(1) + "px" };
+    }
+    function current() {                          // wherever it is now, mid-way or at rest
+      var cs = getComputedStyle(menu);
+      return { scale: cs.scale === "none" ? "1 1" : cs.scale, translate: cs.translate === "none" ? "0 0" : cs.translate };
+    }
+    function play(from, to, ms, easing) {
+      if (run) run.cancel();
+      from.transform = to.transform = HOLD;
+      run = menu.animate([from, to], { duration: ms, easing: easing, fill: "forwards" });
+    }
+    function opened() {
+      if (open) return;
+      open = true;
+      if (fade) { fade.cancel(); fade = null; }
+      var from = run && run.playState !== "finished" ? current() : folded();
+      if (from) play(from, { scale: "1 1", translate: "0 0" }, SETTINGS.GROW_MS, SETTINGS.GROW_EASE);
+    }
+    function closed(e) {
+      if (e.type === "focusout" && dd.contains(e.relatedTarget)) return;
+      if (e.type === "pointerleave" && dd.contains(document.activeElement)) return;
+      if (!open) return;
+      open = false;
+      var to = folded();
+      if (!to) return;
+      play(current(), to, SETTINGS.SHRINK_MS, SETTINGS.SHRINK_EASE);
+      // stay solid while folding, fade at the end (overrides the CSS fade)
+      fade = menu.animate([
+        { opacity: 1, visibility: "visible" },
+        { opacity: 0.85, visibility: "visible", offset: 0.6 },
+        { opacity: 0, visibility: "visible" }
+      ], { duration: SETTINGS.SHRINK_MS, easing: "ease-in" });
+    }
+    dd.addEventListener("pointerenter", opened);
+    dd.addEventListener("focusin", opened);
+    dd.addEventListener("pointerleave", function (e) {
+      // a mouse click leaves focus on the nav item, which would hold the menu open
+      if (e.pointerType === "mouse" && dd.contains(document.activeElement)) document.activeElement.blur();
+      closed(e);
+    });
+    dd.addEventListener("focusout", closed);
+  });
+
+  /* ---- 3. pill CTAs wobble --------------------------------------------- */
+  if (FINE && !STILL) {
+    var ENTER = wobbleFrames(SETTINGS.CTA_WOBBLE), LEAVE = wobbleFrames(SETTINGS.CTA_WOBBLE / 2);
+    Array.prototype.forEach.call(document.querySelectorAll(".gm-cta"), function (btn) {
+      if (!btn.animate) return;
+      var run = null;
+      function play(frames, ms) { if (run) run.cancel(); run = btn.animate(frames, { duration: ms }); }
+      btn.addEventListener("pointerenter", function () { play(ENTER, SETTINGS.WOBBLE_MS); });
+      btn.addEventListener("pointerleave", function () { play(LEAVE, SETTINGS.WOBBLE_MS * 0.85); });
+    });
+  }
+})();
+/* ===== to here ===== */
+</script>
+</body>
+</html>
