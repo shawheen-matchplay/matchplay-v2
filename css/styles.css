@@ -1863,19 +1863,17 @@ html.splash--returning [data-reveal] {
   padding-top: calc(var(--nav-clear, 5.5rem) + clamp(0.25rem, 1vh, 0.75rem));
   padding-bottom: clamp(2.5rem, 6vh, 4.5rem);
 }
-/* The homepage's closing call to action and newsletter: three-quarters of
-   a screen each, their boxes one size (the same width, and a shared minimum
-   height taller than either's content), content centred. */
-.page--screens #start,
-.page--screens #subscribe {
-  min-height: 75vh;
-  min-height: 75svh;
+/* The homepage's closing call to action and the newsletter: one dark
+   screen, the two boxes stacked one over the other at one size (the same
+   width, and the height of the taller, main.js data-match). */
+.page--screens #start > .container {
+  justify-content: center;
+  gap: clamp(1rem, 2.5vh, 1.75rem);
 }
 .page--screens #start .cta-band,
 .page--screens .subscribe__panel {
   width: 100%;
   max-width: none;
-  min-height: clamp(18rem, 40vh, 24rem);
 }
 .page--screens #start .cta-band { display: flex; flex-direction: column; justify-content: center; }
 /* The ring toy across a dark section, last thing before the footer: the
