@@ -247,10 +247,12 @@
         return Math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1]) >= MIN + R * 0.6;
       });
     };
-    /* A few links already formed (4 to 7), drawn in with the rings; they
+    /* A few links already formed (4 to 7, on a phone 2 to 4), drawn in with the rings; they
        split like any other a little after. Each remembers a ring of its own
        colour family to give back when it does. */
-    var links = 4 + Math.floor(Math.random() * 4), k = 0, first = Math.floor(Math.random() * COLORS.length);
+    var links = W < 600 ? 2 + Math.floor(Math.random() * 3)          /* a phone: 2 to 4 */
+                        : 4 + Math.floor(Math.random() * 4);         /* else 4 to 7 */
+    var k = 0, first = Math.floor(Math.random() * COLORS.length);
     for (var lt = 0; k < links && lt < 3000; lt++) {
       var ang = rand(0, 2 * Math.PI), hx = Math.cos(ang) * HALF, hy = Math.sin(ang) * HALF;
       var lx = rand(pad + HALF, W - pad - HALF), ly = rand(pad + HALF, H - pad - HALF - 40);
