@@ -189,8 +189,18 @@
       lens.classList.add("is-on");
       if (!still && !raf) { last = performance.now(); raf = requestAnimationFrame(tick); }
     };
-    Array.prototype.forEach.call(nav.querySelectorAll(".nav__menu > li > .nav__link, .nav__dropdown-menu a, .nav__actions .nav__link, .nav__actions .btn--nav"), function (link) {
+    Array.prototype.forEach.call(nav.querySelectorAll(".nav__menu > li > .nav__link, .nav__actions .nav__link, .nav__actions .btn--nav"), function (link) {
       link.addEventListener("pointerenter", function () { target(link); });
+      link.addEventListener("focus", function () { target(link); });
+    });
+    // Dropdown items only when the mouse actually moves onto them: a
+    // dropdown grows out from under the pointer as it opens, and its first
+    // item passing beneath a still pointer must not pull the lens down.
+    Array.prototype.forEach.call(nav.querySelectorAll(".nav__dropdown-menu a"), function (link) {
+      link.addEventListener("pointermove", function (e) {
+        if (!e.movementX && !e.movementY) return;          // synthetic: the page moved, not the mouse
+        if (el !== link || !on) target(link);
+      });
       link.addEventListener("focus", function () { target(link); });
     });
     nav.addEventListener("pointerleave", function () { on = false; lens.classList.remove("is-on"); });
@@ -200,10 +210,12 @@
   /* ---- dropdowns grow out of their nav item ---------------------------- */
   // As Events or About opens, its panel starts as the button you pointed at
   // (its size and place) and grows down into the full menu, with a little
-  // spring at the end. Played on the separate scale and translate
-  // properties, so it rides on the panel's own centring and slide-in
-  // (transform). The panel is translated left by half its width, so a
-  // transform-origin at its own 0 0 is its top centre on screen.
+  // spring at the end; as it closes it shrinks back into the button while
+  // it fades. Coming back mid-way picks up from wherever it is. Played on
+  // the separate scale and translate properties, so it rides on the
+  // panel's own centring and slide-in (transform). The panel is translated
+  // left by half its width, so a transform-origin at its own 0 0 is its
+  // top centre on screen.
   if (window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
       !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     Array.prototype.forEach.call(document.querySelectorAll(".nav__dropdown"), function (dd) {
@@ -211,24 +223,38 @@
       if (!menu || !btn || !menu.animate) return;
       var open = false, run = null;
       menu.style.transformOrigin = "0 0";
-      function opened() {
-        if (open) return;
-        open = true;
-        if (run) run.cancel();
-        // where the panel ends up: under the item, at its CSS top
+      // the panel squeezed into the button, as scale and translate values
+      function asButton() {
         var li = dd.getBoundingClientRect(), b = btn.getBoundingClientRect();
         var top = li.top + (parseFloat(getComputedStyle(menu).top) || 0);
         var w = menu.offsetWidth, h = menu.offsetHeight;
-        if (!w || !h) return;
-        run = menu.animate([
-          { scale: (b.width / w).toFixed(4) + " " + (b.height / h).toFixed(4), translate: "0 " + (b.top - top).toFixed(1) + "px" },
-          { scale: "1 1", translate: "0 0" }
-        ], { duration: 380, easing: "cubic-bezier(0.34, 1.25, 0.64, 1)" });
+        if (!w || !h) return null;
+        return { scale: (b.width / w).toFixed(4) + " " + (b.height / h).toFixed(4), translate: "0 " + (b.top - top).toFixed(1) + "px" };
+      }
+      // where it is right now (mid-way through a grow or shrink, or at rest)
+      function current() {
+        var cs = getComputedStyle(menu);
+        return { scale: cs.scale === "none" ? "1 1" : cs.scale, translate: cs.translate === "none" ? "0 0" : cs.translate };
+      }
+      var FULL = { scale: "1 1", translate: "0 0" };
+      function play(from, to, ms, easing) {
+        if (run) run.cancel();
+        run = menu.animate([from, to], { duration: ms, easing: easing, fill: "forwards" });
+      }
+      function opened() {
+        if (open) return;
+        open = true;
+        var shrinking = run && run.playState !== "finished";   // caught mid-way
+        var from = shrinking ? current() : asButton();
+        if (from) play(from, FULL, 380, "cubic-bezier(0.34, 1.25, 0.64, 1)");
       }
       function closed(e) {
         if (e.type === "focusout" && dd.contains(e.relatedTarget)) return;
         if (e.type === "pointerleave" && dd.contains(document.activeElement)) return;
+        if (!open) return;
         open = false;
+        var to = asButton();
+        if (to) play(current(), to, 220, "cubic-bezier(0.4, 0, 0.9, 0.6)");   // as fast as the fade
       }
       dd.addEventListener("pointerenter", opened);
       dd.addEventListener("focusin", opened);
