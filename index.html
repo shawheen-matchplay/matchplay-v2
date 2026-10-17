@@ -533,10 +533,11 @@
       <div class="footer__top">
         <div class="footer__brand-col">
           <a href="index.html" class="footer__brand" aria-label="MatchPlay home">
-            <img src="https://cdn.prod.website-files.com/655541c5d304e11b258d53d4/65aafb1ec5992b7b3e208091_3.%20Logo%20Long%20-%20Dark%20-%20Transparent.png"
+            <img id="footer-logo" src="https://cdn.prod.website-files.com/655541c5d304e11b258d53d4/65aafb1ec5992b7b3e208091_3.%20Logo%20Long%20-%20Dark%20-%20Transparent.png"
                  alt="MatchPlay" width="225" height="38">
           </a>
-          <p class="footer__tagline">The Venture Standard.</p>
+          <!-- tracked out by main.js until it spans the logo exactly -->
+          <p class="footer__tagline" data-fit-to="footer-logo">The Venture Standard</p>
           <!-- the newsletter, on every page but the homepage, which has its own box -->
           <form class="footer__news" data-subscribe>
             <label class="visually-hidden" for="footer-email">Email address for the newsletter</label>

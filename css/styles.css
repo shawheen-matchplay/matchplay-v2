@@ -2922,14 +2922,21 @@ html.splash--returning [data-reveal] {
   padding-bottom: clamp(2.5rem, 4.5vw, 4rem);
 }
 .footer__brand img { width: 189px; }
+/* Locked up with the logo like the hero's wordmark and line: blue mono caps,
+   tracked out by main.js (data-fit-to) to span the logo's width exactly.
+   inline-block so it shrink-wraps and the natural width can be measured. */
 .footer__tagline {
-  margin-top: var(--space-md);
-  max-width: 42ch;
-  font-family: var(--font-ui);
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.6);
+  display: inline-block;
+  margin-top: 0.7rem;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
 }
+.footer__brand { display: block; width: max-content; }
 /* the newsletter as one field with its button inside it */
 .footer__news {
   display: flex;
