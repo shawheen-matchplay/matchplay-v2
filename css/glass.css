@@ -17,9 +17,9 @@
           backdrop-filter: none;
   border-color: transparent;
   box-shadow: 0 10px 34px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.12);
-  --glass-tint: 0.5;
+  --glass-tint: 0.75;
 }
-.glass.glass-on-light .nav { --glass-tint: 0.6; }
+.glass.glass-on-light .nav { --glass-tint: 0.8; }
 /* the pill's bend is sized to the pill: the shapes inside it get their own */
 .glass .nav__dropdown-menu,
 .glass .nav__lens { --lg-filter: initial; }
