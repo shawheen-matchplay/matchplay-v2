@@ -83,6 +83,33 @@
     .status.is-ok { color: var(--ok); }
     .status.is-err { color: var(--danger); }
     .status a { color: inherit; }
+    .bar__left { display: flex; align-items: center; gap: 0.85rem; min-width: 0; }
+    .bar__left .btn { padding: 0.5rem 0.9rem; }
+    input[readonly] { color: var(--ink-3); background: var(--bg); }
+
+    /* Article list */
+    .list-wrap { max-width: 960px; margin: 0 auto; padding: 1.5rem max(16px, 2rem) 3rem; display: grid; gap: 1rem; }
+    .list-wrap .status:empty { display: none; }
+    .posts { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+    .post {
+      display: grid; grid-template-columns: 112px minmax(0, 1fr) auto; gap: 1rem; align-items: center;
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.75rem;
+    }
+    .post img { width: 112px; aspect-ratio: 1200 / 630; object-fit: cover; border-radius: 8px; background: var(--bg); display: block; }
+    .post__title { font-weight: 600; line-height: 1.35; }
+    .post__meta { color: var(--ink-3); font-size: 0.85rem; margin-top: 0.2rem; }
+    .post__meta a { color: inherit; }
+    .post__actions { display: flex; gap: 0.4rem; }
+    .post__actions .btn { padding: 0.5rem 0.95rem; }
+    .btn--danger { background: transparent; color: var(--danger); border: 1px solid var(--line); }
+    .btn--danger.is-armed { background: var(--danger); color: #fff; border-color: var(--danger); }
+    .post.is-busy { opacity: 0.55; pointer-events: none; }
+    @media (max-width: 640px) {
+      .post { grid-template-columns: 84px minmax(0, 1fr); }
+      .post img { width: 84px; }
+      .post__actions { grid-column: 1 / -1; justify-content: flex-end; }
+    }
+
     .preview { position: sticky; top: 72px; height: calc(100vh - 96px); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: #fff; }
     .preview iframe { width: 100%; height: 100%; border: 0; display: block; }
     @media (max-width: 1000px) {
@@ -109,9 +136,25 @@
   </main>
 
   <!-- ===== Editor ===== -->
+  <!-- ===== Articles (the first screen after unlocking) ===== -->
+  <div id="home" hidden>
+    <header class="bar">
+      <h1 class="bar__title">Articles <span id="list-count"></span></h1>
+      <button class="btn" type="button" id="new-post">New article</button>
+    </header>
+    <main class="list-wrap">
+      <p class="status" id="list-status" role="status"></p>
+      <ul class="posts" id="posts"></ul>
+    </main>
+  </div>
+
+  <!-- ===== Editor ===== -->
   <div id="app" hidden>
     <header class="bar">
-      <h1 class="bar__title">New article <span id="draft-state"></span></h1>
+      <div class="bar__left">
+        <button class="btn btn--ghost" type="button" id="back">&larr; Articles</button>
+        <h1 class="bar__title"><span id="mode-title">New article</span> <span id="draft-state"></span></h1>
+      </div>
       <button class="btn btn--ghost" type="button" id="clear">Start over</button>
     </header>
 
@@ -124,7 +167,7 @@
             <input type="text" id="title" required>
           </div>
           <div>
-            <label for="slug">Web address <span class="hint">— set from the title; letters, numbers and dashes</span></label>
+            <label for="slug">Web address <span class="hint" id="slug-hint">— set from the title; letters, numbers and dashes</span></label>
             <div class="slug"><span>/blog/</span><input type="text" id="slug" required></div>
           </div>
           <div class="row2">
@@ -163,7 +206,7 @@
         <section class="group">
           <h2>Cover image</h2>
           <div class="cover-drop">
-            <label for="cover">Image <span class="hint">— cropped to 1200 × 630 from the centre</span></label>
+            <label for="cover">Image <span class="hint" id="cover-hint">— cropped to 1200 × 630 from the centre</span></label>
             <input type="file" id="cover" accept="image/*">
             <img id="cover-img" alt="" hidden>
           </div>
@@ -179,6 +222,7 @@
             Blank line between paragraphs. <code>## Heading</code> <code>### Subheading</code>
             <code>**bold**</code> <code>*italic*</code> <code>[link text](https://…)</code>
             <code>- bullet</code> <code>1. numbered</code> <code>&gt; quote</code>
+            <br>Lines starting with <code>&lt;</code> are kept as HTML (videos, buttons); leave them as they are.
           </div>
           <div class="tools">
             <button class="btn btn--ghost" type="button" id="add-image">Insert image</button>
@@ -266,7 +310,6 @@
         cfg = await decryptVault($("pw").value);
         $("pw").value = "";
         $("lock").hidden = true;
-        $("app").hidden = false;
         startEditor();
       } catch (err) {
         $("lock-err").textContent = "That password didn’t work.";
@@ -318,29 +361,40 @@
     function inline(t) {
       t = esc(t);
       t = t.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (m, text, url) {
-        var external = /^https?:\/\//.test(url) && !/matchplaygroup\.com/.test(url);
+        var external = /^https?:\/\//.test(url) && !/^https?:\/\/(www\.)?matchplaygroup\.com/.test(url);
         return '<a href="' + url + '"' + (external ? ' target="_blank" rel="noopener"' : "") + ">" + text + "</a>";
       });
       t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
       t = t.replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>");
       return t;
     }
-    // images: { "image-1": { url, file, width, height } }. src() picks the
-    // preview's object URL or the published path.
-    function toHtml(md, images, src) {
-      var out = [], para = [], list = null, quote = [];
+    // images: { "image-1": { url, file, width, height } } for pictures added
+    // in this session; src() picks the preview's object URL or the published
+    // path. Pictures already on the site are written as their path
+    // (../assets/blog/…) and looked up in `known` for their size. A block
+    // that starts with "<" is HTML the Markdown can't express (a video, a
+    // button) and passes through untouched.
+    function toHtml(md, images, src, known) {
+      var out = [], para = [], list = null, quote = [], raw = null;
+      known = known || {};
       function flushPara() { if (para.length) { out.push("<p>" + para.map(inline).join("<br>") + "</p>"); para = []; } }
-      function flushList() { if (list) { out.push("<" + list.tag + ">" + list.items.map(function (i) { return "<li>" + inline(i) + "</li>"; }).join("") + "</" + list.tag + ">"); list = null; } }
+      function flushList() { if (list) { out.push("<" + list.tag + ' role="list">' + list.items.map(function (i) { return "<li>" + i.split("\n").map(inline).join("<br>") + "</li>"; }).join("") + "</" + list.tag + ">"); list = null; } }
       function flushQuote() { if (quote.length) { out.push("<blockquote><p>" + quote.map(inline).join("<br>") + "</p></blockquote>"); quote = []; } }
-      function flushAll() { flushPara(); flushList(); flushQuote(); }
+      function flushRaw() { if (raw) { out.push(raw.join("\n")); raw = null; } }
+      function flushAll() { flushPara(); flushList(); flushQuote(); flushRaw(); }
       md.replace(/\r\n?/g, "\n").split("\n").forEach(function (line) {
         var m;
         if (!line.trim()) { flushAll(); return; }
+        if (raw) { raw.push(line); return; }
+        if (/^\\/.test(line)) { flushList(); flushQuote(); para.push(line.slice(1).trim()); return; }
+        if (list && /^\s{2,}\S/.test(line) && !/^\s*([-*]|\d+[.)])\s/.test(line)) { list.items[list.items.length - 1] += "\n" + line.trim(); return; }
+        if (/^\s*</.test(line) && !para.length) { flushAll(); raw = [line.trim()]; return; }
         if ((m = line.match(/^(#{2,4})\s+(.*)$/))) { flushAll(); out.push("<h" + m[1].length + ">" + inline(m[2]) + "</h" + m[1].length + ">"); return; }
         if ((m = line.match(/^!\[([^\]]*)\]\(([^)\s]+)\)\s*$/))) {
           flushAll();
-          var img = images[m[2]];
-          if (img) out.push('<figure class="article__figure"><img src="' + src(m[2], img) + '" alt="' + esc(m[1]) + '" width="' + img.width + '" height="' + img.height + '" loading="lazy" decoding="async"></figure>');
+          var img = images[m[2]], path = null;
+          if (!img && known[m[2]]) { img = known[m[2]]; path = m[2]; }
+          if (img) out.push('<figure class="article__figure"><img src="' + esc(path ? src(path, null) : src(m[2], img)) + '" alt="' + esc(m[1]) + '" width="' + img.width + '" height="' + img.height + '" loading="lazy" decoding="async"></figure>');
           return;
         }
         if ((m = line.match(/^\s*[-*]\s+(.*)$/))) { flushPara(); flushQuote(); if (!list || list.tag !== "ul") { flushList(); list = { tag: "ul", items: [] }; } list.items.push(m[1]); return; }
@@ -356,15 +410,88 @@
       return (html.replace(/<[^>]+>/g, " ").match(/\S+/g) || []).length;
     }
 
+    // The reverse, for editing a published article: its stored HTML back to
+    // the Markdown above. Pictures become their path (sizes go into `known`);
+    // anything Markdown can't say stays as one line of HTML.
+    function toMarkdown(html, known) {
+      var box = document.createElement("div");
+      box.innerHTML = html;
+      function inl(node) {
+        var s = "";
+        node.childNodes.forEach(function (n) {
+          if (n.nodeType === 3) { s += n.nodeValue.replace(/\s*\n\s*/g, " "); return; }
+          if (n.nodeType !== 1) return;
+          var t = n.tagName.toLowerCase(), inner = inl(n);
+          if (t === "br") s += "\n";
+          else if (t === "strong" || t === "b") s += wrap(inner, "**");
+          else if (t === "em" || t === "i") s += wrap(inner, "*");
+          else if (t === "a") s += "[" + inner + "](" + n.getAttribute("href") + ")";
+          else s += inner;
+        });
+        return s;
+      }
+      // Markdown emphasis can't cross a line, so wrap each line on its own.
+      function wrap(inner, mark) {
+        return inner.split("\n").map(function (l) { return l.trim() ? mark + l + mark : l; }).join("\n");
+      }
+      // A line that would read as a heading, list, quote or HTML stays text.
+      function lines(text) {
+        return text.split("\n").map(function (l) { return /^\s*(#|>|<|\\|[-*]\s|\d+[.)]\s)/.test(l) ? "\\" + l.trim() : l; }).join("\n");
+      }
+      function rawLine(el) { return el.outerHTML.replace(/\s*\n\s*/g, " "); }
+      var out = [];
+      box.childNodes.forEach(function (el) {
+        if (el.nodeType === 3) { if (el.nodeValue.trim()) out.push(el.nodeValue.trim()); return; }
+        if (el.nodeType !== 1) return;
+        var t = el.tagName.toLowerCase(), m;
+        if (el.className && t !== "figure") { out.push(rawLine(el)); return; }
+        if ((m = t.match(/^h([2-4])$/))) { out.push("#".repeat(+m[1]) + " " + inl(el).trim()); return; }
+        if (t === "p") { out.push(lines(inl(el).replace(/\n+$/, "").trim())); return; }
+        if (t === "ul" || t === "ol") {
+          var items = [], nested = false;
+          Array.prototype.forEach.call(el.children, function (li, i) {
+            if (li.querySelector("ul, ol, p")) nested = true;
+            items.push((t === "ul" ? "- " : (i + 1) + ". ") + inl(li).trim().split(/\s*\n\s*/).join("\n   "));
+          });
+          out.push(nested ? rawLine(el) : items.join("\n"));
+          return;
+        }
+        if (t === "blockquote") {
+          out.push(inl(el.querySelector("p") || el).trim().split("\n").map(function (l) { return "> " + l; }).join("\n"));
+          return;
+        }
+        if (t === "figure" && el.classList.contains("article__figure") && el.children.length === 1 && el.firstElementChild.tagName === "IMG") {
+          var img = el.firstElementChild, path = img.getAttribute("src");
+          known[path] = { width: img.getAttribute("width"), height: img.getAttribute("height") };
+          out.push("![" + (img.getAttribute("alt") || "") + "](" + path + ")");
+          return;
+        }
+        out.push(rawLine(el));
+      });
+      return out.filter(function (b) { return b; }).join("\n\n") + "\n";
+    }
+
     /* ---------- editor ---------------------------------------------------- */
-    var cover = null;                    // from makeCover()
+    // mode: { kind: "new" } or { kind: "edit", post } where post is the
+    // article's JSON as it is on GitHub.
+    var mode = { kind: "new" };
+    var cover = null;                    // a new cover, from makeCover()
     var images = {};                     // "image-N" -> from makeBodyImage()
+    var known = {};                      // "../assets/blog/x.webp" -> { width, height }
     var imageCount = 0;
     var slugTouched = false;
     var previewDoc = null;
+    var posts = [];                      // every article, newest first
 
+    function draftKey() { return mode.kind === "edit" ? DRAFT_KEY + ":" + mode.post.slug : DRAFT_KEY; }
     function author() {
       return $("author").value || $("author-other").value.trim();
+    }
+    function setAuthor(name) {
+      var other = !!name && AUTHORS.indexOf(name) < 0;
+      $("author").value = other ? "" : (name || AUTHORS[0]);
+      $("author-other").hidden = !other;
+      $("author-other").value = other ? name : "";
     }
     function fields() {
       return {
@@ -373,23 +500,46 @@
         alt: $("alt").value.trim(), body: $("body").value
       };
     }
+    function fill(f) {
+      $("title").value = f.title || ""; $("slug").value = f.slug || ""; $("date").value = f.date || today();
+      $("desc").value = f.desc || ""; $("seo").value = f.seo || ""; $("keywords").value = f.keywords || "";
+      $("alt").value = f.alt || ""; $("body").value = f.body || "";
+      setAuthor(f.author);
+    }
+    // The published article as form fields.
+    function postFields(p) {
+      known = {};
+      return {
+        title: p.title, slug: p.slug, author: p.author, date: (p.datePublished || "").slice(0, 10),
+        desc: p.description || "", seo: p.seoTitle && p.seoTitle !== p.title ? p.seoTitle : "",
+        keywords: p.keywords || "", alt: p.cover && p.cover.alt !== p.title ? p.cover.alt : "",
+        body: toMarkdown(p.body || "", known)
+      };
+    }
 
     function saveDraft() {
       var f = fields();
       f.slugTouched = slugTouched;
-      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(f)); $("draft-state").textContent = "· draft saved on this computer"; } catch (e) {}
+      try { localStorage.setItem(draftKey(), JSON.stringify(f)); $("draft-state").textContent = mode.kind === "edit" ? "· unsaved changes kept on this computer" : "· draft saved on this computer"; } catch (e) {}
     }
     function loadDraft() {
       var f = null;
-      try { f = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (e) {}
-      if (!f) return;
-      $("title").value = f.title || ""; $("slug").value = f.slug || ""; $("date").value = f.date || today();
-      $("desc").value = f.desc || ""; $("seo").value = f.seo || ""; $("keywords").value = f.keywords || "";
-      $("alt").value = f.alt || ""; $("body").value = f.body || "";
+      try { f = JSON.parse(localStorage.getItem(draftKey()) || "null"); } catch (e) {}
+      if (!f) return false;
+      if (mode.kind === "edit") f.slug = mode.post.slug;
+      fill(f);
       slugTouched = !!f.slugTouched;
-      if (f.author && AUTHORS.indexOf(f.author) < 0) { $("author").value = ""; $("author-other").hidden = false; $("author-other").value = f.author; }
-      else if (f.author) $("author").value = f.author;
-      $("draft-state").textContent = "· draft restored";
+      $("draft-state").textContent = mode.kind === "edit" ? "· unsaved changes restored" : "· draft restored";
+      return true;
+    }
+    function dropDraft() { try { localStorage.removeItem(draftKey()); } catch (e) {} }
+
+    // Paths in the body are relative to blog/; the preview sits at the root.
+    function previewSrc(path) { return path.replace(/^\.\.\//, ""); }
+    function coverUrl() {
+      if (cover) return cover.url;
+      if (mode.kind === "edit" && mode.post.cover) return "assets/blog/" + (mode.post.cover.webp || mode.post.cover.jpg);
+      return null;
     }
 
     function setupPreview() {
@@ -409,30 +559,61 @@
     function renderPreview() {
       if (!previewDoc) return;
       var f = fields();
-      var html = toHtml(f.body, images, function (id, img) { return img.url; });
+      var html = toHtml(f.body, images, function (id, img) { return img ? img.url : previewSrc(id); }, known);
       var mins = Math.max(1, Math.ceil(wordsIn(html) / WPM));
       var date = f.date ? new Date(f.date + "T12:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "";
       previewDoc.getElementById("p-title").textContent = f.title || "Your title";
       previewDoc.getElementById("p-meta").innerHTML = "<span>" + esc(f.author || "Author") + "</span><time>" + esc(date) + "</time><span>" + mins + " min read</span>";
-      previewDoc.getElementById("p-cover-wrap").hidden = !cover;
-      if (cover) previewDoc.getElementById("p-cover").src = cover.url;
+      var url = coverUrl();
+      previewDoc.getElementById("p-cover-wrap").hidden = !url;
+      if (url) previewDoc.getElementById("p-cover").src = url;
       previewDoc.getElementById("p-body").innerHTML = html || "<p>Your article appears here as you write.</p>";
     }
 
     var pending;
-    function changed() {
+    function changed(e) {
       clearTimeout(pending);
-      pending = setTimeout(function () { renderPreview(); saveDraft(); }, 150);
+      pending = setTimeout(function () { renderPreview(); if (e) saveDraft(); }, 150);
       var n = $("desc").value.trim().length;
       $("desc-count").textContent = n + " characters";
       $("desc-count").classList.toggle("is-off", n > 0 && (n < 120 || n > 170));
     }
 
-    function startEditor() {
-      $("date").value = today();
-      loadDraft();
-      setupPreview();
+    // Open the form, empty for a new article or filled with a published one.
+    function openEditor(next) {
+      mode = next;
+      cover = null; images = {}; known = {}; imageCount = 0; slugTouched = false;
+      $("cover").value = ""; $("image-file").value = "";
+      $("draft-state").textContent = "";
+      status("");
+      var editing = mode.kind === "edit";
+      $("mode-title").textContent = editing ? "Editing" : "New article";
+      $("publish").textContent = editing ? "Save changes" : "Publish article";
+      $("clear").textContent = editing ? "Discard changes" : "Start over";
+      $("slug").readOnly = editing;
+      $("slug-hint").textContent = editing ? "— fixed once published, so links keep working" : "— set from the title; letters, numbers and dashes";
+      $("cover-hint").textContent = editing ? "— keep the current one, or choose a new image (cropped to 1200 × 630)" : "— cropped to 1200 × 630 from the centre";
+
+      if (editing) {
+        fill(postFields(mode.post));
+        slugTouched = true;
+        loadDraft();
+      } else {
+        fill({ date: today() });
+        loadDraft();
+      }
+      var url = coverUrl();
+      $("cover-img").hidden = !url;
+      if (url) $("cover-img").src = url;
+
+      $("home").hidden = true;
+      $("app").hidden = false;
+      window.scrollTo(0, 0);
       changed();
+    }
+
+    function startEditor() {
+      setupPreview();
 
       $("post").addEventListener("input", changed);
       $("title").addEventListener("input", function () {
@@ -442,9 +623,9 @@
         slugTouched = true;
         $("slug").value = $("slug").value.toLowerCase().replace(/[^a-z0-9-]/g, "-");
       });
-      $("author").addEventListener("change", function () {
+      $("author").addEventListener("change", function (e) {
         $("author-other").hidden = $("author").value !== "";
-        changed();
+        changed(e);
       });
 
       $("cover").addEventListener("change", async function () {
@@ -457,7 +638,7 @@
       });
 
       $("add-image").addEventListener("click", function () { $("image-file").click(); });
-      $("image-file").addEventListener("change", async function () {
+      $("image-file").addEventListener("change", async function (e) {
         var file = $("image-file").files[0];
         if (!file) return;
         var id = "image-" + (++imageCount);
@@ -469,24 +650,103 @@
         ta.selectionStart = at + 4;
         ta.selectionEnd = at + 4 + "Describe this image".length;
         $("image-file").value = "";
-        changed();
+        changed(e);
       });
 
       $("clear").addEventListener("click", function () {
-        if ($("clear").dataset.confirm !== "1") {
-          $("clear").dataset.confirm = "1";
-          $("clear").textContent = "Clear everything?";
-          setTimeout(function () { $("clear").dataset.confirm = ""; $("clear").textContent = "Start over"; }, 3000);
-          return;
-        }
-        try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
-        location.reload();
+        if (!confirmClick($("clear"), mode.kind === "edit" ? "Discard all changes?" : "Clear everything?")) return;
+        dropDraft();
+        openEditor(mode);
       });
 
+      $("back").addEventListener("click", function () { showList(); });
+      $("new-post").addEventListener("click", function () { openEditor({ kind: "new" }); });
       $("post").addEventListener("submit", function (e) { e.preventDefault(); publish(); });
+
+      showList();
     }
 
-    /* ---------- publish --------------------------------------------------- */
+    // A button that needs a second click within three seconds.
+    function confirmClick(btn, ask) {
+      if (btn.dataset.confirm === "1") {
+        btn.dataset.confirm = "";
+        btn.classList.remove("is-armed");
+        btn.textContent = btn.dataset.label;
+        return true;
+      }
+      btn.dataset.label = btn.textContent;
+      btn.dataset.confirm = "1";
+      btn.classList.add("is-armed");
+      btn.textContent = ask;
+      setTimeout(function () {
+        if (btn.dataset.confirm !== "1") return;
+        btn.dataset.confirm = "";
+        btn.classList.remove("is-armed");
+        btn.textContent = btn.dataset.label;
+      }, 3000);
+      return false;
+    }
+
+    /* ---------- article list ---------------------------------------------- */
+    function listStatus(msg, kind) {
+      $("list-status").className = "status" + (kind ? " is-" + kind : "");
+      $("list-status").innerHTML = msg;
+    }
+    async function loadPosts() {
+      var dir = await gh("/contents/tools/blog/posts?ref=" + cfg.branch);
+      var files = dir.filter(function (f) { return /\.json$/.test(f.name); });
+      var loaded = await Promise.all(files.map(function (f) {
+        return gh("/contents/" + f.path + "?ref=" + cfg.branch, { raw: true });
+      }));
+      return loaded.sort(function (a, b) {
+        return (b.datePublished || "").localeCompare(a.datePublished || "") || a.slug.localeCompare(b.slug);
+      });
+    }
+    async function showList(note) {
+      $("app").hidden = true;
+      $("home").hidden = false;
+      window.scrollTo(0, 0);
+      listStatus(note || "Loading articles…", note ? "ok" : "");
+      $("new-post").textContent = hasNewDraft() ? "Continue new article" : "New article";
+      try {
+        posts = await loadPosts();
+        renderList();
+        if (!note) listStatus("");
+      } catch (err) {
+        listStatus("Couldn’t load the articles. " + esc(err.message || String(err)), "err");
+      }
+    }
+    function hasNewDraft() {
+      try { return !!localStorage.getItem(DRAFT_KEY); } catch (e) { return false; }
+    }
+    function niceDate(iso) {
+      return iso ? new Date(iso.slice(0, 10) + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+    }
+    function renderList() {
+      $("list-count").textContent = "· " + posts.length;
+      var ul = $("posts");
+      ul.innerHTML = "";
+      posts.forEach(function (p) {
+        var li = document.createElement("li");
+        li.className = "post";
+        var img = p.cover ? "assets/blog/" + (p.cover.webp || p.cover.jpg) : "";
+        li.innerHTML =
+          '<img src="' + esc(img) + '" alt="" loading="lazy">' +
+          '<div><div class="post__title">' + esc(p.title) + "</div>" +
+          '<div class="post__meta">' + esc(p.author || "") + " · " + esc(niceDate(p.datePublished)) +
+          ' · <a href="blog/' + esc(p.slug) + '.html" target="_blank" rel="noopener">View</a></div></div>' +
+          '<div class="post__actions"><button class="btn btn--ghost" type="button" data-edit>Edit</button>' +
+          '<button class="btn btn--danger" type="button" data-delete>Delete</button></div>';
+        li.querySelector("[data-edit]").addEventListener("click", function () { openEditor({ kind: "edit", post: p }); });
+        li.querySelector("[data-delete]").addEventListener("click", function (e) {
+          if (!confirmClick(e.currentTarget, "Delete for good?")) return;
+          deletePost(p, li);
+        });
+        ul.appendChild(li);
+      });
+    }
+
+    /* ---------- talking to GitHub ----------------------------------------- */
     function status(msg, kind) {
       $("status").className = "status" + (kind ? " is-" + kind : "");
       $("status").innerHTML = msg;
@@ -495,9 +755,10 @@
       opts = opts || {};
       var res = await fetch("https://api.github.com/repos/" + cfg.owner + "/" + cfg.repo + path, {
         method: opts.method || "GET",
+        cache: "no-store",
         headers: {
           "Authorization": "Bearer " + cfg.token,
-          "Accept": "application/vnd.github+json",
+          "Accept": opts.raw ? "application/vnd.github.raw+json" : "application/vnd.github+json",
           "X-GitHub-Api-Version": "2022-11-28"
         },
         body: opts.body ? JSON.stringify(opts.body) : undefined
@@ -510,17 +771,71 @@
       }
       return res.json();
     }
+    // One commit on the branch. files: [{ path, blob | text }] to write,
+    // remove: [path] to delete (only paths that exist).
+    async function commit(files, remove, message, say) {
+      var tree = [];
+      if (files.length) say("Uploading " + files.length + (files.length === 1 ? " file…" : " files…"));
+      for (var i = 0; i < files.length; i++) {
+        var content = files[i].blob ? await blobToBase64(files[i].blob) : await textToBase64(files[i].text);
+        var blob = await gh("/git/blobs", { method: "POST", body: { content: content, encoding: "base64" } });
+        tree.push({ path: files[i].path, mode: "100644", type: "blob", sha: blob.sha });
+      }
+      say("Publishing…");
+      for (var attempt = 0; attempt < 2; attempt++) {    // retry once if main moved meanwhile
+        var head = await gh("/git/ref/heads/" + cfg.branch);
+        var base = await gh("/git/commits/" + head.object.sha);
+        var entries = tree;
+        if (remove.length) {
+          var all = await gh("/git/trees/" + base.tree.sha + "?recursive=1");
+          var have = {};
+          all.tree.forEach(function (t) { have[t.path] = true; });
+          entries = tree.concat(remove.filter(function (p) { return have[p]; }).map(function (p) {
+            return { path: p, mode: "100644", type: "blob", sha: null };
+          }));
+        }
+        var newTree = await gh("/git/trees", { method: "POST", body: { base_tree: base.tree.sha, tree: entries } });
+        var made = await gh("/git/commits", { method: "POST", body: { message: message, tree: newTree.sha, parents: [head.object.sha] } });
+        try {
+          await gh("/git/refs/heads/" + cfg.branch, { method: "PATCH", body: { sha: made.sha } });
+          return made.sha;
+        } catch (err) {
+          if (attempt === 1) throw err;
+        }
+      }
+    }
+    function commitLink(sha) {
+      return '<a href="https://github.com/' + cfg.owner + "/" + cfg.repo + "/commit/" + sha + '" target="_blank" rel="noopener">See the change</a>';
+    }
 
+    // Pictures an article's body uses, as repo paths.
+    function bodyImages(html) {
+      return (String(html).match(/\.\.\/assets\/blog\/[^"')\s]+/g) || []).map(function (p) { return p.slice(3); });
+    }
+    function coverFiles(p) {
+      return p && p.cover ? [p.cover.webp, p.cover.jpg].filter(Boolean).map(function (n) { return "assets/blog/" + n; }) : [];
+    }
+    // Of these paths, the ones no other article uses.
+    function unshared(paths, slug) {
+      var used = {};
+      posts.forEach(function (p) {
+        if (p.slug === slug) return;
+        bodyImages(p.body).concat(coverFiles(p)).forEach(function (x) { used[x] = true; });
+      });
+      return paths.filter(function (x, i) { return !used[x] && paths.indexOf(x) === i; });
+    }
+
+    /* ---------- publish and save ------------------------------------------ */
     function validate(f) {
       if (!f.title) return "Add a title.";
       if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(f.slug)) return "The web address can only use lowercase letters, numbers and single dashes.";
       if (!f.author) return "Add the author’s name.";
       if (!f.date) return "Pick a publish date.";
       if (!f.desc) return "Add a summary.";
-      if (!cover) return "Add a cover image.";
+      if (!cover && mode.kind !== "edit") return "Add a cover image.";
       if (!f.body.trim()) return "Write the article body.";
-      var missing = (f.body.match(/\]\((image-\d+)\)/g) || []).map(function (m) { return m.slice(2, -1); })
-        .filter(function (id) { return !images[id]; });
+      var missing = (f.body.match(/!\[[^\]]*\]\(([^)\s]+)\)/g) || []).map(function (m) { return m.replace(/^.*\(|\)$/g, ""); })
+        .filter(function (id) { return !images[id] && !known[id]; });
       if (missing.length) return "An image placeholder (" + missing[0] + ") has no picture. Re-insert it, or delete that line.";
       return "";
     }
@@ -529,29 +844,39 @@
       var f = fields();
       var problem = validate(f);
       if (problem) { status(problem, "err"); return; }
+      var editing = mode.kind === "edit", old = editing ? mode.post : null;
       $("publish").disabled = true;
       try {
-        status("Checking the web address…");
         var postPath = "tools/blog/posts/" + f.slug + ".json";
-        if (await gh("/contents/" + postPath + "?ref=" + cfg.branch, { allow404: true })) {
-          throw new Error("An article already lives at /blog/" + f.slug + ". Change the web address.");
+        if (!editing) {
+          status("Checking the web address…");
+          if (await gh("/contents/" + postPath + "?ref=" + cfg.branch, { allow404: true })) {
+            throw new Error("An article already lives at /blog/" + f.slug + ". Change the web address.");
+          }
         }
 
-        // Name every file after the slug, then write the body against those names.
-        var files = [];                                     // { path, base64 }
-        var coverPage = f.slug + "." + cover.page.ext, coverJpg = f.slug + ".jpg";
-        files.push({ path: "assets/blog/" + coverJpg, blob: cover.jpg });
-        if (coverPage !== coverJpg) files.push({ path: "assets/blog/" + coverPage, blob: cover.page.blob });
+        // Name every new file after the slug (plus a stamp when editing, so a
+        // new picture never overwrites one the live page still shows), then
+        // write the body against those names.
+        var files = [], stamp = editing ? "-" + Date.now().toString(36) : "";
+        var coverInfo = old ? old.cover : null;
+        if (cover) {
+          var coverJpg = f.slug + stamp + ".jpg", coverPage = f.slug + stamp + "." + cover.page.ext;
+          files.push({ path: "assets/blog/" + coverJpg, blob: cover.jpg });
+          if (coverPage !== coverJpg) files.push({ path: "assets/blog/" + coverPage, blob: cover.page.blob });
+          coverInfo = { webp: coverPage, jpg: coverJpg, width: 1200, height: 630 };
+        }
         var used = {};
         var body = toHtml(f.body, images, function (id, img) {
+          if (!img) return id;                                // already on the site
           if (!used[id]) {
-            used[id] = f.slug + "-" + id.split("-")[1] + "." + img.ext;
+            used[id] = f.slug + stamp + "-" + id.split("-")[1] + "." + img.ext;
             files.push({ path: "assets/blog/" + used[id], blob: img.blob });
           }
           return "../assets/blog/" + used[id];
-        });
+        }, known);
         var words = wordsIn(body);
-        var post = {
+        var post = Object.assign({}, old || {}, {
           slug: f.slug,
           title: f.title,
           seoTitle: f.seo || f.title,
@@ -561,49 +886,66 @@
           datePublished: f.date,
           dateModified: new Date().toISOString(),
           keywords: f.keywords,
-          cover: { webp: coverPage, jpg: coverJpg, alt: f.alt || f.title },
+          cover: Object.assign({}, coverInfo, { alt: f.alt || f.title }),
           wordCount: words,
           readingMinutes: Math.max(1, Math.ceil(words / WPM)),
-          source: "blog editor",
           body: body
-        };
+        });
+        if (!editing) post.source = "blog editor";
         files.push({ path: postPath, text: JSON.stringify(post, null, 2) + "\n" });
 
-        status("Uploading " + files.length + " files…");
-        var tree = [];
-        for (var i = 0; i < files.length; i++) {
-          var content = files[i].blob ? await blobToBase64(files[i].blob) : await textToBase64(files[i].text);
-          var blob = await gh("/git/blobs", { method: "POST", body: { content: content, encoding: "base64" } });
-          tree.push({ path: files[i].path, mode: "100644", type: "blob", sha: blob.sha });
+        // Pictures the edit no longer uses (a replaced cover, a removed image).
+        var remove = [];
+        if (editing) {
+          var now = bodyImages(body).concat(coverFiles(post));
+          remove = unshared(bodyImages(old.body).concat(coverFiles(old)), f.slug)
+            .filter(function (x) { return now.indexOf(x) < 0; });
         }
 
-        status("Publishing…");
-        var commitSha;
-        for (var attempt = 0; attempt < 2; attempt++) {    // retry once if main moved meanwhile
-          var head = await gh("/git/ref/heads/" + cfg.branch);
-          var base = await gh("/git/commits/" + head.object.sha);
-          var newTree = await gh("/git/trees", { method: "POST", body: { base_tree: base.tree.sha, tree: tree } });
-          var commit = await gh("/git/commits", { method: "POST", body: {
-            message: "Blog: publish “" + f.title + "”\n\nAdded with the blog editor by " + f.author + ".",
-            tree: newTree.sha, parents: [head.object.sha] } });
-          try {
-            await gh("/git/refs/heads/" + cfg.branch, { method: "PATCH", body: { sha: commit.sha } });
-            commitSha = commit.sha;
-            break;
-          } catch (err) {
-            if (attempt === 1) throw err;
-          }
-        }
+        var sha = await commit(files, remove,
+          (editing ? "Blog: edit “" : "Blog: publish “") + f.title + "”\n\n" +
+          (editing ? "Edited" : "Added") + " with the blog editor by " + f.author + ".", status);
 
-        try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
-        $("draft-state").textContent = "· published";
-        status("Published. The site rebuilds in a minute or two, then the article is live at " +
-          '<a href="blog/' + f.slug + '.html" target="_blank" rel="noopener">/blog/' + esc(f.slug) + "</a>. " +
-          '<a href="https://github.com/' + cfg.owner + "/" + cfg.repo + "/commit/" + commitSha + '" target="_blank" rel="noopener">See the change</a>.', "ok");
+        dropDraft();
+        if (editing) {
+          mode.post = post;
+          posts = posts.map(function (p) { return p.slug === post.slug ? post : p; });
+        }
+        var live = '<a href="blog/' + esc(f.slug) + '.html" target="_blank" rel="noopener">/blog/' + esc(f.slug) + "</a>";
+        showList((editing ? "Saved “" + esc(f.title) + "”. The page updates in a minute or two at " :
+          "Published. The site rebuilds in a minute or two, then the article is live at ") + live + ". " + commitLink(sha) + ".");
       } catch (err) {
         status(esc(err.message || String(err)), "err");
       }
       $("publish").disabled = false;
+    }
+
+    /* ---------- delete ---------------------------------------------------- */
+    async function deletePost(p, row) {
+      row.classList.add("is-busy");
+      try {
+        // The article, its page, and the pictures no other article uses.
+        var remove = ["tools/blog/posts/" + p.slug + ".json", "blog/" + p.slug + ".html"]
+          .concat(unshared(bodyImages(p.body).concat(coverFiles(p)), p.slug));
+        var sha = await commit([], remove, "Blog: delete “" + p.title + "”\n\nRemoved with the blog editor.", listStatus);
+        try { localStorage.removeItem(DRAFT_KEY + ":" + p.slug); } catch (e) {}
+        posts = posts.filter(function (x) { return x.slug !== p.slug; });
+        renderList();
+        listStatus("Deleted “" + esc(p.title) + "”. The blog page updates in a minute or two. " + commitLink(sha) + ".", "ok");
+      } catch (err) {
+        row.classList.remove("is-busy");
+        listStatus("Couldn’t delete “" + esc(p.title) + "”. " + esc(err.message || String(err)), "err");
+      }
+    }
+
+    // For testing without a password: ?debug=1 exposes the converters and a
+    // way in with a token of your own (blogEditor.unlockWith({ token, owner,
+    // repo, branch })).
+    if (/[?&]debug=1/.test(location.search)) {
+      window.blogEditor = {
+        toHtml: toHtml, toMarkdown: toMarkdown,
+        unlockWith: function (c) { cfg = c; $("lock").hidden = true; startEditor(); }
+      };
     }
   })();
   </script>

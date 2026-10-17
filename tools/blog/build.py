@@ -304,4 +304,10 @@ if __name__ == "__main__":
     for p in posts:
         build_post(p, posts, *chrome("../"))
     build_index(posts, *chrome(""))
+    # a deleted post's page goes too
+    slugs = set(p["slug"] for p in posts)
+    for f in glob.glob(os.path.join(ROOT, "blog", "*.html")):
+        if os.path.basename(f)[:-5] not in slugs:
+            os.remove(f)
+            print("removed", os.path.relpath(f, ROOT))
     print("built blog.html and %d posts in blog/" % len(posts))

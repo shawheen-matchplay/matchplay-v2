@@ -250,6 +250,13 @@ around the MatchPlay mark (white ball + two white links).
   fine-grained token with Contents read/write on this repo). Publishing
   commits the post JSON; `.github/workflows/build-blog.yml` rebuilds and
   republishes Pages.
+- After unlocking, the editor opens on a list of every article (read live from
+  GitHub) with Edit and Delete. Edit converts the stored HTML back to the
+  editor's Markdown (HTML it can't express stays as raw `<…>` lines); the web
+  address is fixed once published. Save and Delete are single commits that
+  also remove images no other post uses; `build.py` deletes pages of removed
+  posts. `?debug=1` exposes `blogEditor.toHtml/toMarkdown/unlockWith(cfg)` for
+  testing (stub `fetch` for api.github.com; never test against the real repo).
 
 ## 8. Media and tools
 
