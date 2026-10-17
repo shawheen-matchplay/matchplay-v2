@@ -1795,7 +1795,7 @@ html.splash--returning [data-reveal] {
 
 /* Pointer cards ----------------------------------------------------------
    Any box with data-tilt. main.js gives it a decorative .fx layer and, for a
-   mouse or pen, tilts the box toward the pointer and sets --mx/--my to where
+   mouse or pen, tilts the box toward the pointer and sets --gx/--gy to where
    the pointer is. The layer carries a short accent rule along the top that
    draws across on hover, and two blurred glows: one resting low right, and
    one under the pointer. When the pointer comes in, the resting glow fades
@@ -1833,55 +1833,61 @@ html.splash--returning [data-reveal] {
 }
 [data-tilt]:hover > .fx::before,
 [data-tilt].is-active > .fx::before { transform: scaleX(1); }
+/* The glows are soft radial gradients rather than blurred discs: the
+   gradient follows the blur's own falloff (a 216px disc blurred 80px), so it
+   looks the same, but it is drawn once. A blur had to be redrawn every time
+   the glow moved, which made the hover lag; Safari also drew a big blur on a
+   tilted box in tiles, cut off at their edges. The pointer's glow moves by
+   transform only (main.js sets --gx/--gy in px), so following the pointer
+   is just the GPU sliding a finished layer. */
 .fx__orb {
   position: absolute;
-  width: 216px;
-  height: 216px;
+  left: 0;
+  top: 0;
+  width: 560px;
+  height: 560px;
   border-radius: 50%;
-  background: var(--fx-accent);
-  filter: blur(80px);
-  transform: translate(-50%, -50%);
+  /* sampled every 20px from a 216px disc under blur(80px) */
+  background: radial-gradient(closest-side,
+    color-mix(in srgb, var(--fx-accent) 59.6%, transparent) 0.0%,
+    color-mix(in srgb, var(--fx-accent) 58.4%, transparent) 7.1%,
+    color-mix(in srgb, var(--fx-accent) 54.9%, transparent) 14.3%,
+    color-mix(in srgb, var(--fx-accent) 50.2%, transparent) 21.4%,
+    color-mix(in srgb, var(--fx-accent) 43.9%, transparent) 28.6%,
+    color-mix(in srgb, var(--fx-accent) 36.9%, transparent) 35.7%,
+    color-mix(in srgb, var(--fx-accent) 29.4%, transparent) 42.9%,
+    color-mix(in srgb, var(--fx-accent) 22.7%, transparent) 50.0%,
+    color-mix(in srgb, var(--fx-accent) 16.9%, transparent) 57.1%,
+    color-mix(in srgb, var(--fx-accent) 11.8%, transparent) 64.3%,
+    color-mix(in srgb, var(--fx-accent) 7.8%, transparent) 71.4%,
+    color-mix(in srgb, var(--fx-accent) 4.7%, transparent) 78.6%,
+    color-mix(in srgb, var(--fx-accent) 2.7%, transparent) 85.7%,
+    color-mix(in srgb, var(--fx-accent) 1.6%, transparent) 92.9%,
+    transparent 100%);
   transition: opacity 0.4s var(--ease);
 }
 .fx__orb--rest {
   left: calc(100% - 54px);
   top: 100%;
+  transform: translate(-50%, -50%);
   opacity: var(--fx-rest);
 }
 /* Starts dark; it only moves while showing, so it never slides in from
    wherever it last was. */
 .fx__orb--pointer {
-  left: var(--mx, 50%);
-  top: var(--my, 50%);
+  transform: translate3d(calc(var(--gx, 0px) - 50%), calc(var(--gy, 0px) - 50%), 0);
   opacity: 0;
 }
 [data-tilt]:hover .fx__orb--rest { opacity: var(--fx-hover); }   /* touch: no tracking */
 [data-tilt].is-tracking .fx__orb--rest { opacity: 0; }
 [data-tilt].is-tracking .fx__orb--pointer {
   opacity: var(--fx-track);
-  transition: opacity 0.4s var(--ease), left 0.12s ease-out, top 0.12s ease-out;
+  will-change: transform;
+  transition: opacity 0.4s var(--ease), transform 0.12s ease-out;
 }
 /* Touch screens have no hover: instead the card crossing the middle of the
    screen as it scrolls takes the hover look (main.js sets .is-active, and
    .is-tracking for the glow, which travels down through it). */
-/* On phones the glow is a soft gradient, not a blurred disc: Safari draws a
-   big blur on a tilted box in tiles and cuts it off at their edges, which
-   showed as hard lines through the glow. The gradient follows the blur's
-   own falloff (a 216px disc blurred 80px), so it looks the same. */
-@media (hover: none) {
-  .fx__orb {
-    width: 560px;
-    height: 560px;
-    filter: none;
-    background: radial-gradient(closest-side,
-      color-mix(in srgb, var(--fx-accent) 60%, transparent) 0%,
-      color-mix(in srgb, var(--fx-accent) 46%, transparent) 20%,
-      color-mix(in srgb, var(--fx-accent) 30%, transparent) 38%,
-      color-mix(in srgb, var(--fx-accent) 13%, transparent) 60%,
-      color-mix(in srgb, var(--fx-accent) 3%, transparent) 82%,
-      transparent 100%);
-  }
-}
 /* On white a glass box has nothing to glow against: the glow runs stronger
    and the lift reads through a soft shadow and a firmer edge. */
 .section--light [data-tilt],

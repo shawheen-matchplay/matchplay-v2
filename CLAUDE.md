@@ -154,8 +154,9 @@ two glows). Desktop: tilt 1° (`2 × data-tilt`), drift and lift 4px, glow
 appears under the pointer while the resting glow fades. Touch: the card
 crossing a line at 45% of the screen height takes the hover look (`.is-active`
 + `.is-tracking`), glow travelling down it, ~1° rock; marquee cards only when
-centred. On phones the glow is a radial gradient, not `filter: blur` (Safari
-draws hard lines through big blurs on tilted boxes). Per-type rules: no top
+centred. The glow is a radial gradient fitted to the old `blur(80px)` disc (a
+blur redrew on every move and lagged; Safari also drew hard lines through big
+blurs on tilted boxes), moved by `transform` via `--gx/--gy` in px. Per-type rules: no top
 rule on story cards, team cards and testimonials; blog cards tilt only (no
 glow). Chips turn blue with white text on hover.
 

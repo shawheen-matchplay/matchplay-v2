@@ -384,23 +384,45 @@
   if (tiltCards.length && canTilt) {
     var DRIFT = 4;    // total drift in px
     var LIFT = 4;     // px the card rises while tracked
+    // The card is measured once when the pointer comes in (again only if the
+    // page scrolls meanwhile), not on every move: reading its box after each
+    // tilt forced the browser to lay the page out again mid-frame. Moves are
+    // gathered into one update per frame.
+    var scrolled = 0;
+    window.addEventListener("scroll", function () { scrolled++; }, { passive: true });
     Array.prototype.forEach.call(tiltCards, function (card) {
-      var settle;
+      var settle, box = null, boxAt = -1, last = null, frame = 0;
       // data-tilt="2" allows 2 degrees either way; bare data-tilt means 1
       var TILT = 2 * (parseFloat(card.getAttribute("data-tilt")) || 1);
-      function place(e) {
+      function measure() {
         var r = card.getBoundingClientRect();
-        var x = Math.min(Math.max((e.clientX - r.left) / r.width, 0), 1);   // 0 at left, 1 at right
-        var y = Math.min(Math.max((e.clientY - r.top) / r.height, 0), 1);   // 0 at top, 1 at bottom
-        card.style.setProperty("--mx", (x * 100).toFixed(1) + "%");
-        card.style.setProperty("--my", (y * 100).toFixed(1) + "%");
+        box = { left: r.left, top: r.top, w: card.offsetWidth, h: card.offsetHeight };
+        boxAt = scrolled;
+      }
+      function place(e) {
+        if (!box || boxAt !== scrolled) measure();
+        var x = Math.min(Math.max((e.clientX - box.left) / box.w, 0), 1);   // 0 at left, 1 at right
+        var y = Math.min(Math.max((e.clientY - box.top) / box.h, 0), 1);    // 0 at top, 1 at bottom
+        card.style.setProperty("--gx", (x * box.w).toFixed(1) + "px");
+        card.style.setProperty("--gy", (y * box.h).toFixed(1) + "px");
         return [x, y];
+      }
+      function update() {
+        frame = 0;
+        if (!last) return;
+        var xy = place(last), x = xy[0], y = xy[1];
+        // the edge under the pointer comes toward the viewer
+        card.style.transform = "perspective(900px)" +
+          " rotateX(" + ((y - 0.5) * TILT).toFixed(2) + "deg)" +
+          " rotateY(" + ((0.5 - x) * TILT).toFixed(2) + "deg)" +
+          " translate3d(" + ((x - 0.5) * DRIFT).toFixed(1) + "px," + (-LIFT + (y - 0.5) * DRIFT).toFixed(1) + "px,0)";
       }
       card.addEventListener("pointerenter", function (e) {
         if (e.pointerType === "touch") return;
         clearTimeout(settle);
         // Put the pointer's glow under the pointer before it starts showing,
         // so it appears there rather than travelling from its last spot.
+        measure();
         place(e);
         card.getBoundingClientRect();
         card.classList.add("is-tracking");
@@ -408,18 +430,15 @@
       });
       card.addEventListener("pointermove", function (e) {
         if (e.pointerType === "touch") return;
-        var xy = place(e), x = xy[0], y = xy[1];
-        // the edge under the pointer comes toward the viewer
-        card.style.transform = "perspective(900px)" +
-          " rotateX(" + ((y - 0.5) * TILT).toFixed(2) + "deg)" +
-          " rotateY(" + ((0.5 - x) * TILT).toFixed(2) + "deg)" +
-          " translate3d(" + ((x - 0.5) * DRIFT).toFixed(1) + "px," + (-LIFT + (y - 0.5) * DRIFT).toFixed(1) + "px,0)";
+        last = { clientX: e.clientX, clientY: e.clientY };
+        if (!frame) frame = requestAnimationFrame(update);
       });
       card.addEventListener("pointerleave", function () {
+        cancelAnimationFrame(frame); frame = 0; last = null; box = null;
         card.classList.remove("is-tracking");
         card.style.transition = "transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.4s, border-color 0.4s, box-shadow 0.4s";
         card.style.transform = "";
-        // --mx/--my stay put, so the pointer's glow fades out where it was
+        // --gx/--gy stay put, so the pointer's glow fades out where it was
         // once it has eased back, hand the transition back to the stylesheet
         settle = setTimeout(function () { card.style.transition = ""; }, 650);
       });
@@ -456,8 +475,8 @@
         setActive(card, on);
         if (!on || (card._q != null && Math.abs(q - card._q) < 0.002)) return;
         card._q = q;
-        card.style.setProperty("--mx", (30 + 40 * q).toFixed(1) + "%");
-        card.style.setProperty("--my", (q * 100).toFixed(1) + "%");
+        card.style.setProperty("--gx", (r.width * (0.3 + 0.4 * q)).toFixed(1) + "px");
+        card.style.setProperty("--gy", (r.height * q).toFixed(1) + "px");
         if (!stillCards) {
           var TILT = 2 * (parseFloat(card.getAttribute("data-tilt")) || 1);
           card.style.transform = "perspective(900px) rotateX(" + ((0.5 - q) * TILT).toFixed(2) + "deg) translate3d(0,-4px,0)";
