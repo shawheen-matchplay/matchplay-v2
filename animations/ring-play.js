@@ -7,7 +7,8 @@
                                         for each other and merge by themselves
      window.RING_PLAY = { mode: "c" }   as a, and rings that drift close also
                                         merge by themselves
-   Either way, links split back into two rings after 2-4 seconds.
+   Every way, only rings of the same colour merge, and links split back
+   into two rings after 2-3 seconds (one of them taking a new colour).
 
    The merge is the one in link-merge.html and the hero: a stretch, a
    touch and a bounce, worked out in its own frame (ring radius 100) and
@@ -150,8 +151,8 @@
   var ATTRACT = CAN + R * 2.6;         /* a dragged ring starts to reach within this */
   var CRUISE = R * 0.35, WANDER = R * 0.6;
   var AVOID_R = R * 4.5;               /* how near the mouse can come before shapes move off */
-  var SPLIT_AFTER = [2000, 4000];      /* ms a link holds before it splits on its own */
-  var MEET = CAN + R * 1.6;            /* (b, c) rings this close start reaching for each other */
+  var SPLIT_AFTER = [2000, 3000];      /* ms a link holds before it splits on its own */
+  var MEET = CAN + R * 0.4;            /* (b, c) same-colour rings this close (touching) merge */
   var COOL = 2500;                     /* (b, c) ms after a split before a ring merges again */
 
   var f2 = function (n) { return n.toFixed(2); };
@@ -244,12 +245,13 @@
   function stepMerge(m, now) {
     var a = m.a, b = m.b, deg = m.phi * DEG - 45;
     if (m.phase === "reach") {
-      var dur = 850 * (1 - m.s0) + 150, t = Math.min(1, Math.max(0, now - m.t0) / dur);
-      var to = [a.x + Math.cos(m.phi) * CAN, a.y + Math.sin(m.phi) * CAN];
-      var slide = easeOut(Math.min(1, t / 0.45));
-      b.x = m.from[0] + (to[0] - m.from[0]) * slide;
-      b.y = m.from[1] + (to[1] - m.from[1]) * slide;
-      var s = m.s0 + (1 - m.s0) * springRise(t);
+      /* the reach: b slides in on the same rising curve as the stretch, so
+         the two arrive at the touch together and on the move */
+      var dur = 220 + 420 * (1 - m.s0), t = Math.min(1, Math.max(0, now - m.t0) / dur);
+      var to = [a.x + Math.cos(m.phi) * CAN, a.y + Math.sin(m.phi) * CAN], k = springRise(t);
+      b.x = m.from[0] + (to[0] - m.from[0]) * k;
+      b.y = m.from[1] + (to[1] - m.from[1]) * k;
+      var s = m.s0 + (1 - m.s0) * k;
       a.el.setAttribute("d", d(mix(A0, A1, s))); place(a.el, a.x, a.y, deg);
       b.el.setAttribute("d", d(mix(A0, A1, s))); place(b.el, b.x, b.y, deg + 180);
       if (t >= 1) {
@@ -258,7 +260,7 @@
         place(b.el, a.x, a.y, deg);                      /* both now drawn in a's frame */
       }
     } else {
-      var u = Math.min(1, Math.max(0, now - m.t0) / 1400);
+      var u = Math.min(1, Math.max(0, now - m.t0) / 1150);
       var mm = easeOut(Math.min(1, u / 0.14)), e = u < 1 ? 0.15 * wobble(u) : 0;
       var link = sides(12 + (RHO - 12) * spring(u), e > 0 ? e * 0.4 : e);
       a.el.setAttribute("d", d(mix(A1, link[0], mm)));
@@ -386,7 +388,7 @@
     if (drag && drag.b.kind === "ring" && !drag.b.busy) {
       var b = drag.b, best = null, bestD = ATTRACT;
       bodies.forEach(function (o) {
-        if (o === b || o.kind !== "ring" || o.busy) return;
+        if (o === b || o.kind !== "ring" || o.busy || o.color !== b.color) return;   /* only its own colour */
         var dd = Math.hypot(o.x - b.x, o.y - b.y);
         if (dd < bestD) { best = o; bestD = dd; }
       });
@@ -420,33 +422,25 @@
       });
     }
 
-    /* (b, c) rings that drift close pair up, reach for each other and draw
-       together, and merge once they touch. Closest pairs first, one partner
-       each, and not straight after a split. */
+    /* (b, c) rings of one colour that touch merge: closest pairs first, one partner
+       each, and not straight after a split. The merge starts the moment they
+       meet (its reach draws them the rest of the way), so a pair never hangs
+       half-stretched waiting to touch. */
     pairs = [];
     if (AUTO) {
       var free = bodies.filter(function (b) {               /* not one in your hand, nor what it reaches for */
-      return b.kind === "ring" && !b.busy && !b.dragged && !(now < b.cool) && !(preview && b === preview.a);
-    });
+        return b.kind === "ring" && !b.busy && !b.dragged && !(now < b.cool) && !(preview && b === preview.a);
+      });
       var cands = [];
       for (var i0 = 0; i0 < free.length; i0++) for (var j0 = i0 + 1; j0 < free.length; j0++) {
         var dd0 = Math.hypot(free[j0].x - free[i0].x, free[j0].y - free[i0].y);
-        if (dd0 < MEET) cands.push([dd0, free[i0], free[j0]]);
+        if (dd0 < MEET && free[i0].color === free[j0].color) cands.push([dd0, free[i0], free[j0]]);
       }
       cands.sort(function (x, y) { return x[0] - y[0]; });
-      var taken = new Set();
       cands.forEach(function (c) {
         var A = c[1], B = c[2];
-        if (taken.has(A) || taken.has(B)) return;
-        taken.add(A); taken.add(B);
-        var dd = c[0], phi = Math.atan2(B.y - A.y, B.x - A.x), pr = Math.min(1, (MEET - dd) / (MEET - CAN));
-        A.goal = B.goal = Math.pow(Math.max(0, pr), 1.6);
-        A.face = phi; B.face = phi + Math.PI;
-        if (dd <= CAN * 1.04) { startMerge(Math.random() < 0.5 ? A : B, null, A, B); return; }
-        var ux = Math.cos(phi), uy = Math.sin(phi), pull = R * 14 * (0.3 + pr);
-        A.vx += ux * pull * dt; A.vy += uy * pull * dt;
-        B.vx -= ux * pull * dt; B.vy -= uy * pull * dt;
-        pairs.push([A, B]);
+        if (A.busy || B.busy) return;
+        startMerge(Math.random() < 0.5 ? A : B, null, A, B);
       });
     }
     var paired = function (A, B) {

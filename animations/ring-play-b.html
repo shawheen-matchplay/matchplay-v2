@@ -5,7 +5,7 @@
   <title>Ring Play B — MatchPlay</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow">
-  <!-- Ring play, version B: rings and links keep away from the mouse; rings that drift close merge into a link by themselves, which splits again after 2-4 seconds. The behaviour is in ring-play.js. -->
+  <!-- Ring play, version B: rings and links keep away from the mouse; rings that drift close merge into a link by themselves, which splits again after 2-3 seconds. The behaviour is in ring-play.js. -->
   <style>
     :root { --ground: #0E0E11; --ink: rgba(255,255,255,.5); }
     html, body { margin: 0; height: 100%; background: var(--ground); overflow: hidden; }
@@ -36,7 +36,7 @@
 </head>
 <body>
   <svg id="stage" role="img" aria-label="Floating rings that link up when they drift close and keep away from the pointer"></svg>
-  <p class="hint">Rings link up when they drift close. They keep away from your mouse.</p>
+  <p class="hint">Rings of a colour link up when they touch. They keep away from your mouse.</p>
   <button class="reset" type="button" id="reset">Reset</button>
 
   <script>window.RING_PLAY = { mode: "b" };</script>
