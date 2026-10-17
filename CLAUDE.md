@@ -83,7 +83,7 @@ code over it.
 | Capital Partners | `capital-partners.html` | `page--ventures` (orange accent); anchors `#why #how #what-you-see #spv #after #join` |
 | Match House | `match-house.html` | one screen over `assets/match-house/recap.mp4`; title Lexend Zetta Black, subtitle Lexend Mega Black; links out to matchhouse.events |
 | Partners | `partners.html` | 26 transparent logos in `assets/partners/` (HubSpot, Deel, Shopline, Leader Bank, Patterns, Gildre, CoffeeSpace first) |
-| Team | `team.html` | fully dark; mission hero and the join box only (the member cards were removed Oct 2026; headshots still in `assets/team/`, the cards are in git history) |
+| Team | `team.html` | fully dark; opens on "Our team" (the page's h1; the mission hero was removed Oct 2026), then the join box; 1200×1200 headshots in `assets/team/` (head ~60% of frame, eyes ~39% down, upscaled 4×), LinkedIn links bottom-right |
 | Press | `press.html`, `press-*.html` | "All press" link at top and bottom |
 | Summits | `summit-2024.html` (`page--purple`), `summit-2025.html` | |
 | Blog | `blog.html`, `blog/<slug>.html` | **generated**, see §7. Title "The Warm Intro" / "A MatchPlay Blog" |
