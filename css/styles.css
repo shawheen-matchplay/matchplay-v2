@@ -363,7 +363,7 @@ button { font: inherit; cursor: pointer; }
   top: calc(100% + 10.8px);
   left: 50%;
   transform: translate(-50%, 6px);
-  min-width: 180px;
+  width: max-content;            /* as wide as its widest item, so it grows if a longer one is added */
   background: rgba(46, 46, 49, 0.92);
   -webkit-backdrop-filter: blur(18px) saturate(1.2);
           backdrop-filter: blur(18px) saturate(1.2);
