@@ -197,8 +197,10 @@
     // dropdown grows out from under the pointer as it opens, and its first
     // item passing beneath a still pointer must not pull the lens down.
     Array.prototype.forEach.call(nav.querySelectorAll(".nav__dropdown-menu a"), function (link) {
+      var parent = link.closest(".nav__dropdown").querySelector(".nav__link");
       link.addEventListener("pointermove", function (e) {
         if (!e.movementX && !e.movementY) return;          // synthetic: the page moved, not the mouse
+        if (e.clientY <= parent.getBoundingClientRect().bottom) return;   // still on the parent's level
         if (el !== link || !on) target(link);
       });
       link.addEventListener("focus", function () { target(link); });
@@ -208,10 +210,10 @@
   }
 
   /* ---- dropdowns grow out of their nav item ---------------------------- */
-  // As Events or About opens, its panel starts as the button you pointed at
-  // (its size and place) and grows down into the full menu, with a little
-  // spring at the end; as it closes it shrinks back into the button while
-  // it fades. Coming back mid-way picks up from wherever it is. Played on
+  // As Events or About opens, its panel unfolds down from the bottom edge
+  // of the button you pointed at (starting at the button's width) into the
+  // full menu, with a little spring at the end; as it closes it folds back
+  // up to that edge while it fades. Coming back mid-way picks up from wherever it is. Played on
   // the separate scale and translate properties, so it rides on the
   // panel's own centring and slide-in (transform). The panel is translated
   // left by half its width, so a transform-origin at its own 0 0 is its
@@ -223,13 +225,15 @@
       if (!menu || !btn || !menu.animate) return;
       var open = false, run = null, fade = null;
       menu.style.transformOrigin = "0 0";
-      // the panel squeezed into the button, as scale and translate values
+      // the panel folded up against the bottom edge of the button (its
+      // width, a sliver tall), as scale and translate values: it unfolds
+      // from there and folds back to it, never over the button itself
       function asButton() {
         var li = dd.getBoundingClientRect(), b = btn.getBoundingClientRect();
         var top = li.top + (parseFloat(getComputedStyle(menu).top) || 0);
         var w = menu.offsetWidth, h = menu.offsetHeight;
         if (!w || !h) return null;
-        return { scale: (b.width / w).toFixed(4) + " " + (b.height / h).toFixed(4), translate: "0 " + (b.top - top).toFixed(1) + "px" };
+        return { scale: (b.width / w).toFixed(4) + " " + (4 / h).toFixed(4), translate: "0 " + (b.bottom - top).toFixed(1) + "px" };
       }
       // where it is right now (mid-way through a grow or shrink, or at rest)
       function current() {
