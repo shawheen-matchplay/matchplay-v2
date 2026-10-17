@@ -171,7 +171,7 @@ glow). Chips turn blue with white text on hover.
 - Dropdowns and the phone menu use the same glass as the pill.
 - Hover **lens**: one glass drop slides on a spring between nav links
   (including Log In and Apply) and travels down into the Events/About
-  dropdown items and back up (2D spring, takes the target's corners, target
+  dropdown items and back up (2D spring, always a pill, target
   re-measured each frame while the menu slides open). Over Apply it sits
   inside the blue border. No displacement on the lens: it blurred the link
   text.

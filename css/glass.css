@@ -82,7 +82,7 @@
   border-radius: 999px;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.25s ease, border-radius 0.25s ease;
+  transition: opacity 0.25s ease;
   background: rgba(255, 255, 255, 0.07);
   -webkit-backdrop-filter: saturate(1.4) brightness(1.15);
           backdrop-filter: var(--lg-filter, saturate(1.4) brightness(1.15));
@@ -110,6 +110,7 @@
 .glass .nav__link,
 .glass .nav__dropdown-menu a,
 .glass .nav__mobile a:not(.nav__mobile-cta) { color: rgba(255, 255, 255, 0.92); }
+.glass .nav__dropdown-menu a { border-radius: 999px; }   /* pill rows, the shape of the lens */
 .glass .nav__link:hover,
 .glass .nav__dropdown-menu a:hover,
 .glass .nav__mobile a:not(.nav__mobile-cta):hover { color: #fff; }

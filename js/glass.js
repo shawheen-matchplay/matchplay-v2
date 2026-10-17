@@ -119,8 +119,8 @@
   // One glass drop under the pointer's link. It appears where you first
   // point, then travels to each link you move to on a spring (across the
   // pill, and down from Events or About into their dropdowns and back up),
-  // stretching along the way and squashing a little as it settles, and
-  // taking the corners of what it lands on; it fades when the pointer
+  // stretching along the way and squashing a little as it settles, always
+  // a pill (in the dropdowns too); it fades when the pointer
   // leaves the nav. The target is measured every frame while it travels,
   // because a dropdown is still sliding open when you reach it.
   if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
@@ -181,9 +181,6 @@
       el = link;
       cta = link.classList.contains("btn--nav");
       lens.classList.toggle("is-cta", cta);
-      // a pill, or a menu row's corners; capped at half the height so the
-      // change between them animates evenly (999px would snap at the end)
-      lens.style.borderRadius = Math.min(parseFloat(getComputedStyle(link).borderTopLeftRadius) || 0, link.offsetHeight / 2) + "px";
       measure();
       if (!on || still) { x = tx; y = ty; w = tw; h = th; vx = vy = vw = vh = 0; draw(1, 1); }
       if (cta) popAt = -1;                                                   // Apply: no wobble at all
