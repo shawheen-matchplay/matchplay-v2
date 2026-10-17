@@ -106,6 +106,7 @@
   // by the hero button and by the lens when it first appears.
   var WOBBLE = [[0, 0], [0.02, -0.015], [-0.015, 0.02], [0.005, -0.004], [0, 0]];
   var WOBBLE_MS = 450;
+  var CTA_WOBBLE = 0.01;                     // pill buttons peak at 101% (the nav lens at 103%)
   var easeInOut = function (t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; };
   function wobbleAt(ms, a) {                 // [sx, sy] at ms into the wobble; a: peak, 0.02 = 102%
     var p = easeInOut(Math.min(1, Math.max(0, ms / WOBBLE_MS))) * (WOBBLE.length - 1);
@@ -129,7 +130,7 @@
     nav.appendChild(lens);
     var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     var x = 0, y = 0, w = 0, h = 0, vx = 0, vy = 0, vw = 0, vh = 0;
-    var tx = 0, ty = 0, tw = 0, th = 0, on = false, raf = 0, last = 0, cta = false, el = null, popAt = -1, popAmp = 0.05;
+    var tx = 0, ty = 0, tw = 0, th = 0, on = false, raf = 0, last = 0, cta = false, el = null, popAt = -1, popAmp = 0.03;
     var draw = function (sx, sy) {
       // Over Apply the drop sits inside the button's border: it never runs
       // past its right edge (the spring overshoots a little as it settles)
@@ -165,8 +166,8 @@
       x += vx * dt; y += vy * dt; w += vw * dt; h += vh * dt;
       // stretch along the way it is going, narrower across it
       var ax = Math.min(0.14, Math.abs(vx) / 3500), ay = Math.min(0.14, Math.abs(vy) / 2500);
-      // the wobble: as it first appears (105%), or over Apply in step with
-      // the button's own (102%), so the drop stays inside its border. Over
+      // the wobble: as it first appears (103%), or over Apply in step with
+      // the button's own (101%), so the drop stays inside its border. Over
       // Apply it does not stretch with speed.
       var popping = popAt >= 0 && now - popAt < WOBBLE_MS;
       var wb = popping ? wobbleAt(now - popAt, popAmp) : [1, 1];
@@ -186,8 +187,8 @@
       lens.style.borderRadius = Math.min(parseFloat(getComputedStyle(link).borderTopLeftRadius) || 0, link.offsetHeight / 2) + "px";
       measure();
       if (!on || still) { x = tx; y = ty; w = tw; h = th; vx = vy = vw = vh = 0; draw(1, 1); }
-      if (!still && cta) { popAt = performance.now(); popAmp = 0.02; }        // with Apply's own wobble
-      else if (!on && !still) { popAt = performance.now(); popAmp = 0.05; }  // first link of a visit
+      if (!still && cta) { popAt = performance.now(); popAmp = CTA_WOBBLE; }  // with Apply's own wobble
+      else if (!on && !still) { popAt = performance.now(); popAmp = 0.03; }  // first link of a visit: 103%
       on = true;
       lens.classList.add("is-on");
       if (!still && !raf) { last = performance.now(); raf = requestAnimationFrame(tick); }
@@ -215,7 +216,7 @@
       }
       return out;
     };
-    var ENTER = wobbleFrames(0.02), LEAVE = wobbleFrames(0.01);
+    var ENTER = wobbleFrames(CTA_WOBBLE), LEAVE = wobbleFrames(CTA_WOBBLE / 2);
     Array.prototype.forEach.call(document.querySelectorAll(".hero__cta, .btn--primary.btn--pill, .btn--nav"), function (btn) {
       var run = null;
       function play(frames, ms) {
