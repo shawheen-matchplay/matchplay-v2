@@ -197,28 +197,33 @@
     nav.addEventListener("focusout", function (e) { if (!nav.contains(e.relatedTarget)) { on = false; lens.classList.remove("is-on"); } });
   }
 
-  /* ---- dropdowns wobble open -------------------------------------------- */
-  // As Events or About opens, its panel gives the lens's wobble (103%),
-  // out from just under the nav item. It is played on the separate scale
-  // property, so it rides on the panel's own centring and slide-in
+  /* ---- dropdowns grow out of their nav item ---------------------------- */
+  // As Events or About opens, its panel starts as the button you pointed at
+  // (its size and place) and grows down into the full menu, with a little
+  // spring at the end. Played on the separate scale and translate
+  // properties, so it rides on the panel's own centring and slide-in
   // (transform). The panel is translated left by half its width, so a
   // transform-origin at its own 0 0 is its top centre on screen.
   if (window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
       !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     Array.prototype.forEach.call(document.querySelectorAll(".nav__dropdown"), function (dd) {
-      var menu = dd.querySelector(".nav__dropdown-menu");
-      if (!menu || !menu.animate) return;
-      var open = false, run = null, frames = [];
-      for (var i = 0; i <= 90; i++) {
-        var k = wobbleAt(WOBBLE_MS * i / 90, 0.03);
-        frames.push({ scale: k[0].toFixed(4) + " " + k[1].toFixed(4) });
-      }
+      var menu = dd.querySelector(".nav__dropdown-menu"), btn = dd.querySelector(".nav__link");
+      if (!menu || !btn || !menu.animate) return;
+      var open = false, run = null;
       menu.style.transformOrigin = "0 0";
       function opened() {
         if (open) return;
         open = true;
         if (run) run.cancel();
-        run = menu.animate(frames, { duration: WOBBLE_MS });
+        // where the panel ends up: under the item, at its CSS top
+        var li = dd.getBoundingClientRect(), b = btn.getBoundingClientRect();
+        var top = li.top + (parseFloat(getComputedStyle(menu).top) || 0);
+        var w = menu.offsetWidth, h = menu.offsetHeight;
+        if (!w || !h) return;
+        run = menu.animate([
+          { scale: (b.width / w).toFixed(4) + " " + (b.height / h).toFixed(4), translate: "0 " + (b.top - top).toFixed(1) + "px" },
+          { scale: "1 1", translate: "0 0" }
+        ], { duration: 380, easing: "cubic-bezier(0.34, 1.25, 0.64, 1)" });
       }
       function closed(e) {
         if (e.type === "focusout" && dd.contains(e.relatedTarget)) return;
