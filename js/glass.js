@@ -186,8 +186,8 @@
       function step(now) {
         var dt = Math.min(1 / 30, Math.max(0, now - then) / 1000);
         then = now;
-        vm += (300 * (goal - m) - 14 * vm) * dt;
-        vq += (520 * (0 - q) - 11 * vq) * dt;
+        vm += (300 * (goal - m) - 20 * vm) * dt;
+        vq += (520 * (0 - q) - 17 * vq) * dt;
         m += vm * dt; q += vq * dt;
         btn.style.transform = "scale(" + (m * (1 + q)).toFixed(4) + "," + (m * (1 - q * 0.8)).toFixed(4) + ")";
         if (Math.abs(goal - m) > 0.0005 || Math.abs(vm) > 0.005 || Math.abs(q) > 0.0005 || Math.abs(vq) > 0.005) {
@@ -201,8 +201,8 @@
         goal = to; vq += push;
         if (!frame) { then = performance.now(); frame = requestAnimationFrame(step); }
       }
-      btn.addEventListener("pointerenter", function () { kick(1.04, 2.6); });
-      btn.addEventListener("pointerleave", function () { kick(1, -1.2); });
+      btn.addEventListener("pointerenter", function () { kick(1.04, 1.6); });
+      btn.addEventListener("pointerleave", function () { kick(1, -0.7); });
     });
   }
 
