@@ -221,7 +221,7 @@
     Array.prototype.forEach.call(document.querySelectorAll(".nav__dropdown"), function (dd) {
       var menu = dd.querySelector(".nav__dropdown-menu"), btn = dd.querySelector(".nav__link");
       if (!menu || !btn || !menu.animate) return;
-      var open = false, run = null;
+      var open = false, run = null, fade = null;
       menu.style.transformOrigin = "0 0";
       // the panel squeezed into the button, as scale and translate values
       function asButton() {
@@ -236,17 +236,22 @@
         var cs = getComputedStyle(menu);
         return { scale: cs.scale === "none" ? "1 1" : cs.scale, translate: cs.translate === "none" ? "0 0" : cs.translate };
       }
-      var FULL = { scale: "1 1", translate: "0 0" };
+      var FULL = function () { return { scale: "1 1", translate: "0 0" }; };
+      // The stylesheet also slides the panel 6px as it opens and closes; the
+      // grow replaces that, so the panel is held at its resting centring.
+      var HOLD = "translate(-50%, 0)";
       function play(from, to, ms, easing) {
         if (run) run.cancel();
+        from.transform = to.transform = HOLD;
         run = menu.animate([from, to], { duration: ms, easing: easing, fill: "forwards" });
       }
       function opened() {
         if (open) return;
         open = true;
+        if (fade) { fade.cancel(); fade = null; }
         var shrinking = run && run.playState !== "finished";   // caught mid-way
         var from = shrinking ? current() : asButton();
-        if (from) play(from, FULL, 380, "cubic-bezier(0.34, 1.25, 0.64, 1)");
+        if (from) play(from, FULL(), 380, "cubic-bezier(0.34, 1.25, 0.64, 1)");
       }
       function closed(e) {
         if (e.type === "focusout" && dd.contains(e.relatedTarget)) return;
@@ -254,7 +259,16 @@
         if (!open) return;
         open = false;
         var to = asButton();
-        if (to) play(current(), to, 220, "cubic-bezier(0.4, 0, 0.9, 0.6)");   // as fast as the fade
+        if (!to) return;
+        play(current(), to, 260, "cubic-bezier(0.45, 0, 0.55, 1)");
+        // The stylesheet's fade (ease-out) left it nearly see-through before
+        // it had shrunk, so the close fades on its own: it stays solid
+        // while it shrinks and goes at the end, visible until it is done.
+        fade = menu.animate([
+          { opacity: 1, visibility: "visible" },
+          { opacity: 0.85, visibility: "visible", offset: 0.6 },
+          { opacity: 0, visibility: "visible" }
+        ], { duration: 260, easing: "ease-in" });
       }
       dd.addEventListener("pointerenter", opened);
       dd.addEventListener("focusin", opened);
