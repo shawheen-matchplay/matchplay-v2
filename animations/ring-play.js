@@ -315,6 +315,17 @@
     return false;
   }
 
+  function placeMerge(m) {
+    var deg = m.phi * DEG - 45;
+    if (m.phase === "reach") { place(m.a.el, m.a.x, m.a.y, deg); place(m.b.el, m.b.x, m.b.y, deg + 180); }
+    else { place(m.a.el, m.a.x, m.a.y, deg); place(m.b.el, m.a.x, m.a.y, deg); }
+  }
+  function placeSplit(sp) {
+    var L = sp.L, deg = L.ang * DEG - 45;
+    var ca = [L.x - Math.cos(L.ang) * HALF, L.y - Math.sin(L.ang) * HALF];
+    place(L.el, ca[0], ca[1], deg); place(sp.elB, ca[0], ca[1], deg);
+  }
+
   /* A link pinches back into two touching rings, which spring apart and
      wobble round again, each its own colour. */
   function startSplit(L) {
@@ -367,6 +378,27 @@
     var sx = c1[0] - c0[0], sy = c1[1] - c0[1], len2 = sx * sx + sy * sy;
     var u = len2 ? Math.max(0, Math.min(1, ((p[0] - c0[0]) * sx + (p[1] - c0[1]) * sy) / len2)) : 0;
     return [c0[0] + sx * u, c0[1] + sy * u];
+  }
+  /* the closest points of two segments (a point is a segment of length 0) */
+  var clamp01 = function (x) { return x < 0 ? 0 : x > 1 ? 1 : x; };
+  function closest(p0, p1, q0, q1) {
+    var d1x = p1[0] - p0[0], d1y = p1[1] - p0[1], d2x = q1[0] - q0[0], d2y = q1[1] - q0[1];
+    var rx = p0[0] - q0[0], ry = p0[1] - q0[1];
+    var a = d1x * d1x + d1y * d1y, e = d2x * d2x + d2y * d2y, f = d2x * rx + d2y * ry, s = 0, t = 0;
+    if (a < 1e-9 && e < 1e-9) { s = t = 0; }
+    else if (a < 1e-9) { t = clamp01(f / e); }
+    else {
+      var c = d1x * rx + d1y * ry;
+      if (e < 1e-9) { s = clamp01(-c / a); }
+      else {
+        var bb = d1x * d2x + d1y * d2y, den = a * e - bb * bb;
+        s = den > 1e-9 ? clamp01((bb * f - c * e) / den) : 0;
+        t = (bb * s + f) / e;
+        if (t < 0) { t = 0; s = clamp01(-c / a); }
+        else if (t > 1) { t = 1; s = clamp01((bb - c) / a); }
+      }
+    }
+    return [[p0[0] + d1x * s, p0[1] + d1y * s], [q0[0] + d2x * t, q0[1] + d2y * t]];
   }
   function hit(p) {
     for (var i = bodies.length - 1; i >= 0; i--) {
@@ -475,30 +507,6 @@
       }
     }
 
-    /* (b) shapes keep away from the mouse: the nearer it is, the harder
-       they move off, and a link turns away as well */
-    if (AVOID && mouse) {
-      bodies.forEach(function (b) {
-        if (b.busy || b.dragged) return;
-        var n = nearest(b, [mouse.x, mouse.y]), ax = n[0] - mouse.x, ay = n[1] - mouse.y, dd = Math.hypot(ax, ay);
-        if (dd >= AVOID_R) return;
-        var f = 1 - dd / AVOID_R, acc = f * R * 240;
-        var ux = dd ? ax / dd : 1, uy = dd ? ay / dd : 0;
-        /* the ball hits what it reaches: out of it, and off with its speed */
-        var touch = BALL_R + R + LW / 2;
-        if (mouse.isMouse && dd < touch) {
-          b.x += ux * (touch - dd); b.y += uy * (touch - dd);
-          var vn = (b.vx - (mouse.vx || 0)) * ux + (b.vy - (mouse.vy || 0)) * uy;
-          if (vn < 0) { b.vx -= ux * vn * 1.8; b.vy -= uy * vn * 1.8; }
-        }
-        b.vx += ux * acc * dt; b.vy += uy * acc * dt;
-        if (b.kind === "link") {
-          var ox = n[0] - b.x, oy = n[1] - b.y;
-          b.va += (ox * uy - oy * ux) / (HALF * HALF) * acc * dt * 0.5;
-        }
-      });
-    }
-
     /* (b, c) rings of one colour family that touch merge: closest pairs first, one partner
        each, and not straight after a split. The merge starts the moment they
        meet (its reach draws them the rest of the way), so a pair never hangs
@@ -534,6 +542,12 @@
       return (preview && (b === preview.a || b === preview.b)) || pairs.some(function (p) { return p[0] === b || p[1] === b; });
     };
 
+    /* links let go of each other after a while (not while held) */
+    bodies.slice().forEach(function (b) {
+      if (b.kind === "link" && !b.busy && !b.dragged && now >= b.splitAt) startSplit(b);
+    });
+
+    /* free shapes drift and coast */
     bodies.forEach(function (b) {
       if (b.kind === "ring" && !inPair(b)) b.goal = 0;
       if (b.busy || b.dragged) return;
@@ -551,42 +565,6 @@
       }
     });
 
-    /* walls: every circle stays on screen */
-    var m = R + LW;
-    bodies.forEach(function (b) {
-      if (b.busy) return;
-      circlesOf(b).forEach(function (c) {
-        var dx = 0, dy = 0;
-        if (c[0] < m) dx = m - c[0]; else if (c[0] > W - m) dx = W - m - c[0];
-        if (c[1] < m) dy = m - c[1]; else if (c[1] > H - m) dy = H - m - c[1];
-        if (dx) { b.x += dx; if (!b.dragged) b.vx = Math.abs(b.vx) * Math.sign(dx) * 0.7; }
-        if (dy) { b.y += dy; if (!b.dragged) b.vy = Math.abs(b.vy) * Math.sign(dy) * 0.7; }
-      });
-    });
-
-    /* shapes keep a little clear space between them, and bump */
-    for (var i = 0; i < bodies.length; i++) for (var j = i + 1; j < bodies.length; j++) {
-      var A = bodies[i], B = bodies[j];
-      if (paired(A, B)) continue;
-      var wa = A.busy || A.dragged ? 0 : 1, wb = B.busy || B.dragged ? 0 : 1;
-      if (!wa && !wb) continue;
-      circlesOf(A).forEach(function (ca) {
-        circlesOf(B).forEach(function (cb) {
-          var dx = cb[0] - ca[0], dy = cb[1] - ca[1], dist = Math.hypot(dx, dy) || 0.01;
-          if (dist >= MIN) return;
-          var nx = dx / dist, ny = dy / dist, over = MIN - dist, w = wa + wb;
-          A.x -= nx * over * wa / w; A.y -= ny * over * wa / w;
-          B.x += nx * over * wb / w; B.y += ny * over * wb / w;
-          var rv = (B.vx - A.vx) * nx + (B.vy - A.vy) * ny;
-          if (rv < 0) {
-            var jj = -rv * 1.5 / w;
-            A.vx -= nx * jj * wa; A.vy -= ny * jj * wa;
-            B.vx += nx * jj * wb; B.vy += ny * jj * wb;
-          }
-        });
-      });
-    }
-
     /* each ring's stretch rides a spring, so letting go wobbles back */
     bodies.forEach(function (b) {
       if (b.kind !== "ring" || b.busy) return;
@@ -594,13 +572,111 @@
       b.sv += acc * dt; b.s += b.sv * dt;
     });
 
-    /* links let go of each other after a while (not while held) */
-    bodies.slice().forEach(function (b) {
-      if (b.kind === "link" && !b.busy && !b.dragged && now >= b.splitAt) startSplit(b);
-    });
-
+    /* merges and splits move on (they carry their own momentum) */
     merges = merges.filter(function (mg) { return !stepMerge(mg, now); });
     splits = splits.filter(function (sp) { return !stepSplit(sp, now); });
+
+    /* Every shape as a capsule round its spine (a ring's centre, a link's
+       centre-to-centre line, which covers its waist too). A merging pair or
+       a splitting link counts as one shape and is pushed like any other;
+       only a ring in your hand stands firm. */
+    var solids = [], held = new Set();
+    merges.forEach(function (mg) {
+      held.add(mg.a); held.add(mg.b);
+      var far = mg.phase === "reach" ? [mg.b.x, mg.b.y]
+        : [mg.a.x + Math.cos(mg.phi) * CAN, mg.a.y + Math.sin(mg.phi) * CAN];
+      solids.push({ p0: [mg.a.x, mg.a.y], p1: far, v: mg,
+        move: function (dx, dy) { mg.a.x += dx; mg.a.y += dy; mg.b.x += dx; mg.b.y += dy; } });
+    });
+    splits.forEach(function (sp) {
+      var L = sp.L, cs = circlesOf(L);
+      held.add(L);
+      solids.push({ p0: cs[0], p1: cs[1], v: L, spin: L, move: function (dx, dy) { L.x += dx; L.y += dy; } });
+    });
+    bodies.forEach(function (b) {
+      if (held.has(b)) return;
+      var cs = circlesOf(b);
+      solids.push({ p0: cs[0], p1: cs[cs.length - 1], v: b, body: b, fixed: !!b.dragged, spin: b.kind === "link" ? b : null,
+        move: function (dx, dy) { b.x += dx; b.y += dy; } });
+    });
+
+    /* (b) everything keeps away from the mouse, mid-merge too: the nearer
+       it is, the harder they move off, and a link turns away as well */
+    if (AVOID && mouse) {
+      solids.forEach(function (S) {
+        if (S.fixed) return;
+        var c = closest(S.p0, S.p1, [mouse.x, mouse.y], [mouse.x, mouse.y]);
+        var n = c[0], ax = n[0] - mouse.x, ay = n[1] - mouse.y, dd = Math.hypot(ax, ay);
+        if (dd >= AVOID_R) return;
+        var acc = (1 - dd / AVOID_R) * R * 240, ux = dd ? ax / dd : 1, uy = dd ? ay / dd : 0;
+        S.v.vx += ux * acc * dt; S.v.vy += uy * acc * dt;
+        if (S.spin) {
+          var ox = n[0] - S.spin.x, oy = n[1] - S.spin.y;
+          S.spin.va += (ox * uy - oy * ux) / (HALF * HALF) * acc * dt * 0.5;
+        }
+      });
+    }
+    /* (b) the mouse's golf ball is solid too: nothing overlaps it, and what
+       it runs into is knocked off at its speed */
+    var ballS = null;
+    if (AVOID && mouse && mouse.isMouse) {
+      ballS = { p0: [mouse.x, mouse.y], p1: [mouse.x, mouse.y], fixed: true, ball: true,
+                v: { vx: mouse.vx || 0, vy: mouse.vy || 0 }, move: function () {} };
+      solids.push(ballS);
+    }
+
+    /* No overlaps: spines stay MIN apart (shape to ball: the ball's radius
+       plus a ring's), and every capsule stays on screen. Four passes a
+       frame, so a crowd, or a shove from the ball, settles without leaving
+       any. */
+    var shift = function (S, dx, dy) {
+      S.move(dx, dy);
+      S.p0 = [S.p0[0] + dx, S.p0[1] + dy]; S.p1 = [S.p1[0] + dx, S.p1[1] + dy];
+    };
+    var lo = R + LW, BALL_MIN = BALL_R + R + LW;
+    for (var it = 0; it < 4; it++) {
+      for (var i = 0; i < solids.length; i++) for (var j = i + 1; j < solids.length; j++) {
+        var A = solids[i], B = solids[j];
+        if (A.fixed && B.fixed) continue;
+        if (A.body && B.body && paired(A.body, B.body)) continue;
+        var need = A.ball || B.ball ? BALL_MIN : MIN;
+        var cp = closest(A.p0, A.p1, B.p0, B.p1), dx = cp[1][0] - cp[0][0], dy = cp[1][1] - cp[0][1], dist = Math.hypot(dx, dy);
+        if (dist >= need) continue;
+        var nx, ny;
+        if (dist > 0.01) { nx = dx / dist; ny = dy / dist; }
+        else {                                   /* spines crossing: part them midpoint to midpoint */
+          var mx0 = (B.p0[0] + B.p1[0] - A.p0[0] - A.p1[0]) / 2, my0 = (B.p0[1] + B.p1[1] - A.p0[1] - A.p1[1]) / 2, ml = Math.hypot(mx0, my0) || 1;
+          nx = mx0 / ml || 1; ny = my0 / ml;
+        }
+        var wa = A.fixed ? 0 : 1, wb = B.fixed ? 0 : 1, w = wa + wb, over = need - dist;
+        shift(A, -nx * over * wa / w, -ny * over * wa / w);
+        shift(B, nx * over * wb / w, ny * over * wb / w);
+        if (it === 0) {                          /* and they bounce (off the ball, at its speed) */
+          var rv = (B.v.vx - A.v.vx) * nx + (B.v.vy - A.v.vy) * ny;
+          if (rv < 0) {
+            var jj = -rv * (A.ball || B.ball ? 1.8 : 1.5) / w;
+            A.v.vx -= nx * jj * wa; A.v.vy -= ny * jj * wa;
+            B.v.vx += nx * jj * wb; B.v.vy += ny * jj * wb;
+          }
+        }
+      }
+      solids.forEach(function (S) {             /* walls */
+        if (S.ball) return;
+        var x0 = Math.min(S.p0[0], S.p1[0]), x1 = Math.max(S.p0[0], S.p1[0]);
+        var y0 = Math.min(S.p0[1], S.p1[1]), y1 = Math.max(S.p0[1], S.p1[1]);
+        var dx = x0 < lo ? lo - x0 : x1 > W - lo ? W - lo - x1 : 0;
+        var dy = y0 < lo ? lo - y0 : y1 > H - lo ? H - lo - y1 : 0;
+        if (!dx && !dy) return;
+        shift(S, dx, dy);
+        if (S.fixed) return;
+        if (dx) S.v.vx = Math.abs(S.v.vx) * Math.sign(dx) * 0.7;
+        if (dy) S.v.vy = Math.abs(S.v.vy) * Math.sign(dy) * 0.7;
+      });
+    }
+
+    /* merges and splits are drawn where the pushing left them */
+    merges.forEach(placeMerge);
+    splits.forEach(placeSplit);
   }
 
   function render() {
@@ -638,6 +714,13 @@
     if (!populated) { populated = true; populate(); }
     if (!running) { running = true; last = performance.now(); requestAnimationFrame(frame); }
   }
+
+  /* ?debug=1: the live state, for checking from the console */
+  if (q.get("debug") === "1") window.ringPlay = {
+    bodies: function () { return bodies; }, merges: function () { return merges; }, splits: function () { return splits; },
+    R: R, MIN: MIN, CAN: CAN, closest: closest, circlesOf: circlesOf,
+    step: function (dt) { step(dt, performance.now()); render(); }
+  };
 
   window.addEventListener("resize", measure);
   document.getElementById("reset").addEventListener("click", populate);

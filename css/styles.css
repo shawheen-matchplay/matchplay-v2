@@ -1807,6 +1807,24 @@ html.splash--returning [data-reveal] {
 /* Touch screens have no hover: instead the card crossing the middle of the
    screen as it scrolls takes the hover look (main.js sets .is-active, and
    .is-tracking for the glow, which travels down through it). */
+/* On phones the glow is a soft gradient, not a blurred disc: Safari draws a
+   big blur on a tilted box in tiles and cuts it off at their edges, which
+   showed as hard lines through the glow. The gradient follows the blur's
+   own falloff (a 216px disc blurred 80px), so it looks the same. */
+@media (hover: none) {
+  .fx__orb {
+    width: 560px;
+    height: 560px;
+    filter: none;
+    background: radial-gradient(closest-side,
+      color-mix(in srgb, var(--fx-accent) 60%, transparent) 0%,
+      color-mix(in srgb, var(--fx-accent) 46%, transparent) 20%,
+      color-mix(in srgb, var(--fx-accent) 30%, transparent) 38%,
+      color-mix(in srgb, var(--fx-accent) 13%, transparent) 60%,
+      color-mix(in srgb, var(--fx-accent) 3%, transparent) 82%,
+      transparent 100%);
+  }
+}
 /* On white a glass box has nothing to glow against: the glow runs stronger
    and the lift reads through a soft shadow and a firmer edge. */
 .section--light [data-tilt],
