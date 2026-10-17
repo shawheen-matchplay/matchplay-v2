@@ -97,9 +97,6 @@
   Array.prototype.forEach.call(document.querySelectorAll(".nav__dropdown-menu"), function (m) {
     bend(m, 24, 18, 0.03, "saturate(1.7) brightness(1.05)");
   });
-  Array.prototype.forEach.call(document.querySelectorAll(".btn--nav, .nav__mobile-cta"), function (b) {
-    bend(b, 10, 7, 0, "blur(1px) saturate(1.8) brightness(1.1)");
-  });
   var mobile = document.querySelector(".nav__mobile");
   if (mobile) bend(mobile, 26, 20, 0.02, "saturate(1.7) brightness(1.05)");
 
