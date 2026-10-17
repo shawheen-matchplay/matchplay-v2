@@ -174,35 +174,26 @@
   }
 
   /* ---- bubbly CTA (trial: the homepage hero's button) ----------------- */
-  // Pointing at it, the button swells a little like a drop of glass and
-  // wobbles as it settles: squashed wide, then tall, then still, the same
-  // give as the nav lens. Leaving, it shrinks back with a smaller wobble.
-  // Two springs: m, the size (to 1.02 while hovered), and q, the squash
-  // (pushed on enter and leave, settling back to 0).
+  // Pointing at it, the button gives one soft wobble like a drop of glass:
+  // 102% wide, then 102% tall, a faint echo, and back to its own size (it
+  // does not stay bigger while hovered). Leaving, half that. Set as fixed
+  // steps rather than a spring, so the tall swing matches the wide one
+  // without the extra bounces a spring needs to get there.
   if (window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
       !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    var wobble = function (a) {                       // a: peak stretch, 0.02 = 102%
+      var s = function (w, h) { return { transform: "scale(" + (1 + w * a / 0.02).toFixed(4) + "," + (1 + h * a / 0.02).toFixed(4) + ")" }; };
+      return [s(0, 0), s(0.02, -0.015), s(-0.015, 0.02), s(0.005, -0.004), s(0, 0)];
+    };
     Array.prototype.forEach.call(document.querySelectorAll(".hero__cta"), function (btn) {
-      var m = 1, vm = 0, q = 0, vq = 0, goal = 1, frame = 0, then = 0;
-      function step(now) {
-        var dt = Math.min(1 / 30, Math.max(0, now - then) / 1000);
-        then = now;
-        vm += (300 * (goal - m) - 20 * vm) * dt;
-        vq += (520 * (0 - q) - 17 * vq) * dt;
-        m += vm * dt; q += vq * dt;
-        btn.style.transform = "scale(" + (m * (1 + q)).toFixed(4) + "," + (m * (1 - q * 0.8)).toFixed(4) + ")";
-        if (Math.abs(goal - m) > 0.0005 || Math.abs(vm) > 0.005 || Math.abs(q) > 0.0005 || Math.abs(vq) > 0.005) {
-          frame = requestAnimationFrame(step);
-        } else {
-          m = goal; q = vm = vq = 0; frame = 0;
-          btn.style.transform = goal === 1 ? "" : "scale(" + goal + ")";
-        }
+      var run = null;
+      function play(a, ms) {
+        if (!btn.animate) return;
+        if (run) run.cancel();
+        run = btn.animate(wobble(a), { duration: ms, easing: "ease-in-out" });
       }
-      function kick(to, push) {
-        goal = to; vq += push;
-        if (!frame) { then = performance.now(); frame = requestAnimationFrame(step); }
-      }
-      btn.addEventListener("pointerenter", function () { kick(1.02, 1.6); });
-      btn.addEventListener("pointerleave", function () { kick(1, -0.7); });
+      btn.addEventListener("pointerenter", function () { play(0.02, 450); });
+      btn.addEventListener("pointerleave", function () { play(0.01, 380); });
     });
   }
 
