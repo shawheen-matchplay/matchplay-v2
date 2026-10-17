@@ -46,6 +46,19 @@
     inset 0 12px 22px -16px rgba(255, 255, 255, 0.3);
   transition: background-color 0.4s ease;
 }
+/* The pill's rim catches the light at an angle: brightest along the top
+   left, a second glint at the bottom right, faint between. */
+.glass .nav::before {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(rgba(24, 24, 28, var(--glass-tint)), rgba(24, 24, 28, var(--glass-tint))) padding-box,
+    linear-gradient(118deg,
+      rgba(255, 255, 255, 0.62) 0%, rgba(255, 255, 255, 0.14) 26%, rgba(255, 255, 255, 0.04) 52%,
+      rgba(255, 255, 255, 0.1) 76%, rgba(255, 255, 255, 0.4) 100%) border-box;
+  box-shadow:
+    inset 10px 8px 22px -18px rgba(255, 255, 255, 0.4),
+    inset -10px -8px 22px -20px rgba(255, 255, 255, 0.2);
+}
 /* the sheen: a soft reflection that slides along as the page scrolls */
 .glass .nav::after {
   background: linear-gradient(110deg,
