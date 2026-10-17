@@ -1,0 +1,22 @@
+{
+  "slug": "test-blog",
+  "title": "test blog",
+  "seoTitle": "blog title",
+  "description": "test summary",
+  "ogTitle": "blog title",
+  "author": "new author",
+  "datePublished": "2026-10-17",
+  "dateModified": "2026-10-17T04:54:15.465Z",
+  "keywords": "funidng, round, etc.",
+  "cover": {
+    "webp": "test-blog.webp",
+    "jpg": "test-blog.jpg",
+    "width": 1200,
+    "height": 630,
+    "alt": "roadster"
+  },
+  "wordCount": 390,
+  "readingMinutes": 2,
+  "body": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis urna dolor, fringilla sed bibendum at, tristique ac metus. Donec pulvinar nec erat sit amet venenatis. Morbi vel diam at mauris varius blandit. Sed id accumsan nulla, et rhoncus nibh. Integer vel tincidunt lacus. Mauris in ex luctus, mollis purus non, imperdiet dolor. Etiam fringilla in ligula vel placerat. Sed ipsum ex, fringilla vel mi accumsan, vestibulum sollicitudin turpis. Sed ultricies iaculis mi eget bibendum. Integer malesuada sit amet eros a hendrerit. Proin dapibus a ligula ut congue.</p><figure class=\"article__figure\"><img src=\"../assets/blog/test-blog-1.webp\" alt=\"Describe this image\" width=\"1200\" height=\"675\" loading=\"lazy\" decoding=\"async\"></figure><p>Nam euismod metus a odio vehicula, vitae maximus lacus lobortis. Donec posuere in nisl at semper. Sed a vestibulum tellus, at lobortis ante. Cras mollis porttitor lacus, eu convallis sapien iaculis id. Phasellus gravida lorem malesuada ex efficitur, at dictum massa venenatis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; In blandit luctus nunc, venenatis ullamcorper neque. Donec nisi metus, varius non porta ac, hendrerit eget massa. Etiam eu libero tellus. Nulla a neque in risus accumsan dapibus quis id libero.</p><p>Maecenas varius urna imperdiet interdum efficitur. Morbi risus arcu, efficitur sed dolor id, imperdiet laoreet ligula. Etiam sit amet nunc ornare, malesuada libero placerat, varius ipsum. Pellentesque non lorem ligula. Ut eget interdum felis. Etiam sed vulputate purus. Vestibulum scelerisque placerat vulputate. Etiam consequat risus est, vitae interdum velit dictum congue. In eleifend semper purus sed pharetra. Duis quis hendrerit diam. Phasellus sit amet metus sit amet est condimentum tempus. Aliquam ac tellus augue.</p><p>Quisque vulputate dui ex, eu commodo mauris auctor non. Nulla facilisi. Nulla auctor ultricies enim, ut sodales ante sollicitudin eget. Sed ante ligula, consectetur sed tortor sed, interdum dictum ante. Quisque in turpis magna. Nullam tincidunt sem sed sem aliquet semper. Fusce non ipsum sed dolor placerat cursus. Quisque mattis eget ligula vel porttitor. Aliquam aliquam nibh purus, sit amet interdum neque elementum sit amet. Cras vel odio neque.</p><p>Quisque a nibh blandit, egestas tortor ac, pulvinar libero. Pellentesque pretium, lectus vel tempor facilisis, ipsum mauris hendrerit purus, eu condimentum nulla nisl eget libero. Aenean ut felis ac erat blandit rutrum et nec purus. Cras eget faucibus ligula, ut scelerisque arcu. Integer placerat porta ex sed tristique. Suspendisse volutpat in tellus hendrerit hendrerit. Vivamus eget ex vitae lectus convallis dictum. Quisque aliquet luctus dui, ut lobortis orci luctus ac. Praesent gravida enim dui.</p>",
+  "source": "blog editor"
+}
