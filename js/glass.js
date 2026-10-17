@@ -162,7 +162,7 @@
       var ax = Math.min(0.14, Math.abs(vx) / 3500), ay = Math.min(0.14, Math.abs(vy) / 2500);
       // the wobble it gives as it first appears (not over Apply's border)
       var popping = popAt >= 0 && now - popAt < WOBBLE_MS && !cta;
-      var wb = popping ? wobbleAt(now - popAt) : [1, 1];
+      var wb = popping ? wobbleAt(now - popAt, 0.05) : [1, 1];   // 105%, stronger than the hero button's 102%
       draw((1 + ax - ay * 0.8) * wb[0], (1 + ay - ax * 0.8) * wb[1]);
       var moving = [tx - x, ty - y, tw - w, th - h].some(function (d) { return Math.abs(d) > 0.3; }) ||
                    [vx, vy, vw, vh].some(function (v) { return Math.abs(v) > 2; });
