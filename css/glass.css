@@ -114,7 +114,8 @@
 .glass .nav__dropdown-menu a[aria-current="page"],
 .glass .nav__mobile a[aria-current="page"] { color: var(--cyan); }
 
-/* Apply: solid site blue with the pill's glass rim and inner glow, white
+/* Apply: solid site blue with the pill's glass rim and inner glow (no glow
+   outside), white
    type; hovering brightens it rather than flipping to white. */
 .glass .btn--nav,
 .glass .nav__mobile-cta {
@@ -123,9 +124,7 @@
   background:
     linear-gradient(var(--accent), var(--accent)) padding-box,
     radial-gradient(70% 160% at 40% 0%, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.14) 75%) border-box;
-  box-shadow:
-    inset 3px 8px 14px -10px rgba(255, 255, 255, 0.4),
-    0 4px 16px color-mix(in srgb, var(--accent) 35%, transparent);
+  box-shadow: inset 3px 8px 14px -10px rgba(255, 255, 255, 0.4);
   color: #fff;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18);
   transition: box-shadow 0.3s ease, filter 0.3s ease;
@@ -135,7 +134,5 @@
   color: #fff;
   border-color: transparent;
   filter: brightness(1.08);
-  box-shadow:
-    inset 3px 8px 14px -10px rgba(255, 255, 255, 0.45),
-    0 6px 20px color-mix(in srgb, var(--accent) 45%, transparent);
+  box-shadow: inset 3px 8px 14px -10px rgba(255, 255, 255, 0.45);
 }
