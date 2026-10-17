@@ -177,7 +177,7 @@
   // Pointing at it, the button swells a little like a drop of glass and
   // wobbles as it settles: squashed wide, then tall, then still, the same
   // give as the nav lens. Leaving, it shrinks back with a smaller wobble.
-  // Two springs: m, the size (to 1.04 while hovered), and q, the squash
+  // Two springs: m, the size (to 1.02 while hovered), and q, the squash
   // (pushed on enter and leave, settling back to 0).
   if (window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
       !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -201,7 +201,7 @@
         goal = to; vq += push;
         if (!frame) { then = performance.now(); frame = requestAnimationFrame(step); }
       }
-      btn.addEventListener("pointerenter", function () { kick(1.04, 1.6); });
+      btn.addEventListener("pointerenter", function () { kick(1.02, 1.6); });
       btn.addEventListener("pointerleave", function () { kick(1, -0.7); });
     });
   }
