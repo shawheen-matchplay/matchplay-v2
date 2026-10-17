@@ -166,9 +166,8 @@
       x += vx * dt; y += vy * dt; w += vw * dt; h += vh * dt;
       // stretch along the way it is going, narrower across it
       var ax = Math.min(0.14, Math.abs(vx) / 3500), ay = Math.min(0.14, Math.abs(vy) / 2500);
-      // the wobble: as it first appears (103%), or over Apply in step with
-      // the button's own (101%), so the drop stays inside its border. Over
-      // Apply it does not stretch with speed.
+      // the wobble as it first appears (103%); none over Apply, where it
+      // does not stretch with speed either, so it stays inside the border.
       var popping = popAt >= 0 && now - popAt < WOBBLE_MS;
       var wb = popping ? wobbleAt(now - popAt, popAmp) : [1, 1];
       if (cta) draw(wb[0], wb[1]);
@@ -187,7 +186,7 @@
       lens.style.borderRadius = Math.min(parseFloat(getComputedStyle(link).borderTopLeftRadius) || 0, link.offsetHeight / 2) + "px";
       measure();
       if (!on || still) { x = tx; y = ty; w = tw; h = th; vx = vy = vw = vh = 0; draw(1, 1); }
-      if (!still && cta) { popAt = performance.now(); popAmp = CTA_WOBBLE; }  // with Apply's own wobble
+      if (cta) popAt = -1;                                                   // Apply: no wobble at all
       else if (!on && !still) { popAt = performance.now(); popAmp = 0.03; }  // first link of a visit: 103%
       on = true;
       lens.classList.add("is-on");
@@ -203,7 +202,7 @@
 
   /* ---- bubbly CTAs ------------------------------------------------------ */
   // Every pill call to action (the hero's, the solid pills across the
-  // pages, Apply in the nav) gives the wobble when pointed at, and half of
+  // pages; not Apply in the nav) gives the wobble when pointed at, and half of
   // it when left. Played from wobbleAt() itself, sampled finely, so it
   // matches the nav lens exactly when the lens wobbles with Apply.
   if (window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
@@ -217,7 +216,7 @@
       return out;
     };
     var ENTER = wobbleFrames(CTA_WOBBLE), LEAVE = wobbleFrames(CTA_WOBBLE / 2);
-    Array.prototype.forEach.call(document.querySelectorAll(".hero__cta, .btn--primary.btn--pill, .btn--nav"), function (btn) {
+    Array.prototype.forEach.call(document.querySelectorAll(".hero__cta, .btn--primary.btn--pill"), function (btn) {
       var run = null;
       function play(frames, ms) {
         if (!btn.animate) return;
