@@ -1,0 +1,94 @@
+/* Liquid glass, a trial (glass-demo.html only; js/glass.js).
+   The nav pill, its dropdowns, the phone menu and a lens that slides
+   between the nav links are clear glass: a light tint, a bright rim, a
+   sheen that drifts as the page scrolls, and in Chromium browsers a real
+   bend at the edges (and a slight magnifier in the lens) from SVG
+   displacement maps js/glass.js builds to each shape's size. Elsewhere the
+   same glass without the bend. The tint deepens over white sections so the
+   white type stays readable. */
+
+/* The pill's glass is a layer of its own (::before), so the pill itself is
+   not a backdrop root and the dropdowns inside it see the page behind. */
+.glass .nav {
+  position: relative;
+  isolation: isolate;
+  background: none;
+  -webkit-backdrop-filter: none;
+          backdrop-filter: none;
+  border-color: transparent;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.12);
+  --glass-tint: 0.5;
+}
+.glass.glass-on-light .nav { --glass-tint: 0.6; }
+/* the pill's bend is sized to the pill: the shapes inside it get their own */
+.glass .nav__dropdown-menu,
+.glass .nav__lens { --lg-filter: initial; }
+.glass .nav::before,
+.glass .nav::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.glass .nav::before,
+.glass .nav__dropdown-menu,
+.glass .nav__mobile {
+  background: rgba(24, 24, 28, var(--glass-tint, 0.3));
+  -webkit-backdrop-filter: blur(10px) saturate(1.7) brightness(1.05);
+          backdrop-filter: var(--lg-filter, blur(10px) saturate(1.7) brightness(1.05));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1),
+    inset 1px 0 0 rgba(255, 255, 255, 0.12),
+    inset -1px 0 0 rgba(255, 255, 255, 0.12),
+    inset 0 12px 22px -16px rgba(255, 255, 255, 0.3);
+  transition: background-color 0.4s ease;
+}
+/* the sheen: a soft reflection that slides along as the page scrolls */
+.glass .nav::after {
+  background: linear-gradient(110deg,
+    rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 22%,
+    rgba(255, 255, 255, 0) 70%, rgba(255, 255, 255, 0.06) 86%, rgba(255, 255, 255, 0) 100%);
+  background-size: 220% 100%;
+  background-position: var(--sheen, 40%) 0;
+}
+
+.glass .nav__dropdown-menu {
+  --glass-tint: 0.42;
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 18px 44px rgba(0, 0, 0, 0.36);
+}
+.glass.glass-on-light .nav__dropdown-menu { --glass-tint: 0.62; }
+.glass .nav__mobile { --glass-tint: 0.55; border-color: transparent; }
+
+/* The lens: one glass drop that slides between the links you point at,
+   stretching as it goes (js/glass.js), in place of each link's own hover. */
+.nav__lens {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  border-radius: 999px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  background: rgba(255, 255, 255, 0.07);
+  -webkit-backdrop-filter: saturate(1.4) brightness(1.15);
+          backdrop-filter: var(--lg-filter, saturate(1.4) brightness(1.15));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.09),
+    0 4px 14px rgba(0, 0, 0, 0.22);
+  will-change: transform, width;
+}
+.nav__lens.is-on { opacity: 1; }
+@media (hover: hover) and (pointer: fine) {
+  .glass .nav__link:hover { background: transparent; }
+}
