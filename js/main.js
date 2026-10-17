@@ -103,10 +103,10 @@
     fitLockups();
     // Re-fit once the webfonts land, otherwise the measurement is of the fallback.
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitLockups);
-    var fitTimer;
+    // Every frame while the window is dragged, so the line keeps up live.
+    var fitFrame = 0;
     window.addEventListener("resize", function () {
-      clearTimeout(fitTimer);
-      fitTimer = setTimeout(fitLockups, 150);
+      if (!fitFrame) fitFrame = requestAnimationFrame(function () { fitFrame = 0; fitLockups(); });
     });
   }
 

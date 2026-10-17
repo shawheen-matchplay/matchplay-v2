@@ -711,6 +711,7 @@
      without coloured shapes, for the caller to draw them in. */
   function build(instant, bare) {
     svg.innerHTML = '';
+    svg.style.transform = '';                             /* drop a live-resize scale */
     stopAmbient(heroField);
     heroField.population = [];
     usedCells = new Set();
@@ -1082,10 +1083,36 @@
   let rT;
   window.addEventListener('resize', () => {
     if (!splashDone || stage.clientWidth === W) return;
+    if (!liveF) liveF = requestAnimationFrame(followResize);
     clearTimeout(rT);
     rT = setTimeout(() => {
       build(true);                                        /* stops the field itself */
       startAmbient(heroField);
     }, 250);
   });
+
+  /* While the window is being dragged, scale and move the whole field each
+     frame so the mark already sits at the size and place the rebuild will
+     give it: the grid step S follows the width, and the mark centres on its
+     slot, which follows --mark-h. Everything in the mark is a multiple of S
+     about its anchor cell, so scaling about that anchor is exact and the
+     rebuild lands with no jump. */
+  let liveF = 0;
+  function followResize() {
+    liveF = 0;
+    if (!logoG || rowTop === undefined) return;
+    const w = stage.clientWidth;
+    const k = (Math.max(48, Math.min(78, w / 19)) * SCALE) / S;
+    hero.style.setProperty('--mark-h', (S * k * 2.1) + 'px');
+    const spacer = document.querySelector('.hero__mark-space');
+    if (!spacer) return;
+    const r = spacer.getBoundingClientRect();
+    const centre = r.top - stage.getBoundingClientRect().top + r.height / 2;
+    /* the anchor (the mark's midpoint) where it is drawn now, in the SVG's
+       own px, and where it belongs: centred across the stage, on the slot */
+    const ax = OX + W / 2, ay = y0 + (rowTop + 0.5) * S - logoShift;
+    const tx = OX + w / 2, ty = OY + centre;
+    svg.style.transformOrigin = '0 0';
+    svg.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + k + ') translate(' + (-ax) + 'px,' + (-ay) + 'px)';
+  }
 })();
