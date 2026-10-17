@@ -223,6 +223,9 @@
       var x = rand(pad, W - pad), y = rand(pad, H - pad - 40);
       if (bodies.some(function (o) { return Math.hypot(o.x - x, o.y - y) < MIN + R * 0.6; })) continue;
       var b = makeRing(x, y, COLORS[i % COLORS.length]);
+      /* not straight away: each draws in first, then waits a moment, so
+         links appear one by one instead of all at once */
+      b.cool = performance.now() + 120 + i * 55 + 800 + rand(300, 2500);
       b.el.setAttribute("d", RING); b.plain = true;
       place(b.el, x, y);
       /* draw in, measured as length 1, the hidden dash clear of the ends */
@@ -419,7 +422,7 @@
         if (b.busy || b.dragged) return;
         var n = nearest(b, [mouse.x, mouse.y]), ax = n[0] - mouse.x, ay = n[1] - mouse.y, dd = Math.hypot(ax, ay);
         if (dd >= AVOID_R) return;
-        var f = 1 - dd / AVOID_R, acc = f * f * R * 200;
+        var f = 1 - dd / AVOID_R, acc = f * R * 240;
         var ux = dd ? ax / dd : 1, uy = dd ? ay / dd : 0;
         b.vx += ux * acc * dt; b.vy += uy * acc * dt;
         if (b.kind === "link") {
