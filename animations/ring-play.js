@@ -234,23 +234,48 @@
     if (!(n > 0)) n = Math.round(W * H / (R * R * 55) * DENSITY);
     n = Math.max(4, Math.min(90, n));
     var pad = R + LW + 8;
+    var drawIn = function (pe, delay) {     /* draw in, measured as length 1, the hidden dash clear of the ends */
+      pe.setAttribute("pathLength", 1);
+      pe.style.strokeDasharray = "1 2";
+      var a = pe.animate([{ strokeDashoffset: 1.02 }, { strokeDashoffset: 0 }],
+        { duration: 800, delay: delay, easing: "cubic-bezier(.45,0,.25,1)", fill: "backwards" });
+      a.onfinish = function () { pe.removeAttribute("pathLength"); pe.style.strokeDasharray = "none"; };
+    };
+    var clearOf = function (c0, c1) {       /* room for a shape with this spine */
+      return bodies.every(function (o) {
+        var cs = circlesOf(o), p = closest(c0, c1, cs[0], cs[cs.length - 1]);
+        return Math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1]) >= MIN + R * 0.6;
+      });
+    };
+    /* A few links already formed (4 to 7), drawn in with the rings; they
+       split like any other a little after. Each remembers a ring of its own
+       colour family to give back when it does. */
+    var links = 4 + Math.floor(Math.random() * 4), k = 0, first = Math.floor(Math.random() * COLORS.length);
+    for (var lt = 0; k < links && lt < 3000; lt++) {
+      var ang = rand(0, 2 * Math.PI), hx = Math.cos(ang) * HALF, hy = Math.sin(ang) * HALF;
+      var lx = rand(pad + HALF, W - pad - HALF), ly = rand(pad + HALF, H - pad - HALF - 40);
+      if (!clearOf([lx - hx, ly - hy], [lx + hx, ly + hy])) continue;
+      var col = COLORS[(first + k) % COLORS.length];        /* a spread of colours */
+      var mate = COLORS.filter(function (c2) { return c2 !== col && FAMILY[c2] === FAMILY[col]; })[0];
+      var Lk = makeLink(lx, ly, ang, col, shapeEl(col));
+      Lk.colorB = Math.random() < 0.5 ? mate : col;
+      Lk.vx = rand(-1, 1) * CRUISE; Lk.vy = rand(-1, 1) * CRUISE;
+      Lk.splitAt = performance.now() + 120 + k * 110 + 800 + rand(2000, 3000);
+      place(Lk.el, lx, ly, ang * DEG - 45);
+      drawIn(Lk.el, 120 + k * 110);
+      k++;
+    }
+    n = Math.max(4, n - 2 * k);             /* the links' rings count toward the total */
     for (var i = 0, tries = 0; i < n && tries < 4000; tries++) {
       var x = rand(pad, W - pad), y = rand(pad, H - pad - 40);
-      if (bodies.some(function (o) { return Math.hypot(o.x - x, o.y - y) < MIN + R * 0.6; })) continue;
+      if (!clearOf([x, y], [x, y])) continue;
       var b = makeRing(x, y, COLORS[i % COLORS.length]);
       /* not straight away: each draws in first, then waits a moment, so
          links appear one by one instead of all at once */
       b.cool = performance.now() + 120 + i * 55 + 800 + rand(300, 2500);
       b.el.setAttribute("d", RING); b.plain = true;
       place(b.el, x, y);
-      /* draw in, measured as length 1, the hidden dash clear of the ends */
-      b.el.setAttribute("pathLength", 1);
-      b.el.style.strokeDasharray = "1 2";
-      (function (pe) {
-        var a = pe.animate([{ strokeDashoffset: 1.02 }, { strokeDashoffset: 0 }],
-          { duration: 800, delay: 120 + i * 55, easing: "cubic-bezier(.45,0,.25,1)", fill: "backwards" });
-        a.onfinish = function () { pe.removeAttribute("pathLength"); pe.style.strokeDasharray = "none"; };
-      })(b.el);
+      drawIn(b.el, 120 + i * 55);
       i++;
     }
   }
