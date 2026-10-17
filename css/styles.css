@@ -1882,6 +1882,20 @@ html.splash--returning [data-reveal] {
   max-width: none;
 }
 .page--screens #start .cta-band { display: flex; flex-direction: column; justify-content: center; }
+/* The newsletter laid out as the box above it: centred, on the same glass,
+   the field and its button side by side under the copy. */
+.page--screens #start .subscribe__panel {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  align-content: center;
+  text-align: center;
+  gap: clamp(1.25rem, 2.25vw, 1.75rem);
+  padding: clamp(2.5rem, 4.5vw, 4.5rem) clamp(1.5rem, 3.6vw, 3.5rem);
+  background: var(--surface-glass);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.page--screens #start .subscribe__text { margin-inline: auto; }
+.page--screens #start .subscribe__form { width: 100%; max-width: 560px; justify-content: center; }
 /* The ring toy across a dark section, last thing before the footer: the
    homepage's dark ground (as the dark sections over the field and the
    footer), the toy filling it edge to edge. */
