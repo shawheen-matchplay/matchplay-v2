@@ -22,7 +22,8 @@
 .glass.glass-on-light .nav { --glass-tint: 0.8; }
 /* the pill's bend is sized to the pill: the shapes inside it get their own */
 .glass .nav__dropdown-menu,
-.glass .nav__lens { --lg-filter: initial; }
+.glass .nav__lens,
+.glass .btn--nav { --lg-filter: initial; }
 .glass .nav::before,
 .glass .nav::after {
   content: "";
@@ -105,11 +106,45 @@
 /* Whiter type on the glass; the page you are on stays blue. */
 .glass .nav__link,
 .glass .nav__dropdown-menu a,
-.glass .nav__mobile a { color: rgba(255, 255, 255, 0.92); }
+.glass .nav__mobile a:not(.nav__mobile-cta) { color: rgba(255, 255, 255, 0.92); }
 .glass .nav__link:hover,
 .glass .nav__dropdown-menu a:hover,
-.glass .nav__mobile a:hover { color: #fff; }
+.glass .nav__mobile a:not(.nav__mobile-cta):hover { color: #fff; }
 .glass .nav__link[aria-current="page"],
 .glass .nav__dropdown.is-current > .nav__link,
 .glass .nav__dropdown-menu a[aria-current="page"],
 .glass .nav__mobile a[aria-current="page"] { color: var(--cyan); }
+
+/* so the tint can ease on hover */
+@property --btn-tint { syntax: "<percentage>"; inherits: false; initial-value: 68%; }
+
+/* Apply: tinted glass in the site blue, the page showing through it (bent
+   at its edges where that works), the same rim as the pill, white type.
+   Hovering deepens the blue rather than flipping to white. */
+.glass .btn--nav,
+.glass .nav__mobile-cta {
+  --btn-tint: 68%;
+  position: relative;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(color-mix(in srgb, var(--accent) var(--btn-tint), transparent),
+                    color-mix(in srgb, var(--accent) var(--btn-tint), transparent)) padding-box,
+    radial-gradient(70% 160% at 40% 0%, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.14) 75%) border-box;
+  -webkit-backdrop-filter: blur(8px) saturate(1.8) brightness(1.1);
+          backdrop-filter: var(--lg-filter, blur(8px) saturate(1.8) brightness(1.1));
+  box-shadow:
+    inset 3px 8px 14px -10px rgba(255, 255, 255, 0.4),
+    0 4px 16px color-mix(in srgb, var(--accent) 35%, transparent);
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18);
+  transition: --btn-tint 0.3s ease, box-shadow 0.3s ease;
+}
+.glass .btn--nav:hover,
+.glass .nav__mobile-cta:hover {
+  --btn-tint: 85%;
+  color: #fff;
+  border-color: transparent;
+  box-shadow:
+    inset 3px 8px 14px -10px rgba(255, 255, 255, 0.45),
+    0 6px 20px color-mix(in srgb, var(--accent) 45%, transparent);
+}
