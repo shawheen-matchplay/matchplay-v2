@@ -1217,6 +1217,11 @@ html.splash--returning [data-reveal] {
 }
 .page-hero__marquee .testimonial__quote { font-size: 0.9rem; line-height: 1.7; }
 .page-hero__marquee .testimonial__avatar { width: 3.25em; height: 3.25em; }
+/* On a phone a card nearly fills the screen, so the strip's usual pace
+   (about 37px/s) took some 8s per quote: twice as fast there (60s -> 30s). */
+@media (max-width: 767px) {
+  .page-hero__marquee .marquee__track { animation-duration: 30s; }
+}
 
 /* Featured quote on the light band */
 .feature-quote { margin: 0; max-width: 792px; margin-inline: auto; text-align: center; }
