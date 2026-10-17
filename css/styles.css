@@ -2855,9 +2855,12 @@ html.splash--returning [data-reveal] {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding: clamp(3rem, 5.4vw, 5rem) var(--space-md) clamp(2rem, 2.7vw, 2.5rem);
 }
+/* The brand (logo, line, contact, newsletter), then four columns that follow
+   the nav: Founders, Investors, Events, Company. Every link goes to a page,
+   so they all work from any page. */
 .footer__top {
   display: grid;
-  grid-template-columns: 1.4fr 2fr;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 3fr);
   gap: clamp(2.5rem, 5.4vw, 5rem);
   padding-bottom: clamp(2.5rem, 4.5vw, 4rem);
 }
@@ -2870,11 +2873,69 @@ html.splash--returning [data-reveal] {
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.6);
 }
-.footer__cta { margin-top: clamp(1.5rem, 2.7vw, 2rem); }
+.footer__contact {
+  display: inline-block;
+  margin-top: 0.9rem;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.82);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  transition: color var(--dur), border-color var(--dur);
+}
+.footer__contact:hover { color: var(--accent); border-bottom-color: var(--accent); }
+/* the newsletter as one field with its button inside it */
+.footer__news {
+  display: flex;
+  align-items: center;
+  max-width: 320px;
+  margin-top: 1.5rem;
+  padding: 4px 4px 4px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  transition: border-color var(--dur);
+}
+.footer__news:focus-within { border-color: var(--accent); }
+.footer__news-input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  outline: none;
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+}
+.footer__news-input::placeholder { color: rgba(255, 255, 255, 0.45); }
+.footer__news-btn {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: filter var(--dur);
+}
+.footer__news-btn:hover { filter: brightness(1.1); }
+.footer__news-done {
+  display: none;
+  margin-top: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.footer__news.is-done + .footer__news-done { display: block; }
+.page--home .footer__news,
+.page--home .footer__news-done { display: none; }   /* the homepage has its own box */
 
 .footer__cols {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: clamp(1.5rem, 2.7vw, 2.5rem);
 }
 .footer__col-title {
@@ -2916,7 +2977,11 @@ html.splash--returning [data-reveal] {
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.45);
 }
-.footer__legal { display: flex; gap: var(--space-md); }
+.footer__legal { display: flex; gap: var(--space-md); margin-right: auto; }   /* Log In and Apply sit right */
+.footer__app { display: flex; gap: var(--space-md); }
+.footer__app a { transition: color var(--dur); }
+.footer__app a:hover { color: #fff; }
+.footer__app .footer__app-apply { color: var(--accent); }
 .footer__legal a { transition: color var(--dur); }
 .footer__legal a:hover { color: #fff; }
 
@@ -2990,6 +3055,7 @@ html.splash--returning [data-reveal] {
   .story--flip .story__video { order: 0; }
   .subscribe__panel { grid-template-columns: 1fr; }
   .footer__top { grid-template-columns: 1fr; }
+  .footer__cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .process__steps { grid-template-columns: repeat(2, 1fr); }
   .values__grid { grid-template-columns: 1fr; }
 

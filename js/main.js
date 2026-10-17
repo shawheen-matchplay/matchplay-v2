@@ -526,13 +526,13 @@
   /* ---- Subscribe form ---------------------------------------------- */
   // No backend yet — show the success state locally. Wire up a real
   // endpoint (fetch POST) where indicated when a backend exists.
-  var form = document.querySelector("[data-subscribe]");
-  if (form) {
+  // (The homepage's box, and the footer's field on every other page.)
+  Array.prototype.forEach.call(document.querySelectorAll("[data-subscribe]"), function (form) {
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       if (!form.reportValidity()) return;
       form.classList.add("is-done");
       form.reset();
     });
-  }
+  });
 })();
