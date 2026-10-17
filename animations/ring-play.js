@@ -156,7 +156,7 @@
   var MIN = 2 * R + LW + GAP;          /* closest two ring centres get */
   var ATTRACT = CAN + R * 2.6;         /* a dragged ring starts to reach within this */
   var CRUISE = R * 0.35, WANDER = R * 0.6;
-  var AVOID_R = R * 4.5;               /* how near the mouse can come before shapes move off */
+  var AVOID_R = R * 6;                 /* how near the mouse can come before shapes move off */
   var SPLIT_AFTER = [2000, 3000];      /* ms a link holds before it splits on its own */
   var MEET = CAN + R * 0.4;            /* (b, c) rings of a family this close (touching) merge */
   var DRAW = R * 9;                    /* (b, c) and within this they drift toward each other */
@@ -419,7 +419,7 @@
         if (b.busy || b.dragged) return;
         var n = nearest(b, [mouse.x, mouse.y]), ax = n[0] - mouse.x, ay = n[1] - mouse.y, dd = Math.hypot(ax, ay);
         if (dd >= AVOID_R) return;
-        var f = 1 - dd / AVOID_R, acc = f * f * R * 80;
+        var f = 1 - dd / AVOID_R, acc = f * f * R * 200;
         var ux = dd ? ax / dd : 1, uy = dd ? ay / dd : 0;
         b.vx += ux * acc * dt; b.vy += uy * acc * dt;
         if (b.kind === "link") {
