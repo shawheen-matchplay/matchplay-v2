@@ -418,6 +418,13 @@
     return [...cells];
   }
 
+  /* What has to stay off the mark and the hero copy: a shape and the clear
+     cell round it, or on a phone just the shape itself, so the empty area
+     round the copy is a row and a column tighter on every side and more of
+     the field shows. Shapes still keep their clear cell from each other. */
+  const TIGHT_BELOW = 768;                                /* px wide */
+  const offLimits = (f, spot) => (W < TIGHT_BELOW && spot.own) ? spot.own : spot.cells;
+
   /* Even spread: gather several free spots and take the one furthest from
      every shape already showing (best-candidate sampling), rather than the
      first free one, which let shapes bunch up and leave holes. */
@@ -436,12 +443,13 @@
       if (kind === 'link' || kind === 'merge') {
         const dir = Math.random() < 0.5 ? 1 : -1;         /* down-right or up-right */
         if (!f.dots.has(key(c, r)) || !f.dots.has(key(c + 1, r + dir))) continue;
-        spot = { c, r, dir, cells: blockAround([[c, r], [c + 1, r + dir]]) };
+        spot = { c, r, dir, own: [key(c, r), key(c + 1, r + dir)], cells: blockAround([[c, r], [c + 1, r + dir]]) };
       } else {
         if (!f.dots.has(key(c, r))) continue;
-        spot = { c, r, cells: blockAround([[c, r]]) };
+        spot = { c, r, own: [key(c, r)], cells: blockAround([[c, r]]) };
       }
-      if (spot.cells.some(k2 => f.used.has(k2) || f.excluded.has(k2) || (f.clear && f.clear.has(k2)))) continue;
+      if (spot.cells.some(k2 => f.used.has(k2))) continue;
+      if (offLimits(f, spot).some(k2 => f.excluded.has(k2) || (f.clear && f.clear.has(k2)))) continue;
       found++;
       const centre = centreOf(spot);
       const score = live.reduce((m, o) => Math.min(m, distance(centre, o)), Infinity);
@@ -682,7 +690,7 @@
     });
     heroField.clear = clear;
     heroField.population.forEach(i => {
-      if (!i.dead && i.spot.cells.some(k2 => clear.has(k2))) retireAmbient(heroField, i);
+      if (!i.dead && offLimits(heroField, i.spot).some(k2 => clear.has(k2))) retireAmbient(heroField, i);
     });
   }
 
