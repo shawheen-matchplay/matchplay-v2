@@ -100,6 +100,20 @@
   var mobile = document.querySelector(".nav__mobile");
   if (mobile) bend(mobile, 26, 20, 0.02, "saturate(1.7) brightness(1.05)");
 
+  /* ---- the wobble ----------------------------------------------------- */
+  // One soft wobble like a drop of glass: 102% wide, then 102% tall, a
+  // faint echo, back to its own size; even steps, eased as a whole. Used
+  // by the hero button and by the lens when it first appears.
+  var WOBBLE = [[0, 0], [0.02, -0.015], [-0.015, 0.02], [0.005, -0.004], [0, 0]];
+  var WOBBLE_MS = 450;
+  var easeInOut = function (t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; };
+  function wobbleAt(ms, a) {                 // [sx, sy] at ms into the wobble; a: peak, 0.02 = 102%
+    var p = easeInOut(Math.min(1, Math.max(0, ms / WOBBLE_MS))) * (WOBBLE.length - 1);
+    var i = Math.min(WOBBLE.length - 2, Math.floor(p)), f = p - i, k = (a || 0.02) / 0.02;
+    return [1 + k * (WOBBLE[i][0] + (WOBBLE[i + 1][0] - WOBBLE[i][0]) * f),
+            1 + k * (WOBBLE[i][1] + (WOBBLE[i + 1][1] - WOBBLE[i][1]) * f)];
+  }
+
   /* ---- the lens ------------------------------------------------------- */
   // One glass drop under the pointer's link. It appears where you first
   // point, then travels to each link you move to on a spring (across the
@@ -115,7 +129,7 @@
     nav.appendChild(lens);
     var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     var x = 0, y = 0, w = 0, h = 0, vx = 0, vy = 0, vw = 0, vh = 0;
-    var tx = 0, ty = 0, tw = 0, th = 0, on = false, raf = 0, last = 0, cta = false, el = null;
+    var tx = 0, ty = 0, tw = 0, th = 0, on = false, raf = 0, last = 0, cta = false, el = null, popAt = -1;
     var draw = function (sx, sy) {
       // Over Apply the drop sits inside the button's border: it never runs
       // past its right edge (the spring overshoots a little as it settles)
@@ -146,11 +160,14 @@
       x += vx * dt; y += vy * dt; w += vw * dt; h += vh * dt;
       // stretch along the way it is going, narrower across it
       var ax = Math.min(0.14, Math.abs(vx) / 3500), ay = Math.min(0.14, Math.abs(vy) / 2500);
-      draw(1 + ax - ay * 0.8, 1 + ay - ax * 0.8);
+      // the wobble it gives as it first appears (not over Apply's border)
+      var popping = popAt >= 0 && now - popAt < WOBBLE_MS && !cta;
+      var wb = popping ? wobbleAt(now - popAt) : [1, 1];
+      draw((1 + ax - ay * 0.8) * wb[0], (1 + ay - ax * 0.8) * wb[1]);
       var moving = [tx - x, ty - y, tw - w, th - h].some(function (d) { return Math.abs(d) > 0.3; }) ||
                    [vx, vy, vw, vh].some(function (v) { return Math.abs(v) > 2; });
-      if (moving) raf = requestAnimationFrame(tick);
-      else { x = tx; y = ty; w = tw; h = th; vx = vy = vw = vh = 0; draw(1, 1); raf = 0; }
+      if (moving || popping) raf = requestAnimationFrame(tick);
+      else { x = tx; y = ty; w = tw; h = th; vx = vy = vw = vh = 0; popAt = -1; draw(1, 1); raf = 0; }
     };
     var target = function (link) {
       el = link;
@@ -161,6 +178,7 @@
       lens.style.borderRadius = Math.min(parseFloat(getComputedStyle(link).borderTopLeftRadius) || 0, link.offsetHeight / 2) + "px";
       measure();
       if (!on || still) { x = tx; y = ty; w = tw; h = th; vx = vy = vw = vh = 0; draw(1, 1); }
+      if (!on && !still) popAt = performance.now();   // first link of a visit: wobble in
       on = true;
       lens.classList.add("is-on");
       if (!still && !raf) { last = performance.now(); raf = requestAnimationFrame(tick); }
@@ -181,9 +199,10 @@
   // without the extra bounces a spring needs to get there.
   if (window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
       !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    var wobble = function (a) {                       // a: peak stretch, 0.02 = 102%
-      var s = function (w, h) { return { transform: "scale(" + (1 + w * a / 0.02).toFixed(4) + "," + (1 + h * a / 0.02).toFixed(4) + ")" }; };
-      return [s(0, 0), s(0.02, -0.015), s(-0.015, 0.02), s(0.005, -0.004), s(0, 0)];
+    var wobble = function (a) {
+      return WOBBLE.map(function (k) {
+        return { transform: "scale(" + (1 + k[0] * a / 0.02).toFixed(4) + "," + (1 + k[1] * a / 0.02).toFixed(4) + ")" };
+      });
     };
     Array.prototype.forEach.call(document.querySelectorAll(".hero__cta"), function (btn) {
       var run = null;
@@ -192,7 +211,7 @@
         if (run) run.cancel();
         run = btn.animate(wobble(a), { duration: ms, easing: "ease-in-out" });
       }
-      btn.addEventListener("pointerenter", function () { play(0.02, 450); });
+      btn.addEventListener("pointerenter", function () { play(0.02, WOBBLE_MS); });
       btn.addEventListener("pointerleave", function () { play(0.01, 380); });
     });
   }
