@@ -2,8 +2,8 @@
 
    In Chromium browsers each glass shape bends what is behind it: an SVG
    displacement map, drawn here to the shape's own size, pulls the backdrop
-   in toward the middle round the rim (and, in the lens, magnifies it a
-   little), used as the shape's backdrop-filter. Other browsers cannot use
+   in toward the middle round the rim, used as the shape's backdrop-filter.
+   Not the lens: it sits over the link text, and any bend there blurs it. Other browsers cannot use
    an SVG filter there, so they keep the glass without the bend.
 
    Also: the lens that slides between the nav links, the tint deepening over
@@ -130,8 +130,6 @@
     var target = function (link) {
       var a = link.getBoundingClientRect(), b = nav.getBoundingClientRect();
       tx = a.left - b.left; tw = a.width; ty = Math.round(a.top - b.top); th = Math.round(a.height);
-      if (BEND) lens.style.setProperty("--lg-filter",
-        "url(#" + bendFilter(tw, th, th / 2, 12, 7, 0.14) + ") saturate(1.4) brightness(1.15)");
       if (!on || still) { x = tx; w = tw; vx = vw = 0; draw(1, 1); }
       on = true;
       lens.classList.add("is-on");

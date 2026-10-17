@@ -2,7 +2,7 @@
    The nav pill, its dropdowns, the phone menu and a lens that slides
    between the nav links are clear glass: a light tint, a bright rim, a
    sheen that drifts as the page scrolls, and in Chromium browsers a real
-   bend at the edges (and a slight magnifier in the lens) from SVG
+   bend at the edges of the pill and its panels from SVG
    displacement maps js/glass.js builds to each shape's size. Elsewhere the
    same glass without the bend. The tint deepens over white sections so the
    white type stays readable. */
