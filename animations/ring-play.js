@@ -293,27 +293,35 @@
   function startSplit(L) {
     if (L.busy) return;
     L.busy = true;
-    var c = Math.cos(L.ang) * HALF, s = Math.sin(L.ang) * HALF;
     var elB = shapeEl(L.color);
     layer.insertBefore(elB, L.el.nextSibling);
-    splits.push({ L: L, elB: elB, t0: performance.now(), ca: [L.x - c, L.y - s], cb: [L.x + c, L.y + s] });
+    splits.push({ L: L, elB: elB, t0: performance.now(), last: performance.now() });
   }
   function stepSplit(sp, now) {
-    var L = sp.L, deg = L.ang * DEG - 45, t = Math.min(1, Math.max(0, now - sp.t0) / 260), k = easeIn(t);
+    var L = sp.L, t = Math.min(1, Math.max(0, now - sp.t0) / 260), k = easeIn(t);
+    /* it keeps travelling and turning while it pinches */
+    var dt = Math.min(1 / 30, Math.max(0, now - sp.last) / 1000);
+    sp.last = now;
+    L.x += L.vx * dt; L.y += L.vy * dt; L.ang += L.va * dt;
+    var ux = Math.cos(L.ang), uy = Math.sin(L.ang), deg = L.ang * DEG - 45;
+    var ca = [L.x - ux * HALF, L.y - uy * HALF], cb = [L.x + ux * HALF, L.y + uy * HALF];
     L.el.setAttribute("d", d(mix(LINK[0], A1, k)));
     sp.elB.setAttribute("d", d(mix(LINK[1], B1, k)));
-    place(L.el, sp.ca[0], sp.ca[1], deg); place(sp.elB, sp.ca[0], sp.ca[1], deg);
+    place(L.el, ca[0], ca[1], deg); place(sp.elB, ca[0], ca[1], deg);
     if (t < 1) return false;
     remove(L);
-    var push = R * 6, ux = Math.cos(L.ang), uy = Math.sin(L.ang);
-    var a = makeRing(sp.ca[0], sp.ca[1], L.color, L.el);
-    var b = makeRing(sp.cb[0], sp.cb[1], L.colorB || L.color, sp.elB);   /* back to its own colour */
+    var push = R * 6;
+    var a = makeRing(ca[0], ca[1], L.color, L.el);
+    var b = makeRing(cb[0], cb[1], L.colorB || L.color, sp.elB);   /* back to its own colour */
     sp.elB.setAttribute("stroke", b.color);
     [[a, -1, L.ang], [b, 1, L.ang + Math.PI]].forEach(function (r) {
-      var ring = r[0];
+      var ring = r[0], ox = ux * HALF * r[1], oy = uy * HALF * r[1];
       ring.s = 1; ring.sv = 0; ring.goal = 0; ring.face = r[2];   /* released from the touch */
       ring.cool = performance.now() + COOL;
-      ring.vx = L.vx + ux * push * r[1]; ring.vy = L.vy + uy * push * r[1];
+      /* each keeps the link's momentum: its travel, plus its own end's speed
+         from the spin, plus the push apart */
+      ring.vx = L.vx - L.va * oy + ux * push * r[1];
+      ring.vy = L.vy + L.va * ox + uy * push * r[1];
     });
     return true;
   }
