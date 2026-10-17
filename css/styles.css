@@ -817,7 +817,8 @@ html.splash--returning [data-reveal] {
   transition: transform 0.4s var(--ease), background-color 0.4s var(--ease),
               border-color 0.4s var(--ease);
 }
-.eco-card:hover {
+.eco-card:hover,
+.eco-card.is-active {
   transform: translateY(-4px);
   background: var(--surface-glass-hover);
   border-color: rgba(255, 255, 255, 0.18);
@@ -1773,7 +1774,8 @@ html.splash--returning [data-reveal] {
   transform-origin: left;
   transition: transform 0.5s var(--ease);
 }
-[data-tilt]:hover > .fx::before { transform: scaleX(1); }
+[data-tilt]:hover > .fx::before,
+[data-tilt].is-active > .fx::before { transform: scaleX(1); }
 .fx__orb {
   position: absolute;
   width: 216px;
@@ -1802,11 +1804,15 @@ html.splash--returning [data-reveal] {
   opacity: var(--fx-track);
   transition: opacity 0.4s var(--ease), left 0.12s ease-out, top 0.12s ease-out;
 }
+/* Touch screens have no hover: instead the card crossing the middle of the
+   screen as it scrolls takes the hover look (main.js sets .is-active, and
+   .is-tracking for the glow, which travels down through it). */
 /* On white a glass box has nothing to glow against: the glow runs stronger
    and the lift reads through a soft shadow and a firmer edge. */
 .section--light [data-tilt],
 .testimonial[data-tilt] { --fx-rest: 0.06; --fx-hover: 0.18; --fx-track: 0.28; }   /* white testimonial cards glow like a light band's boxes */
-.section--light [data-tilt]:hover {
+.section--light [data-tilt]:hover,
+.section--light [data-tilt].is-active {
   border-color: rgba(10, 10, 10, 0.14);
   box-shadow: 0 18px 40px -22px rgba(10, 10, 10, 0.28);
 }
@@ -1917,7 +1923,7 @@ html.splash--returning [data-reveal] {
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   border-color: color-mix(in srgb, var(--accent) 55%, transparent);
 }
-.step.step--accent:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.step.step--accent:hover, .step.step--accent.is-active { background: color-mix(in srgb, var(--accent) 22%, transparent); }
 .step {
   position: relative;
   display: flex;
@@ -1927,7 +1933,7 @@ html.splash--returning [data-reveal] {
   border: 1px solid var(--line);
   border-radius: 18px;
 }
-.step:hover { background: var(--panel-hover); }
+.step:hover, .step.is-active { background: var(--panel-hover); }
 .step__num {
   font-family: var(--font-mono);
   font-size: 0.75rem;
@@ -1980,7 +1986,7 @@ html.splash--returning [data-reveal] {
   border-radius: 18px;
   transition: background-color 0.3s var(--ease), border-color 0.3s var(--ease);
 }
-.card:hover { background: var(--panel-hover); }
+.card:hover, .card.is-active { background: var(--panel-hover); }
 .card__kicker {
   margin-bottom: clamp(0.9rem, 1.62vw, 1.25rem);
   font-family: var(--font-mono);
@@ -2012,7 +2018,7 @@ html.splash--returning [data-reveal] {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
   border-color: color-mix(in srgb, var(--accent) 40%, transparent);
 }
-.card--result:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.card--result:hover, .card--result.is-active { background: color-mix(in srgb, var(--accent) 14%, transparent); }
 
 /* Feature rows: name on the left, what it means on the right. */
 .rows { border-top: 1px solid var(--line); }
@@ -2400,7 +2406,7 @@ html.splash--returning [data-reveal] {
   border: 1px solid var(--line);
   border-radius: 18px;
 }
-.member:hover { background: var(--panel-hover); }
+.member:hover, .member.is-active { background: var(--panel-hover); }
 /* The homepage's pointer card (data-tilt): tilt, lift and glow, without
    the accent rule along the top. */
 .member > .fx::before { content: none; }
@@ -2457,7 +2463,7 @@ html.splash--returning [data-reveal] {
   border: 1px solid var(--line);
   border-radius: 18px;
 }
-.post-card:hover { background: var(--panel-hover); }
+.post-card:hover, .post-card.is-active { background: var(--panel-hover); }
 /* The pointer card (data-tilt) tilt and lift only: no glow, and no top rule
    (the cover would hide it anyway). */
 .post-card > .fx { display: none; }

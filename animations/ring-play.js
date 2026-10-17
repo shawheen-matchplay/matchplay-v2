@@ -3,8 +3,11 @@
      window.RING_PLAY = { mode: "a" }   rings ignore the mouse; drag one
                                         onto another to merge them
      window.RING_PLAY = { mode: "b" }   rings and links keep away from the
-                                        mouse; rings that drift close reach
-                                        for each other and merge by themselves
+                                        mouse, which is the MatchPlay golf
+                                        ball and knocks them off when it hits;
+                                        on a touch screen a tap sends them
+                                        all shooting away; rings that drift
+                                        close merge by themselves
      window.RING_PLAY = { mode: "c" }   as a, and rings that drift close also
                                         merge by themselves
    Every way, rings only merge within a colour family (see FAMILY), and
@@ -157,6 +160,7 @@
   var ATTRACT = CAN + R * 2.6;         /* a dragged ring starts to reach within this */
   var CRUISE = R * 0.35, WANDER = R * 0.6;
   var AVOID_R = R * 6;                 /* how near the mouse can come before shapes move off */
+  var BALL_R = R * 1.1;                /* (b) the mouse's golf ball, the size it is in the logo */
   var SPLIT_AFTER = [2000, 3000];      /* ms a link holds before it splits on its own */
   var MEET = CAN + R * 0.4;            /* (b, c) rings of a family this close (touching) merge */
   var DRAW = R * 9;                    /* (b, c) and within this they drift toward each other */
@@ -214,6 +218,17 @@
   function populate() {
     svg.innerHTML = "";
     layer = el("g", {}, svg);
+    /* (b) the mouse is the MatchPlay golf ball: white, with the mark's
+       wedge of dimples (as the hero's mark, js/hero-splash.js) */
+    ball = null;
+    if (AVOID) {
+      ball = el("g", { visibility: "hidden", "pointer-events": "none" }, svg);
+      ball.spin = el("g", {}, ball);
+      el("circle", { r: f2(BALL_R), fill: "#fff" }, ball.spin);
+      [[0.77, -0.32], [0.43, 0.03], [0.77, 0.03], [0.08, 0.37], [0.43, 0.37], [0.77, 0.37], [-0.26, 0.72], [0.08, 0.71], [0.43, 0.71]]
+        .forEach(function (q) { el("circle", { cx: f2(BALL_R * q[0]), cy: f2(BALL_R * q[1]), r: f2(BALL_R * 0.118), fill: "#0B0B0B" }, ball.spin); });
+      svg.style.cursor = "none";
+    }
     bodies = []; merges = []; splits = []; drag = null; preview = null;
     var n = parseInt(q.get("rings"), 10);
     if (!(n > 0)) n = Math.round(W * H / (R * R * 55) * DENSITY);
@@ -249,18 +264,30 @@
     if (a.busy || b.busy) return;
     a.busy = b.busy = true;
     var phi = Math.atan2(b.y - a.y, b.x - a.x);
-    merges.push({ a: a, b: b, phi: phi, phase: "reach", t0: performance.now(), from: [b.x, b.y],
+    /* the pair keeps travelling as one at their shared speed while they
+       merge, and the link carries it on: no stop, merge, start again */
+    merges.push({ a: a, b: b, phi: phi, phase: "reach", t0: performance.now(), last: performance.now(),
+      from: [b.x - a.x, b.y - a.y], vx: (a.vx + b.vx) / 2, vy: (a.vy + b.vy) / 2,
       s0: Math.max(0, Math.min(1, Math.max(a.s, b.s))) });
   }
   function stepMerge(m, now) {
     var a = m.a, b = m.b, deg = m.phi * DEG - 45;
+    var dt = Math.min(1 / 30, Math.max(0, now - m.last) / 1000);
+    m.last = now;
+    var sp = Math.hypot(m.vx, m.vy), damp = Math.exp((sp > CRUISE ? -1.4 : -0.2) * dt);   /* as a free shape */
+    m.vx *= damp; m.vy *= damp;
+    a.x += m.vx * dt; a.y += m.vy * dt;
+    /* the walls turn it, its far ring included */
+    var lo = R + LW, ex = a.x + Math.cos(m.phi) * CAN, ey = a.y + Math.sin(m.phi) * CAN;
+    if (Math.min(a.x, ex) < lo && m.vx < 0 || Math.max(a.x, ex) > W - lo && m.vx > 0) m.vx = -m.vx * 0.7;
+    if (Math.min(a.y, ey) < lo && m.vy < 0 || Math.max(a.y, ey) > H - lo && m.vy > 0) m.vy = -m.vy * 0.7;
     if (m.phase === "reach") {
       /* the reach: b slides in on the same rising curve as the stretch, so
          the two arrive at the touch together and on the move */
       var dur = 220 + 420 * (1 - m.s0), t = Math.min(1, Math.max(0, now - m.t0) / dur);
-      var to = [a.x + Math.cos(m.phi) * CAN, a.y + Math.sin(m.phi) * CAN], k = springRise(t);
-      b.x = m.from[0] + (to[0] - m.from[0]) * k;
-      b.y = m.from[1] + (to[1] - m.from[1]) * k;
+      var to = [Math.cos(m.phi) * CAN, Math.sin(m.phi) * CAN], k = springRise(t);   /* relative to a */
+      b.x = a.x + m.from[0] + (to[0] - m.from[0]) * k;
+      b.y = a.y + m.from[1] + (to[1] - m.from[1]) * k;
       var s = m.s0 + (1 - m.s0) * k;
       a.el.setAttribute("d", d(mix(A0, A1, s))); place(a.el, a.x, a.y, deg);
       b.el.setAttribute("d", d(mix(A0, A1, s))); place(b.el, b.x, b.y, deg + 180);
@@ -281,7 +308,7 @@
         var mx = a.x + Math.cos(m.phi) * HALF, my = a.y + Math.sin(m.phi) * HALF;
         var L = makeLink(mx, my, m.phi, a.color, a.el);
         L.colorB = b.color;                                 /* b's own colour, back when it splits */
-        L.vx = (a.vx + b.vx) * 0.25; L.vy = (a.vy + b.vy) * 0.25;
+        L.vx = m.vx; L.vy = m.vy;
         return true;
       }
     }
@@ -289,7 +316,7 @@
   }
 
   /* A link pinches back into two touching rings, which spring apart and
-     wobble round again; the second takes a new colour. */
+     wobble round again, each its own colour. */
   function startSplit(L) {
     if (L.busy) return;
     L.busy = true;
@@ -327,7 +354,7 @@
   }
 
   /* ---- dragging ------------------------------------------------------ */
-  var drag = null, preview = null, lastTap = null, down = null, mouse = null, pairs = [];
+  var drag = null, preview = null, lastTap = null, down = null, mouse = null, pairs = [], ball = null;
   svg.addEventListener("pointerleave", function () { mouse = null; });
   function point(e) {
     var r = svg.getBoundingClientRect();
@@ -353,7 +380,7 @@
   svg.addEventListener("pointerdown", function (e) {
     var p = point(e), b = DRAG ? hit(p) : null;
     down = { p: p, t: performance.now(), b: b };
-    if (AVOID) mouse = { x: p[0], y: p[1], vx: 0, vy: 0, t: performance.now() };   /* a touch counts too */
+    if (AVOID) mouse = { x: p[0], y: p[1], vx: 0, vy: 0, t: performance.now(), roll: 0, isMouse: e.pointerType === "mouse" };   /* a touch counts too */
     if (!b) return;
     try { svg.setPointerCapture(e.pointerId); } catch (err) { /* keeps working without it */ }
     drag = { b: b, off: [b.x - p[0], b.y - p[1]], last: p, lastT: performance.now(), vx: 0, vy: 0, id: e.pointerId };
@@ -365,7 +392,17 @@
   svg.addEventListener("pointermove", function (e) {
     var p = point(e);
     if (!drag) {
-      if (e.pointerType === "mouse" || e.buttons) mouse = { x: p[0], y: p[1] };   /* (b) shapes keep away */
+      if (e.pointerType === "mouse" || e.buttons) {                 /* (b) shapes keep away */
+        var tm = performance.now();
+        if (mouse && mouse.t) {
+          var mdt = Math.max(4, tm - mouse.t) / 1000;
+          mouse.vx = mouse.vx * 0.5 + (p[0] - mouse.x) / mdt * 0.5;
+          mouse.vy = mouse.vy * 0.5 + (p[1] - mouse.y) / mdt * 0.5;
+          mouse.roll += (p[0] - mouse.x) / BALL_R * DEG;            /* the ball rolls as it goes */
+          mouse.x = p[0]; mouse.y = p[1]; mouse.t = tm;
+        } else mouse = { x: p[0], y: p[1], vx: 0, vy: 0, t: tm, roll: 0 };
+        mouse.isMouse = e.pointerType === "mouse";
+      }
       svg.classList.toggle("can-grab", DRAG && !!hit(p));
       return;
     }
@@ -376,9 +413,24 @@
     drag.last = p; drag.lastT = now;
     drag.b.x = p[0] + drag.off[0]; drag.b.y = p[1] + drag.off[1];
   });
+  /* (b) a tap on a touch screen sends everything shooting away from it:
+     hardest close by, felt right across, links spun off when struck off
+     centre. Shapes mid-merge finish merging. */
+  function blast(p) {
+    var reach = Math.hypot(W, H) * 0.7;
+    bodies.forEach(function (b) {
+      if (b.busy || b.dragged) return;
+      var n = nearest(b, p), ax = n[0] - p[0], ay = n[1] - p[1], dd = Math.hypot(ax, ay) || 1;
+      var ux = ax / dd, uy = ay / dd, v = R * 60 * Math.max(0.3, 1 - dd / reach);
+      b.vx += ux * v; b.vy += uy * v;
+      if (b.kind === "link") b.va += ((n[0] - b.x) * uy - (n[1] - b.y) * ux) / (HALF * HALF) * v * 0.15;
+    });
+  }
   function release(e) {
     var p = point(e), now = performance.now();
     if (e.pointerType !== "mouse") mouse = null;           /* a lifted finger stops repelling */
+    if (AVOID && down && e.pointerType !== "mouse" && e.type === "pointerup" &&
+        Math.hypot(p[0] - down.p[0], p[1] - down.p[1]) < 12 && now - down.t < 450) blast(p);   /* a tap, not a scroll */
     if (down && down.b && down.b.kind === "link" && Math.hypot(p[0] - down.p[0], p[1] - down.p[1]) < 8 && now - down.t < 350) {
       if (lastTap && lastTap.b === down.b && now - lastTap.t < 400) { startSplit(down.b); lastTap = null; }
       else lastTap = { b: down.b, t: now };
@@ -432,6 +484,13 @@
         if (dd >= AVOID_R) return;
         var f = 1 - dd / AVOID_R, acc = f * R * 240;
         var ux = dd ? ax / dd : 1, uy = dd ? ay / dd : 0;
+        /* the ball hits what it reaches: out of it, and off with its speed */
+        var touch = BALL_R + R + LW / 2;
+        if (mouse.isMouse && dd < touch) {
+          b.x += ux * (touch - dd); b.y += uy * (touch - dd);
+          var vn = (b.vx - (mouse.vx || 0)) * ux + (b.vy - (mouse.vy || 0)) * uy;
+          if (vn < 0) { b.vx -= ux * vn * 1.8; b.vy -= uy * vn * 1.8; }
+        }
         b.vx += ux * acc * dt; b.vy += uy * acc * dt;
         if (b.kind === "link") {
           var ox = n[0] - b.x, oy = n[1] - b.y;
@@ -545,6 +604,11 @@
   }
 
   function render() {
+    if (ball) {
+      var showBall = !!(mouse && mouse.isMouse);
+      ball.setAttribute("visibility", showBall ? "visible" : "hidden");
+      if (showBall) { place(ball, mouse.x, mouse.y); ball.spin.setAttribute("transform", "rotate(" + f2(mouse.roll % 360) + ")"); }
+    }
     bodies.forEach(function (b) {
       if (b.busy) return;
       if (b.kind === "link") { place(b.el, b.x, b.y, b.ang * DEG - 45); return; }

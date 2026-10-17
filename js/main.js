@@ -424,6 +424,55 @@
     });
   }
 
+  // Touch screens have no hover, so a box takes the hover look as it scrolls
+  // across a line just above the middle of the screen: its top rule draws
+  // across, the glow comes up and travels down through it as it passes, and
+  // it rocks a degree on the way through (not with reduced motion). In a
+  // moving strip (data-marquee) only the box in the middle of the screen
+  // lights. Only boxes on screen are looked at, and only while they are.
+  var touchCards = tiltCards.length && !canTilt && window.matchMedia("(hover: none)").matches;
+  if (touchCards && "IntersectionObserver" in window) {
+    var stillCards = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var FOCUS = 0.45;                        // the line, as a share of the screen's height
+    var onScreen = new Set(), cardRaf = 0;
+    var EASE_IN = "transform 0.3s ease-out, background-color 0.4s, border-color 0.4s, box-shadow 0.4s";
+    var EASE_OUT = "transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.4s, border-color 0.4s, box-shadow 0.4s";
+    var setActive = function (card, on) {
+      if (on === card.classList.contains("is-active")) return;
+      card.classList.toggle("is-active", on);
+      card.classList.toggle("is-tracking", on);
+      card.style.transition = on ? EASE_IN : EASE_OUT;
+      if (!on) { card.style.transform = ""; card._q = null; }
+    };
+    var updateCards = function () {
+      cardRaf = 0;
+      var vh = window.innerHeight, mid = window.innerWidth / 2, line = vh * FOCUS;
+      onScreen.forEach(function (card) {
+        var r = card.getBoundingClientRect();
+        var q = (line - r.top) / r.height;   // 0: top edge on the line .. 1: bottom edge on it
+        var on = q >= 0 && q <= 1 && (!card.closest("[data-marquee]") || (r.left <= mid && r.right >= mid));
+        setActive(card, on);
+        if (!on || (card._q != null && Math.abs(q - card._q) < 0.002)) return;
+        card._q = q;
+        card.style.setProperty("--mx", (30 + 40 * q).toFixed(1) + "%");
+        card.style.setProperty("--my", (q * 100).toFixed(1) + "%");
+        if (!stillCards) {
+          var TILT = 2 * (parseFloat(card.getAttribute("data-tilt")) || 1);
+          card.style.transform = "perspective(900px) rotateX(" + ((0.5 - q) * TILT).toFixed(2) + "deg) translate3d(0,-4px,0)";
+        }
+      });
+      if (onScreen.size) cardRaf = requestAnimationFrame(updateCards);
+    };
+    var cardWatch = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) onScreen.add(e.target);
+        else { onScreen.delete(e.target); setActive(e.target, false); }
+      });
+      if (onScreen.size && !cardRaf) cardRaf = requestAnimationFrame(updateCards);
+    });
+    Array.prototype.forEach.call(tiltCards, function (card) { cardWatch.observe(card); });
+  }
+
   /* ---- Paginated list (blog index) --------------------------------- */
   // Every item is already in the HTML, so the full list is there without
   // JavaScript and for search engines; this only shows one page at a time.
