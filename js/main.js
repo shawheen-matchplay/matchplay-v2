@@ -553,7 +553,7 @@
       var data = new URLSearchParams({
         email: form.elements.email.value.trim(),
         page: location.pathname,
-        form: form.classList.contains("footer__news") ? "footer" : "homepage"
+        form: form.classList.contains("footer__news") ? "footer" : form.classList.contains("blog-subscribe") ? "blog" : "homepage"
       });
       button.disabled = true;
       fetch(NEWSLETTER_ENDPOINT, { method: "POST", body: data })

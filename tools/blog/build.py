@@ -261,7 +261,7 @@ def build_index(posts, header, footer, fonts):
         <h1 class="page-hero__title blog-lockup reveal">
           <span class="blog-lockup__name" id="blog-name">%(blog)s</span>
           <!-- tracked out by main.js until it spans the name exactly -->
-          <span class="blog-lockup__tag" data-fit-to="blog-name">The MatchPlay Blog</span>
+          <span class="blog-lockup__tag" data-fit-to="blog-name">A MatchPlay Blog</span>
         </h1>
         <p class="page-hero__sub reveal">%(desc)s</p>
         <form class="subscribe__form blog-subscribe reveal" data-subscribe>
