@@ -489,6 +489,7 @@ button { font: inherit; cursor: pointer; }
   transition-delay: calc(40ms + min(var(--i, 0) * 12ms, 170ms));
 }
 .nav__mobile a {
+  text-align: center;              /* every row centred in the panel */
   font-family: var(--font-mono);
   font-size: 0.95rem;
   letter-spacing: 1px;
@@ -500,12 +501,27 @@ button { font: inherit; cursor: pointer; }
 }
 .nav__mobile a:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
 .nav__mobile-label {
+  text-align: center;
   font-family: var(--font-mono);
   font-size: 0.65rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.5);
   padding: 12.6px 14.4px 5.4px;
+}
+/* A line between the site's pages and the app: above Log In, with room round it. */
+.nav__mobile-login {
+  position: relative;
+  margin-top: 13px;
+}
+.nav__mobile-login::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 14.4px;
+  right: 14.4px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.14);
 }
 .nav__mobile-cta {
   margin-top: 9px;
