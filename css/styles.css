@@ -2855,7 +2855,7 @@ html.splash--returning [data-reveal] {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding: clamp(3rem, 5.4vw, 5rem) var(--space-md) clamp(2rem, 2.7vw, 2.5rem);
 }
-/* The brand (logo, line, contact, newsletter), then four columns that follow
+/* The brand (logo, line, newsletter), then four columns that follow
    the nav: Founders, Investors, Events, Company. Every link goes to a page,
    so they all work from any page. */
 .footer__top {
@@ -2873,16 +2873,6 @@ html.splash--returning [data-reveal] {
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.6);
 }
-.footer__contact {
-  display: inline-block;
-  margin-top: 0.9rem;
-  font-family: var(--font-ui);
-  font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.82);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
-  transition: color var(--dur), border-color var(--dur);
-}
-.footer__contact:hover { color: var(--accent); border-bottom-color: var(--accent); }
 /* the newsletter as one field with its button inside it */
 .footer__news {
   display: flex;
