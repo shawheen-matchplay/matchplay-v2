@@ -111,14 +111,15 @@
 .glass .nav__mobile a[aria-current="page"] { color: var(--cyan); }
 
 /* Every call to action (Apply in the nav and the menu, and the solid pill
-   buttons across the pages): solid in the accent with a soft inner glow (no
+   buttons across the pages, the hero's included): solid in the accent with a soft inner glow (no
    rim line, no shadow outside), white type. Hovering drains the fill to clear
    glass inside an outline in the accent, the type turning to it and what is
    behind softening a little. In the accent of the page (orange on the
    Ventures pages); the nav's own stays blue. */
 .glass .btn--nav,
 .glass .nav__mobile-cta,
-.glass .btn--primary {
+.glass .btn--primary,
+.glass .hero__cta {
   position: relative;
   background: var(--accent);
   border-color: var(--accent);
@@ -132,9 +133,11 @@
 }
 .glass .btn--nav,
 .glass .nav__mobile-cta { border: 1.5px solid var(--accent); }
+.glass .hero__cta { border: 2px solid var(--accent); padding: 12.4px 23.2px; }   /* the border inside its old size */
 .glass .btn--nav:hover,
 .glass .nav__mobile-cta:hover,
-.glass .btn--primary:hover {
+.glass .btn--primary:hover,
+.glass .hero__cta:hover {
   background: color-mix(in srgb, var(--accent) 6%, transparent);
   border-color: var(--accent);
   color: var(--accent);
