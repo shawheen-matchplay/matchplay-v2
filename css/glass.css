@@ -101,3 +101,15 @@
 @media (hover: hover) and (pointer: fine) {
   .glass .nav__link:hover { background: transparent; }
 }
+
+/* Whiter type on the glass; the page you are on stays blue. */
+.glass .nav__link,
+.glass .nav__dropdown-menu a,
+.glass .nav__mobile a { color: rgba(255, 255, 255, 0.92); }
+.glass .nav__link:hover,
+.glass .nav__dropdown-menu a:hover,
+.glass .nav__mobile a:hover { color: #fff; }
+.glass .nav__link[aria-current="page"],
+.glass .nav__dropdown.is-current > .nav__link,
+.glass .nav__dropdown-menu a[aria-current="page"],
+.glass .nav__mobile a[aria-current="page"] { color: var(--cyan); }
