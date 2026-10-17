@@ -111,9 +111,14 @@
     lens.setAttribute("aria-hidden", "true");
     nav.appendChild(lens);
     var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    var x = 0, w = 0, vx = 0, vw = 0, tx = 0, tw = 0, ty = 0, th = 0, on = false, raf = 0, last = 0;
+    var x = 0, w = 0, vx = 0, vw = 0, tx = 0, tw = 0, ty = 0, th = 0, on = false, raf = 0, last = 0, cta = false;
     var draw = function (sx, sy) {
-      lens.style.width = w.toFixed(1) + "px";
+      // Over Apply the drop sits inside the button's border: it never runs
+      // past its right edge (the spring overshoots a little as it settles)
+      // and does not stretch sideways there.
+      var dw = w;
+      if (cta) { dw = Math.min(w, tx + tw - x); sx = 1; }
+      lens.style.width = Math.max(0, dw).toFixed(1) + "px";
       lens.style.height = th + "px";
       lens.style.transform = "translate(" + x.toFixed(1) + "px," + ty + "px) scale(" + sx.toFixed(3) + "," + sy.toFixed(3) + ")";
     };
@@ -129,7 +134,15 @@
     };
     var target = function (link) {
       var a = link.getBoundingClientRect(), b = nav.getBoundingClientRect();
-      tx = a.left - b.left; tw = a.width; ty = Math.round(a.top - b.top); th = Math.round(a.height);
+      // the lens is placed from inside the pill's border (clientLeft/Top)
+      tx = a.left - b.left - nav.clientLeft; tw = a.width;
+      ty = Math.round(a.top - b.top - nav.clientTop); th = Math.round(a.height);
+      cta = link.classList.contains("btn--nav");
+      if (cta) {                                     // inside the blue border, not on it
+        var bw = parseFloat(getComputedStyle(link).borderTopWidth) || 0;
+        tx += bw; tw -= 2 * bw; ty += Math.round(bw); th -= 2 * Math.round(bw);
+      }
+      lens.classList.toggle("is-cta", cta);
       if (!on || still) { x = tx; w = tw; vx = vw = 0; draw(1, 1); }
       on = true;
       lens.classList.add("is-on");
