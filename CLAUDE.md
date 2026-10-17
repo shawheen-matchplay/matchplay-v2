@@ -294,8 +294,9 @@ around the MatchPlay mark (white ball + two white links).
 - Newsletter signups (temporary): both forms POST to a Google Apps Script web
   app that appends rows to the "MatchPlay newsletter signups" sheet in
   shawheen@matchplaygroup.com's Drive (`tools/newsletter/signup-sheet.gs`,
-  set-up steps inside). Until `NEWSLETTER_ENDPOINT` in `js/main.js` is set,
-  the forms thank people and save nothing. Replace with a real email tool later.
+  set-up steps inside; deployed Oct 2026, URL in `NEWSLETTER_ENDPOINT` in
+  `js/main.js`). After editing the script, redeploy as a new version of the
+  same deployment so the URL stays. Replace with a real email tool later.
 - Analytics (the old gtag) and the cookie banner were not carried over.
 - README.md still describes the Webflow extraction; rewrite when convenient.
 - Possible: soften the Capital Partners "Diligence-backed" card copy to match

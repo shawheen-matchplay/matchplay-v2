@@ -531,7 +531,7 @@
   // (tools/newsletter/signup-sheet.gs, which has the set-up steps). The
   // thank-you only shows once the sheet has the address. Form-encoded, so the
   // request needs no CORS preflight; Apps Script answers with JSON.
-  var NEWSLETTER_ENDPOINT = "";
+  var NEWSLETTER_ENDPOINT = "https://script.google.com/macros/s/AKfycbw9x8rDHD_0OK2axofUHNZnKUg2ARovkFNwwZKnFfhyj9WPHH5vv49EfPQgBD3_SNld/exec";
   Array.prototype.forEach.call(document.querySelectorAll("[data-subscribe]"), function (form) {
     var note = form.parentElement.querySelector(".subscribe__success, .footer__news-done");
     var thanks = note ? note.innerHTML : "";
