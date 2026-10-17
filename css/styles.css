@@ -1484,6 +1484,63 @@ html.splash--returning [data-reveal] {
 /* The same link above the dateline, so a reader can go back without scrolling. */
 .release__back--top { margin-top: 0; margin-bottom: clamp(1.25rem, 2.5vw, 1.75rem); }
 
+/* Legal pages (Terms, Privacy, Acceptable Use, Copyright & Trademark): the
+   release column, with a row of links between the four documents, a contents
+   list, numbered clause headings and bullet lists. */
+.legal-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: clamp(1.75rem, 3.5vw, 2.5rem);
+}
+.legal-nav a {
+  padding: 0.45rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.72);
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+.legal-nav a:hover { color: #fff; border-color: rgba(255, 255, 255, 0.4); }
+.legal-nav a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.legal-toc {
+  padding: clamp(1.1rem, 2vw, 1.5rem) clamp(1.25rem, 2.2vw, 1.75rem);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: var(--surface-glass);
+}
+.legal-toc__title {
+  font-family: var(--font-mono) !important;
+  text-transform: uppercase;
+  font-size: var(--fs-sm) !important;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+.legal-toc ol { list-style: none; margin: 0.6rem 0 0; padding: 0; display: grid; gap: 0.35rem; }
+.legal-toc a { font-family: var(--font-ui); font-size: 1.05rem; color: #fff; text-decoration: none; }
+.legal-toc a:hover { color: var(--accent); }
+.legal > h2 { scroll-margin-top: calc(var(--nav-clear, 110px) + 2rem); }
+.legal > h3 {
+  margin-top: 2.25rem;
+  font-family: var(--font-ui);
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #fff;
+}
+.legal > h3 + * { margin-top: 0.6rem; }
+.legal > p + ul { margin-top: 0.75rem; }
+.legal ul { margin-bottom: 0; padding-left: 1.25rem; display: grid; gap: 0.45rem; }
+.legal li {
+  font-family: var(--font-ui);
+  font-size: 1.125rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.78);
+}
+.legal li::marker { color: var(--accent); }
+
 /* 7h. Summit recaps ---------------------------------------------------------
    Event pages: a banner lockup, sponsor rows, an agenda, panel slides and a
    photo gallery. Each summit sets its own --accent on <body>. */
