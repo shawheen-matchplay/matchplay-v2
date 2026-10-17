@@ -27,7 +27,10 @@
 .glass .nav::after {
   content: "";
   position: absolute;
-  inset: 0;
+  /* over the pill's 1px (transparent) border too: inset 0 stops inside it,
+     which left a 1px ring of whatever is behind between the glass and the
+     shadow, a white line over white sections */
+  inset: -1px;
   z-index: -1;
   border-radius: inherit;
   pointer-events: none;
