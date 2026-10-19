@@ -1,7 +1,19 @@
 {
   "founders": [
     {
-      "id": "peter-pacult",
+      "id": "shawheen",
+      "visible": true,
+      "show": "quote",
+      "name": "shawheen",
+      "title": "title",
+      "company": "company",
+      "companyUrl": "",
+      "photo": "assets/founders/shawheen-mvfklud2.webp",
+      "quote": "i love matchplay",
+      "cardQuote": "matchplay rocks",
+      "video": "M3IvLKAG8Ss"
+    },
+    {
       "visible": true,
       "show": "quote",
       "name": "Peter Pacult",
@@ -11,10 +23,10 @@
       "photo": "assets/founders/peter-pacult.png",
       "quote": "I came in having worked on fundraising quite a bit. Our time together and your process really helped polish a lot, like the spontaneity and precision of my answers with investors. It was really valuable to me.",
       "cardQuote": "",
-      "video": ""
+      "video": "",
+      "id": "peter-pacult"
     },
     {
-      "id": "anthony-sterns",
       "visible": true,
       "show": "both",
       "name": "Anthony Sterns",
@@ -24,10 +36,10 @@
       "photo": "assets/founders/anthony-sterns.jpeg",
       "quote": "I’ve never had so much clarity in how to say what we’re doing in 10 years – and I’ve been through numerous workshops at different accelerators. This is perfect timing for me to really understand these strategies and how to talk about them.",
       "cardQuote": "I’ve never had so much clarity in how to say what we’re doing in 10 years – and I’ve been through numerous workshops at different accelerators.",
-      "video": "W5fDPz9E_hA"
+      "video": "W5fDPz9E_hA",
+      "id": "anthony-sterns"
     },
     {
-      "id": "caitlyn-krebs",
       "visible": true,
       "show": "both",
       "name": "Caitlyn Krebs",
@@ -37,10 +49,10 @@
       "photo": "assets/founders/caitlyn-krebs.jpeg",
       "quote": "MatchPlay has leveled up our ability to talk about the value of our IP, our deal opportunity, and our reimbursement strategy. The process has deepened our way of talking about all of the aspects of the business — not just the science and the technology.",
       "cardQuote": "MatchPlay has leveled up our ability to talk about the value of our IP, our deal opportunity, and our reimbursement strategy.",
-      "video": "8AemrnPVkKc"
+      "video": "8AemrnPVkKc",
+      "id": "caitlyn-krebs"
     },
     {
-      "id": "ajay-kori",
       "visible": true,
       "show": "both",
       "name": "Ajay Kori",
@@ -50,10 +62,10 @@
       "photo": "assets/founders/ajay-kori.jpg",
       "quote": "MatchPlay gives you—especially first-time founders—a huge head start on things that were hard-learned lessons over multiple years. And even having all those lessons we got so much out of the program.",
       "cardQuote": "MatchPlay gives you—especially first-time founders—a huge head start on things that were hard-learned lessons over multiple years.",
-      "video": "GybHT6rs7AI"
+      "video": "GybHT6rs7AI",
+      "id": "ajay-kori"
     },
     {
-      "id": "lukas-karim-merhi",
       "visible": true,
       "show": "both",
       "name": "Lukas-Karim Merhi",
@@ -63,10 +75,10 @@
       "photo": "assets/founders/lukas-karim-merhi.jpeg",
       "quote": "The benefits are matchmaking with investors and having due diligence completed on our company. This verified due diligence package provides investors with a trusted resource when evaluating us.",
       "cardQuote": "This verified due diligence package provides investors with a trusted resource when evaluating us.",
-      "video": "OhGvMBEVm50"
+      "video": "OhGvMBEVm50",
+      "id": "lukas-karim-merhi"
     },
     {
-      "id": "amar-setty",
       "visible": true,
       "show": "both",
       "name": "Amar Setty",
@@ -76,10 +88,10 @@
       "photo": "assets/founders/amar-setty.png",
       "quote": "We believe in this concept of a standardized approach to investor presentations — your company can meet the right investor at the right time at the right stage and not feel like you’re wasting your time.",
       "cardQuote": "We believe in this concept of a standardized approach to investor presentations.",
-      "video": "KcOzcMugvQs"
+      "video": "KcOzcMugvQs",
+      "id": "amar-setty"
     },
     {
-      "id": "jon-gasson",
       "visible": true,
       "show": "both",
       "name": "Jon Gasson",
@@ -89,7 +101,8 @@
       "photo": "assets/founders/jon-gasson.png",
       "quote": "It’s excellent preparation for not only having that first investor meeting, but having the second meeting, and understanding the diligence process. Those are all highly beneficial if you haven’t done them before.",
       "cardQuote": "It’s excellent preparation for not only having that first investor meeting, but having the second meeting.",
-      "video": "abaxavxQ8Ao"
+      "video": "abaxavxQ8Ao",
+      "id": "jon-gasson"
     }
   ]
 }
