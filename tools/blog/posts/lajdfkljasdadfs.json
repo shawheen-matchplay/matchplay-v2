@@ -6,7 +6,7 @@
   "ogTitle": "sdf",
   "author": "Mahesh Narayanan",
   "datePublished": "2026-10-19",
-  "dateModified": "2026-10-19T12:41:50.169Z",
+  "dateModified": "2026-10-19T12:44:27.651Z",
   "keywords": "",
   "cover": {
     "webp": "lajdfkljasdadfs.webp",
@@ -18,5 +18,6 @@
   "wordCount": 7,
   "readingMinutes": 1,
   "body": "<p>lkasjdflkajsdkfj<br>asdfkjalsdjflkasdjl<br>asldfjal<br>sdkjfla<br>sdkf</p><figure class=\"article__figure\"><img src=\"../assets/blog/lajdfkljasdadfs-1.webp\" alt=\"Mahesh\" width=\"676\" height=\"676\" loading=\"lazy\" decoding=\"async\"></figure><p>alksdjflkad</p><p>aklsdjf</p>",
-  "source": "blog editor"
+  "source": "blog editor",
+  "hidden": true
 }
