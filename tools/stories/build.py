@@ -3,7 +3,10 @@
 One list of founders, edited with stories-editor.html (or by hand). Each has
 a long quote (the scrolling testimonial strips on the homepage and at the top
 of Founders) and/or a story card (a YouTube video with a short quote and a
-company link, in the Founders page's story grid):
+company link, in the Founders page's story grid). A card shows the video's
+thumbnail with a play button, a link to it on YouTube; main.js swaps in the
+player when it is clicked (a live embed swallowed the pointer, which froze
+the card's tilt and glow, and six of them were heavy to load):
 
     "show": "quote" | "video" | "both"     where they appear
     "visible": true | false                false hides them everywhere
@@ -65,9 +68,11 @@ def card(f, pad):
     return (
         '%(p)s<figure class="story-card reveal" data-tilt>\n'
         '%(p)s  <div class="story__video">\n'
-        '%(p)s    <iframe src="https://www.youtube-nocookie.com/embed/%(v)s" title="%(n)s, %(r)s &mdash; MatchPlay founder story"\n'
-        '%(p)s            loading="lazy" allowfullscreen\n'
-        '%(p)s            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>\n'
+        '%(p)s    <a class="story__poster" href="https://www.youtube.com/watch?v=%(v)s" target="_blank" rel="noopener" data-yt="%(v)s"\n'
+        '%(p)s       aria-label="Play: %(n)s, %(r)s &mdash; MatchPlay founder story">\n'
+        '%(p)s      <img src="https://i.ytimg.com/vi/%(v)s/hqdefault.jpg" alt="" loading="lazy" decoding="async">\n'
+        '%(p)s      <span class="story__play" aria-hidden="true">&#9654;</span>\n'
+        '%(p)s    </a>\n'
         '%(p)s  </div>\n'
         '%(p)s  <div class="story-card__text">\n'
         '%(p)s    <blockquote><p>&ldquo;%(q)s&rdquo;</p></blockquote>\n'

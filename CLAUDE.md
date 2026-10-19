@@ -282,6 +282,9 @@ around the MatchPlay mark (white ball + two white links).
   `editor-setup.mjs` writes both pages). Saves commit the JSON and new
   photos (`assets/founders/`); the build-blog workflow also runs the stories
   build. `?debug=1` exposes `storiesEditor.unlockWith(cfg)` for testing.
+- Story cards show the video's thumbnail (`i.ytimg.com/.../hqdefault.jpg`) and a
+  play button, a link to YouTube; `main.js` swaps in the player (autoplay) on
+  click. A live embed swallowed the pointer and froze the card's tilt/glow.
 - Anthony Dann's featured quote on Founders is not part of this (hand-written).
 
 ## 8. Media and tools

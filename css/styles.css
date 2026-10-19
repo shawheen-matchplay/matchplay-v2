@@ -1120,6 +1120,45 @@ html.splash--returning [data-reveal] {
 /* The embed fills the 16:9 box; the placeholder styling below is kept for
    stories that do not have a video yet. */
 .story__video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+/* Before it plays: the video's thumbnail and a play button, a link to the
+   video (main.js swaps in the player on click). Cropped to 16:9 from the
+   middle, which also trims YouTube's letterbox bars. */
+.story__poster {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #000;
+  cursor: pointer;
+}
+.story__poster img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s var(--ease), filter 0.3s ease;
+}
+.story__poster::after {                 /* a soft shade so the button reads on any frame */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0) 70%);
+  pointer-events: none;
+}
+.story__poster .story__play {
+  position: relative;
+  z-index: 1;
+  width: 60px;
+  height: 60px;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s var(--ease);
+}
+.story__poster:hover img { transform: scale(1.03); }
+.story__poster:hover .story__play,
+.story__poster:focus-visible .story__play { transform: scale(1.08); }
+.story__poster:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .story__play {
   display: grid;
   place-items: center;

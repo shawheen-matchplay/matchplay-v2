@@ -144,6 +144,26 @@
     });
   }
 
+  /* ---- Founder story videos ----------------------------------------- */
+  // Each story card shows its video's thumbnail with a play button (a link
+  // to it on YouTube). Clicking swaps in the player, already playing. A live
+  // embed from the start swallowed the pointer, so the card's tilt and glow
+  // froze while the mouse was over the video; this way they follow it
+  // everywhere until a video is actually playing.
+  Array.prototype.forEach.call(document.querySelectorAll(".story__poster[data-yt]"), function (poster) {
+    poster.addEventListener("click", function (e) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0) return;   // a new tab: leave it to the link
+      e.preventDefault();
+      var frame = document.createElement("iframe");
+      frame.src = "https://www.youtube-nocookie.com/embed/" + poster.getAttribute("data-yt") + "?autoplay=1&rel=0";
+      frame.title = (poster.getAttribute("aria-label") || "Video").replace(/^Play: /, "");
+      frame.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+      frame.allowFullscreen = true;
+      poster.replaceWith(frame);
+      frame.focus();
+    });
+  });
+
   /* ---- Scroll reveal ------------------------------------------------ */
   var reveals = document.querySelectorAll(".reveal");
   if ("IntersectionObserver" in window && reveals.length) {
