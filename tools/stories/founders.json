@@ -1,19 +1,6 @@
 {
   "founders": [
     {
-      "id": "shawheen",
-      "visible": true,
-      "show": "both",
-      "name": "shawheen",
-      "title": "title",
-      "company": "company",
-      "companyUrl": "",
-      "photo": "assets/founders/shawheen-mvfklud2.webp",
-      "quote": "i love matchplay",
-      "cardQuote": "matchplay rocks",
-      "video": "M3IvLKAG8Ss"
-    },
-    {
       "visible": true,
       "show": "quote",
       "name": "Peter Pacult",
