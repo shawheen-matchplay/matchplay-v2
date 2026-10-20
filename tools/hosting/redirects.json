@@ -1,0 +1,48 @@
+{
+  "_about": "Permanent (301) redirects, kept here once for any host. tools/hosting/build.py turns them into .htaccess (Hostinger) and _redirects (Cloudflare Pages). 'from' is a path on matchplaygroup.com; a trailing /* matches everything under it. 'to' is a path on this site or a full URL. Mapped from the old Webflow site's sitemap (October 2026); the old blog URLs are unchanged, so they need nothing here.",
+  "redirects": [
+    { "from": "/articles/how-to-find-investors-for-my-startup", "to": "/blog/how-to-find-investors-for-my-startup" },
+
+    { "from": "/legal/terms-of-use", "to": "/terms" },
+    { "from": "/legal/privacy-policy", "to": "/privacy" },
+    { "from": "/legal/acceptable-use-policy", "to": "/acceptable-use" },
+    { "from": "/legal/copyright-and-trademark-policy", "to": "/copyright-trademark" },
+    { "from": "/legal/brand-assets", "to": "/press" },
+
+    { "from": "/resources/team", "to": "/team" },
+    { "from": "/resources/partners", "to": "/partners" },
+    { "from": "/partners-private", "to": "/partners" },
+    { "from": "/resources/press/press", "to": "/press" },
+    { "from": "/resources/press/press-home", "to": "/press" },
+    { "from": "/resources/press/matchplay-group-and-opentreatments-foundation-collaborate-to-empower-startups-in-advancing-objective-pain-measurement", "to": "/press-opentreatments" },
+    { "from": "/resources/one-pager", "to": "/" },
+
+    { "from": "/testimonials", "to": "/founders" },
+    { "from": "/waitlist", "to": "https://app.matchplaygroup.com/#/auth/signup" },
+
+    { "from": "/tiers/2025-nyc-summit", "to": "/summit-2025" },
+    { "from": "/tiers/2025-nyc-summit-photos", "to": "/summit-2025" },
+    { "from": "/tiers/summit-2024", "to": "/summit-2024" },
+    { "from": "/tiers/investors", "to": "/capital-partners" },
+    { "from": "/tiers/investor-offering", "to": "/capital-partners" },
+    { "from": "/tiers/challenge", "to": "/founders" },
+    { "from": "/tiers/invitational", "to": "/founders" },
+    { "from": "/tiers/challenge-programs/*", "to": "/founders" },
+    { "from": "/tiers/*", "to": "/founders" },
+
+    { "from": "/investment-stories/bringing-real-time-intelligence-into-the-operating-room-why-we-invested-in-neurovrd", "to": "https://matchplayventures.com/portfolio/bringing-real-time-intelligence-into-the-operating-room/" },
+    { "from": "/investment-stories/building-the-data-infrastructure-for-precision-medicine-why-we-invested-in-geneial", "to": "https://matchplayventures.com/portfolio/building-the-data-infrastructure-for-precision-medicine/" },
+    { "from": "/investment-stories/building-the-engagement-layer-rehabilitation-has-been-missing-why-we-invested-in-tenzr-health", "to": "https://matchplayventures.com/portfolio/building-the-engagement-layer-rehabilitation-has-been-missing/" },
+    { "from": "/investment-stories/making-life-saving-drug-delivery-work-in-the-real-world-why-we-invested-in-solution-medical", "to": "https://matchplayventures.com/portfolio/making-life-saving-drug-delivery-work-in-the-real-world/" },
+    { "from": "/investment-stories/rebuilding-the-operating-system-for-clinical-trials-why-we-invested-in-jeeva", "to": "https://matchplayventures.com/portfolio/rebuilding-the-operating-system-for-clinical-trials/" },
+    { "from": "/investment-stories", "to": "https://matchplayventures.com/#portfolio" },
+    { "from": "/investment-stories/*", "to": "https://matchplayventures.com/#portfolio" },
+
+    { "from": "/html-lesson-pages/*", "to": "/founders" },
+
+    { "from": "/testing/*", "to": "/" },
+    { "from": "/shawheen-test", "to": "/" },
+    { "from": "/untitled", "to": "/" },
+    { "from": "/untitled-2", "to": "/" }
+  ]
+}

@@ -22,7 +22,9 @@ code over it.
   (global config). Never commit as the old `shawheen-wc` Workcore identity.
 - **Live site**: GitHub Pages serves `main` at
   https://shawheen-matchplay.github.io/matchplay-v2/ (about a minute after a push;
-  a hard refresh may be needed). Vercel is the likely host later.
+  a hard refresh may be needed). Production host: Hostinger, prepared and
+  deploying from the site workflow once its secrets are set (§7b); Cloudflare
+  Pages possible later.
 - **He sends follow-up messages mid-task.** Treat each as a new request: finish
   or fold it in, and report both.
 - **Short replies, outcome first.** He reads on desktop and phone. Say what
@@ -257,7 +259,7 @@ around the MatchPlay mark (white ball + two white links).
   a shared password (no accounts). The GitHub token is AES-GCM encrypted in
   the page; Shawheen sets it with `node tools/blog/editor-setup.mjs` (needs a
   fine-grained token with Contents read/write on this repo). Publishing
-  commits the post JSON; `.github/workflows/build-blog.yml` rebuilds and
+  commits the post JSON; `.github/workflows/site.yml` rebuilds and
   republishes Pages.
 - After unlocking, the editor opens on a list of every article (read live from
   GitHub) with Edit and Delete. Edit converts the stored HTML back to the
@@ -280,12 +282,44 @@ around the MatchPlay mark (white ball + two white links).
   hides the element marked `data-stories-hide` around it.
 - `stories-editor.html`: same lock as the blog editor (one vault;
   `editor-setup.mjs` writes both pages). Saves commit the JSON and new
-  photos (`assets/founders/`); the build-blog workflow also runs the stories
+  photos (`assets/founders/`); the site workflow also runs the stories
   build. `?debug=1` exposes `storiesEditor.unlockWith(cfg)` for testing.
 - Story cards show the video's thumbnail (`i.ytimg.com/.../hqdefault.jpg`) and a
   play button, a link to YouTube; `main.js` swaps in the player (autoplay) on
   click. A live embed swallowed the pointer and froze the card's tilt/glow.
 - Anthony Dann's featured quote on Founders is not part of this (hand-written).
+
+## 7b. Hosting (Hostinger, Cloudflare-ready)
+
+- Every push to `main` runs `.github/workflows/site.yml`: blog + stories
+  builds (committed if changed), then `python3 tools/hosting/build.py`
+  assembles `dist/` (gitignored): the top-level pages, `blog/`, `css/`, `js/`,
+  `assets/`, `animations/` and the editors, never `tools/` (post and founder
+  data), `.github`, `CLAUDE.md` or `README.md`. Then rsync over SSH to
+  Hostinger (`--delete`), and GitHub Pages is asked to republish (it stays
+  as a preview).
+- Redirects live once in `tools/hosting/redirects.json` (old Webflow URLs
+  mapped from its sitemap; old blog URLs are unchanged so need none). The
+  build writes `dist/.htaccess` (Hostinger) and `dist/_redirects` +
+  `dist/_headers` (Cloudflare Pages). Moving to Cloudflare = connect Pages
+  to the repo with build command `python3 tools/hosting/build.py`, output
+  `dist`, and drop the Hostinger deploy step.
+- `.htaccess`: www -> bare domain (on any host, so a temporary Hostinger
+  address works), redirects, clean URLs (`/founders` -> founders.html,
+  `/blog` -> blog.html with DirectorySlash Off), trailing slash dropped,
+  dotfiles blocked, caching (html/css/js no-cache; media 30 days), gzip.
+  http -> https is Hostinger's **Force HTTPS** switch, not .htaccess (loops
+  behind a proxy). Internal links still use `.html`; both forms work.
+- Tested against macOS Apache 2.4 (copy dist/ out of ~/Documents first:
+  macOS blocks httpd from reading it).
+- Deploy secrets (GitHub repo -> Settings -> Secrets -> Actions):
+  `HOSTINGER_HOST`, `HOSTINGER_PORT` (Hostinger SSH is usually 65002),
+  `HOSTINGER_USER`, `HOSTINGER_SSH_KEY` (private key of a deploy key whose
+  public half is added in hPanel -> SSH Access), `HOSTINGER_PATH` (must end
+  in `public_html`, e.g. `domains/matchplaygroup.com/public_html`). Without
+  them the deploy step skips. Shawheen sets these himself; never handle the key.
+- Cutover plan: DNS on Cloudflare (proxy off), A record to Hostinger; copy
+  MX/SPF/DKIM exactly; then switch canonical traffic.
 
 ## 8. Media and tools
 

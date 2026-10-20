@@ -1,0 +1,91 @@
+# Build and publish the site on every push to main.
+#
+# 1. Regenerate the blog (tools/blog/build.py) and the founder quotes and
+#    story cards (tools/stories/build.py), and commit them if they changed.
+#    The blog and stories editors commit their content straight to main, so
+#    this is what turns a save in an editor into pages.
+# 2. Assemble the public site and its host config (tools/hosting/build.py):
+#    dist/ holds only what visitors should get, plus .htaccess for Hostinger.
+# 3. Upload dist/ to Hostinger over SSH (rsync, deleting what the site no
+#    longer has). Skipped until the HOSTINGER_* secrets are set; see the
+#    setup steps in CLAUDE.md (Hosting).
+# 4. Ask GitHub Pages to republish (it stays as a preview). Pushes made with
+#    GITHUB_TOKEN don't trigger Pages, or this workflow, on their own, so the
+#    bot's commit in step 1 cannot loop.
+name: Build and deploy site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: site
+  cancel-in-progress: false
+
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate the blog pages
+        run: python3 tools/blog/build.py
+
+      - name: Generate the founder quotes and story cards
+        run: python3 tools/stories/build.py
+
+      - name: Commit the generated pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add blog.html blog index.html founders.html
+          if git diff --cached --quiet; then
+            echo "Generated pages already up to date."
+          else
+            git commit -m "Rebuild generated pages (blog, founder stories)"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+
+      - name: Assemble the public site and host config
+        run: python3 tools/hosting/build.py
+
+      - name: Deploy to Hostinger
+        env:
+          HOST: ${{ secrets.HOSTINGER_HOST }}
+          PORT: ${{ secrets.HOSTINGER_PORT }}
+          SSH_USER: ${{ secrets.HOSTINGER_USER }}
+          KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          DEST: ${{ secrets.HOSTINGER_PATH }}
+        run: |
+          if [ -z "$HOST" ] || [ -z "$SSH_USER" ] || [ -z "$KEY" ] || [ -z "$DEST" ]; then
+            echo "Hostinger is not set up yet (HOSTINGER_* secrets missing): skipping the deploy."
+            exit 0
+          fi
+          # Only ever sync into a web root, so a wrong path cannot wipe anything else.
+          case "$DEST" in
+            *public_html|*public_html/) ;;
+            *) echo "HOSTINGER_PATH must end in public_html (got: $DEST)"; exit 1 ;;
+          esac
+          PORT="${PORT:-65002}"
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/hostinger && chmod 600 ~/.ssh/hostinger
+          ssh-keyscan -p "$PORT" "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          rsync -az --delete --exclude '.well-known/' \
+            -e "ssh -i ~/.ssh/hostinger -p $PORT" \
+            dist/ "$SSH_USER@$HOST:${DEST%/}/"
+          echo "Deployed to Hostinger."
+
+      - name: Republish GitHub Pages (preview)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds" || echo "Pages build request skipped."
