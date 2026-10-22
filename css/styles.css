@@ -2564,7 +2564,7 @@ html.splash--returning [data-reveal] {
   --gap: clamp(1rem, 1.62vw, 1.5rem);
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;   /* a short last row sits left, under the cards above */
   gap: var(--gap);
   margin: 0;
   padding: 0;
