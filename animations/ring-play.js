@@ -164,6 +164,7 @@
   var SPLIT_AFTER = [2000, 3000];      /* ms a link holds before it splits on its own */
   var MEET = CAN + R * 0.4;            /* (b, c) rings of a family this close (touching) merge */
   var DRAW = R * 9;                    /* (b, c) and within this they drift toward each other */
+  var APART = MEET + R * 0.6;          /* (b, c) how far apart those two halves stay meanwhile */
   var COOL = 6000;                     /* (b, c) ms after a split before a ring may merge with its old partner
                                           (any other ring it may join straight away) */
 
@@ -514,6 +515,8 @@
   /* ---- the loop ------------------------------------------------------ */
   function step(dt, now) {
     var t = now / 1000;
+    /* the two halves of a link that just split, while they're kept apart */
+    var exes = function (A, B) { return (now < A.cool && A.exMate === B) || (now < B.cool && B.exMate === A); };
     /* what a dragged ring is reaching for: the nearest free ring in range */
     preview = null;
     if (drag && drag.b.kind === "ring" && !drag.b.busy) {
@@ -548,7 +551,6 @@
       var free = bodies.filter(function (b) {               /* not one in your hand, nor what it reaches for */
         return b.kind === "ring" && !b.busy && !b.dragged && !(now < b.cool && !b.exMate) && !(preview && b === preview.a);
       });
-      var exes = function (A, B) { return (now < A.cool && A.exMate === B) || (now < B.cool && B.exMate === A); };
       var cands = [];
       for (var i0 = 0; i0 < free.length; i0++) for (var j0 = i0 + 1; j0 < free.length; j0++) {
         var dd0 = Math.hypot(free[j0].x - free[i0].x, free[j0].y - free[i0].y);
@@ -672,7 +674,10 @@
         var A = solids[i], B = solids[j];
         if (A.fixed && B.fixed) continue;
         if (A.body && B.body && paired(A.body, B.body)) continue;
-        var need = A.ball || B.ball ? BALL_MIN : MIN;
+        /* the two halves of a link that just split keep a clear gap until
+           they may merge again, so a push (the mouse) can't press them into
+           a frozen-looking touch that only merges when the cooldown ends */
+        var need = A.ball || B.ball ? BALL_MIN : (A.body && B.body && exes(A.body, B.body)) ? APART : MIN;
         var cp = closest(A.p0, A.p1, B.p0, B.p1), dx = cp[1][0] - cp[0][0], dy = cp[1][1] - cp[0][1], dist = Math.hypot(dx, dy);
         if (dist >= need) continue;
         var nx, ny;
@@ -735,7 +740,12 @@
   /* Runs only while on screen: in a box further down a page it starts
      (rings drawing in) when scrolled to, and pauses when scrolled past. */
   var last = performance.now(), visible = true, running = false, populated = false;
-  function frame(now) {
+  /* One clock for everything: merges, splits and cooldowns stamp their start
+     with performance.now(), so the loop advances them with it too. The frame's
+     own timestamp can run on another origin (an embed loaded lazily, after
+     its page), and the gap stalled merges mid-way for seconds. */
+  function frame() {
+    var now = performance.now();
     if (!visible) { running = false; return; }
     var dt = Math.min(1 / 30, Math.max(0, now - last) / 1000);
     last = now;

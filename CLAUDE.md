@@ -242,6 +242,16 @@ around the MatchPlay mark (white ball + two white links).
     (6 s, no pull between them); each may join any other ring at once. A
     blanket cooldown left rings frozen against a neighbour before merging.
     Links stay joined 2.3–4.6 s (asked: never more than 5 s). `?debug=1` exposes `window.ringPlay`.
+  - The split halves are also held APART (MEET + 0.6R) by the collision
+    solver during those 6 s: the mouse used to press them into a touch that
+    looked frozen until the cooldown ended.
+  - **One clock**: the loop advances everything with `performance.now()`, the
+    same clock merges/splits/cooldowns stamp themselves with. The rAF
+    timestamp can run on another origin in the lazily loaded homepage embed,
+    which stalled merges mid-way by seconds. Never mix the two.
+  - Testing: step a simulated clock (override `performance.now`, call
+    `ringPlay.step(1/60)`, dispatch pointermove for the mouse); keep ONE
+    continuous fake clock across runs, or merges look stuck (a test artifact).
 - Motion preferences learned: fluid, never pause or stop mid-motion; ramps
   like a spring (ease in, slow, ease out); bounce at the join, not the whole
   shape; no exterior glows; nothing should grow noticeably during a bounce.
