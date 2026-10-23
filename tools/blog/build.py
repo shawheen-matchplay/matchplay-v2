@@ -91,7 +91,6 @@ def head(title, desc, canonical, fonts, prefix, extra="", og_type="website", ima
              '<link rel="apple-touch-icon" href="%sassets/apple-touch-icon.png">' % prefix,
              '<link rel="preconnect" href="https://fonts.googleapis.com">',
              '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
-             '<link rel="preconnect" href="https://cdn.prod.website-files.com" crossorigin>',
              '<link href="%s" rel="stylesheet">' % fonts,
              '<link rel="stylesheet" href="%scss/styles.css">' % prefix,
              '<link rel="stylesheet" href="%scss/glass.css">' % prefix]

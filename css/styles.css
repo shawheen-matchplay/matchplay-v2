@@ -25,22 +25,22 @@
    (see <head>). */
 @font-face {
   font-family: "BW Gradual";
-  src: url("https://cdn.prod.website-files.com/655541c5d304e11b258d53d4/655542476ce092d80baad4d6_BwGradualDEMO-Regular.otf") format("opentype");
+  src: url("../assets/fonts/BwGradual-Regular.otf") format("opentype");
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: "BW Gradual";
-  src: url("https://cdn.prod.website-files.com/655541c5d304e11b258d53d4/655542479aeedd648d453a38_BwGradualDEMO-RegularItalic.otf") format("opentype");
+  src: url("../assets/fonts/BwGradual-RegularItalic.otf") format("opentype");
   font-weight: 400; font-style: italic; font-display: swap;
 }
 @font-face {
   font-family: "BW Gradual";
-  src: url("https://cdn.prod.website-files.com/655541c5d304e11b258d53d4/65554247c579b98d2832214f_BwGradualDEMO-Light.otf") format("opentype");
+  src: url("../assets/fonts/BwGradual-Light.otf") format("opentype");
   font-weight: 300; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: "BW Gradual";
-  src: url("https://cdn.prod.website-files.com/655541c5d304e11b258d53d4/6555424720ef0b32a7fbdc89_BwGradualDEMO-Bold.otf") format("opentype");
+  src: url("../assets/fonts/BwGradual-Bold.otf") format("opentype");
   font-weight: 700; font-style: normal; font-display: swap;
 }
 
