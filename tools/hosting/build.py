@@ -176,9 +176,12 @@ def vercel_json(redirects):
 def build():
     redirects = load_redirects()
     assemble()
-    io.open(os.path.join(DIST, ".htaccess"), "w", encoding="utf-8").write(htaccess(redirects))
-    io.open(os.path.join(DIST, "_redirects"), "w", encoding="utf-8").write(cf_redirects(redirects))
-    io.open(os.path.join(DIST, "_headers"), "w", encoding="utf-8").write(cf_headers())
+    # Each host's own files only: Vercel (it sets VERCEL=1 in its builds)
+    # would otherwise serve the Apache and Cloudflare files as plain files.
+    if not os.environ.get("VERCEL"):
+        io.open(os.path.join(DIST, ".htaccess"), "w", encoding="utf-8").write(htaccess(redirects))
+        io.open(os.path.join(DIST, "_redirects"), "w", encoding="utf-8").write(cf_redirects(redirects))
+        io.open(os.path.join(DIST, "_headers"), "w", encoding="utf-8").write(cf_headers())
     io.open(os.path.join(ROOT, "vercel.json"), "w", encoding="utf-8").write(vercel_json(redirects))
     files = sum(len(f) for _, _, f in os.walk(DIST))
     print("dist/: %d files, %d redirects" % (files, len(redirects)))
