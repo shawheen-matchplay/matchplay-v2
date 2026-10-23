@@ -15,19 +15,36 @@ Then writes the host config from one neutral list, tools/hosting/redirects.json:
                        building): build command, output, clean URLs, the
                        redirects, headers
 
+and, for search engines and AI assistants:
+
+    dist/sitemap.xml   every public page and visible blog post, with the
+                       date each last changed (git, or the post's dateModified)
+    dist/robots.txt    everyone welcome, AI crawlers included; editors and
+                       the animation pages left out; points to the sitemap
+    dist/llms.txt      a plain summary of MatchPlay and its pages for AI tools
+
+In the published copy, internal links lose ".html" (founders.html ->
+founders, index.html -> ./), so no click on the live site goes through a
+redirect; the source keeps .html, which works everywhere. The build stops if
+a public page lacks a title, description, canonical URL or share image.
+
 Each host ignores the other's files, so moving hosts is a change to the
 deploy step only. Standard library only:
 
     python3 tools/hosting/build.py            # into dist/
 """
+import html
 import io
 import json
 import os
 import re
 import shutil
+import subprocess
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 DIST = os.path.join(ROOT, "dist")
+SITE = "https://matchplaygroup.com"
+PRIVATE_PAGES = {"blog-editor.html", "stories-editor.html"}    # published, but not for search
 
 PUBLISH_DIRS = ["assets", "blog", "css", "js", "animations"]
 SKIP_FILES = {".DS_Store"}
@@ -43,6 +60,138 @@ def assemble():
     for d in PUBLISH_DIRS:
         shutil.copytree(os.path.join(ROOT, d), os.path.join(DIST, d),
                         ignore=shutil.ignore_patterns(*SKIP_FILES))
+
+
+# ---- clean internal links in the published copy ----------------------------
+LINK = re.compile(r'((?:href|src)=")([^"#?]*?)\.html((?:[#?][^"]*)?)"')
+
+def clean_links(text):
+    def fix(m):
+        attr, path, tail = m.groups()
+        if re.match(r"[a-z][a-z0-9+.-]*:|//", path, re.I):      # another site, mailto: etc.
+            return m.group(0)
+        if path == "index" or path.endswith("/index"):
+            path = path[:-5] or "./"
+        return '%s%s%s"' % (attr, path, tail)
+    return LINK.sub(fix, text)
+
+
+def rewrite_links():
+    n = 0
+    for base, _, files in os.walk(DIST):
+        for name in files:
+            if name.endswith(".html"):
+                p = os.path.join(base, name)
+                t = io.open(p, encoding="utf-8").read()
+                c = clean_links(t)
+                if c != t:
+                    io.open(p, "w", encoding="utf-8").write(c); n += 1
+    return n
+
+
+# ---- pages, for the sitemap, llms.txt and the SEO check --------------------
+def meta(text, pattern):
+    m = re.search(pattern, text, re.S)
+    return html.unescape(re.sub(r"\s+", " ", m.group(1))).strip() if m else ""
+
+
+def git_date(rel):
+    try:
+        out = subprocess.run(["git", "log", "-1", "--format=%cs", "--", rel], cwd=ROOT,
+                             capture_output=True, text=True, timeout=20).stdout.strip()
+        return out or None
+    except Exception:
+        return None
+
+
+def public_pages():
+    """(url, file relative to the repo, title, description, lastmod) for every
+    page that should be found: top-level pages and visible blog posts."""
+    pages = []
+    for name in sorted(os.listdir(ROOT)):
+        if not name.endswith(".html") or name in PRIVATE_PAGES:
+            continue
+        path = "/" if name == "index.html" else "/" + name[:-5]
+        pages.append((SITE + path, name))
+    for f in sorted(os.listdir(os.path.join(ROOT, "blog"))):
+        if f.endswith(".html"):
+            pages.append((SITE + "/blog/" + f[:-5], "blog/" + f))
+    posts = {}
+    for f in os.listdir(os.path.join(ROOT, "tools/blog/posts")):
+        if f.endswith(".json"):
+            d = json.load(io.open(os.path.join(ROOT, "tools/blog/posts", f), encoding="utf-8"))
+            posts["blog/%s.html" % d["slug"]] = (d.get("dateModified") or d.get("datePublished") or "")[:10] or None
+    out = []
+    for url, rel in pages:
+        t = io.open(os.path.join(ROOT, rel), encoding="utf-8").read()
+        out.append({
+            "url": url, "file": rel, "text": t,
+            "title": meta(t, r"<title>(.*?)</title>"),
+            "desc": meta(t, r'<meta name="description" content="([^"]*)"'),
+            "lastmod": posts.get(rel) or git_date(rel),
+        })
+    return out
+
+
+def check(pages):
+    problems = []
+    for p in pages:
+        t = p["text"]
+        for label, ok in (("title", p["title"]), ("description", p["desc"]),
+                          ("canonical", 'rel="canonical"' in t), ("og:image", 'property="og:image"' in t)):
+            if not ok:
+                problems.append("%s: no %s" % (p["file"], label))
+        canon = meta(t, r'<link rel="canonical" href="([^"]*)"')
+        if canon and canon != p["url"]:
+            problems.append("%s: canonical %s should be %s" % (p["file"], canon, p["url"]))
+    if problems:
+        raise SystemExit("SEO check failed:\n  " + "\n  ".join(problems))
+
+
+def sitemap(pages):
+    rows = []
+    for p in pages:
+        lm = "<lastmod>%s</lastmod>" % p["lastmod"] if p["lastmod"] else ""
+        rows.append("  <url><loc>%s</loc>%s</url>" % (p["url"], lm))
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n%s\n</urlset>\n' % "\n".join(rows))
+
+
+def robots():
+    return "\n".join([
+        "# Everyone is welcome to read the site, AI assistants' crawlers included.",
+        "User-agent: *",
+        "Allow: /",
+        "Disallow: /blog-editor",
+        "Disallow: /stories-editor",
+        "Disallow: /animations/",
+        "",
+        "Sitemap: %s/sitemap.xml" % SITE,
+        "",
+    ])
+
+
+def llms(pages):
+    by = lambda prefix: [p for p in pages if p["file"].startswith(prefix)]
+    def line(p):
+        name = re.sub(r"\s+[—|-]\s+MatchPlay.*$", "", p["title"]) or p["url"]
+        return "- [%s](%s): %s" % (name, p["url"], p["desc"])
+    main = [p for p in pages if "/" not in p["file"] and not re.match(r"(terms|privacy|acceptable-use|copyright-trademark|blog)\.html$", p["file"])]
+    legal = [p for p in pages if re.match(r"(terms|privacy|acceptable-use|copyright-trademark)\.html$", p["file"])]
+    blog = [p for p in pages if p["file"] == "blog.html"] + by("blog/")
+    return "\n".join([
+        "# MatchPlay Group",
+        "",
+        "> The Venture Standard: one platform connecting companies and investors to manage diligence, fundraising, and syndication. MatchPlay helps a company become fundable and administratively ready: pitch review, institutional-quality diligence, data room, fundraising preparation, investor matching through Capital Partners (a network of 200+ funds), and SPV coordination and administration. MatchPlay Ventures (matchplayventures.com) is a separate firm that independently decides which companies to invest in.",
+        "",
+        "Apply for Diligence: https://app.matchplaygroup.com/#/auth/signup",
+        "Investors join Capital Partners: https://app.matchplaygroup.com/#/auth/investor-signup",
+        "Contact: info@matchplaygroup.com",
+        "",
+        "## Pages",
+        "",
+    ] + [line(p) for p in main] + ["", "## Blog: The Warm Intro", ""] + [line(p) for p in blog]
+      + ["", "## Legal", ""] + [line(p) for p in legal] + [""])
 
 
 def load_redirects():
@@ -175,7 +324,13 @@ def vercel_json(redirects):
 
 def build():
     redirects = load_redirects()
+    pages = public_pages()
+    check(pages)
     assemble()
+    cleaned = rewrite_links()
+    io.open(os.path.join(DIST, "sitemap.xml"), "w", encoding="utf-8").write(sitemap(pages))
+    io.open(os.path.join(DIST, "robots.txt"), "w", encoding="utf-8").write(robots())
+    io.open(os.path.join(DIST, "llms.txt"), "w", encoding="utf-8").write(llms(pages))
     # Each host's own files only: Vercel (it sets VERCEL=1 in its builds)
     # would otherwise serve the Apache and Cloudflare files as plain files.
     if not os.environ.get("VERCEL"):
@@ -184,7 +339,8 @@ def build():
         io.open(os.path.join(DIST, "_headers"), "w", encoding="utf-8").write(cf_headers())
     io.open(os.path.join(ROOT, "vercel.json"), "w", encoding="utf-8").write(vercel_json(redirects))
     files = sum(len(f) for _, _, f in os.walk(DIST))
-    print("dist/: %d files, %d redirects" % (files, len(redirects)))
+    print("dist/: %d files, %d redirects, %d pages in the sitemap, links cleaned in %d pages"
+          % (files, len(redirects), len(pages), cleaned))
 
 
 if __name__ == "__main__":

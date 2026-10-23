@@ -246,7 +246,7 @@ def build_index(posts, header, footer, fonts):
               "blogPost": [{"@type": "BlogPosting", "headline": p["title"],
                             "url": "%s/blog/%s" % (SITE, p["slug"]), "datePublished": p["datePublished"],
                             "author": {"@type": "Person", "name": p["author"]}} for p in posts]}
-    page = head("Blog", desc, canonical, fonts, "", image="%s/assets/blog/%s" % (SITE, posts[0]["cover"]["jpg"]),
+    page = head("The Warm Intro: A MatchPlay Blog", desc, canonical, fonts, "", image="%s/assets/blog/%s" % (SITE, posts[0]["cover"]["jpg"]),
                 image_alt=posts[0]["cover"]["alt"], jsonld=jsonld)
     grid = "\n        ".join(card(p, "blog/") for p in posts)
     page += """

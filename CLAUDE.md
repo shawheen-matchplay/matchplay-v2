@@ -20,11 +20,10 @@ code over it.
   request, a clear message, ending with the attribution trailer the system
   gives you. Git identity is `shawheen-matchplay <shawheen@matchplaygroup.com>`
   (global config). Never commit as the old `shawheen-wc` Workcore identity.
-- **Live site**: GitHub Pages serves `main` at
-  https://shawheen-matchplay.github.io/matchplay-v2/ (about a minute after a push;
-  a hard refresh may be needed). Production host: Hostinger, prepared and
-  deploying from the site workflow once its secrets are set (§7b); Cloudflare
-  Pages possible later.
+- **Live site**: https://matchplaygroup.com, on **Vercel** (project
+  `matchplay-website-v2`, team MatchPlay Group, Pro). Every push to `main`
+  deploys in about a minute (a hard refresh may be needed). Went live 23 Oct
+  2026, replacing Webflow; see §7b. GitHub Pages is switched off.
 - **He sends follow-up messages mid-task.** Treat each as a new request: finish
   or fold it in, and report both.
 - **Short replies, outcome first.** He reads on desktop and phone. Say what
@@ -259,8 +258,8 @@ around the MatchPlay mark (white ball + two white links).
   a shared password (no accounts). The GitHub token is AES-GCM encrypted in
   the page; Shawheen sets it with `node tools/blog/editor-setup.mjs` (needs a
   fine-grained token with Contents read/write on this repo). Publishing
-  commits the post JSON; `.github/workflows/site.yml` rebuilds and
-  republishes Pages.
+  commits the post JSON; `.github/workflows/site.yml` rebuilds the pages and
+  Vercel deploys them.
 - After unlocking, the editor opens on a list of every article (read live from
   GitHub) with Edit and Delete. Edit converts the stored HTML back to the
   editor's Markdown (HTML it can't express stays as raw `<…>` lines); the web
@@ -289,37 +288,42 @@ around the MatchPlay mark (white ball + two white links).
   click. A live embed swallowed the pointer and froze the card's tilt/glow.
 - Anthony Dann's featured quote on Founders is not part of this (hand-written).
 
-## 7b. Hosting (Hostinger, Cloudflare-ready)
+## 7b. Hosting (Vercel; Hostinger/Cloudflare-ready)
 
-- Every push to `main` runs `.github/workflows/site.yml`: blog + stories
-  builds (committed if changed), then `python3 tools/hosting/build.py`
-  assembles `dist/` (gitignored): the top-level pages, `blog/`, `css/`, `js/`,
-  `assets/`, `animations/` and the editors, never `tools/` (post and founder
-  data), `.github`, `CLAUDE.md` or `README.md`. Then rsync over SSH to
-  Hostinger (`--delete`), and GitHub Pages is asked to republish (it stays
-  as a preview).
-- Redirects live once in `tools/hosting/redirects.json` (old Webflow URLs
-  mapped from its sitemap; old blog URLs are unchanged so need none). The
-  build writes `dist/.htaccess` (Hostinger) and `dist/_redirects` +
-  `dist/_headers` (Cloudflare Pages). Moving to Cloudflare = connect Pages
-  to the repo with build command `python3 tools/hosting/build.py`, output
-  `dist`, and drop the Hostinger deploy step.
-- `.htaccess`: www -> bare domain (on any host, so a temporary Hostinger
-  address works), redirects, clean URLs (`/founders` -> founders.html,
-  `/blog` -> blog.html with DirectorySlash Off), trailing slash dropped,
-  dotfiles blocked, caching (html/css/js no-cache; media 30 days), gzip.
-  http -> https is Hostinger's **Force HTTPS** switch, not .htaccess (loops
-  behind a proxy). Internal links still use `.html`; both forms work.
-- Tested against macOS Apache 2.4 (copy dist/ out of ~/Documents first:
-  macOS blocks httpd from reading it).
-- Deploy secrets (GitHub repo -> Settings -> Secrets -> Actions):
-  `HOSTINGER_HOST`, `HOSTINGER_PORT` (Hostinger SSH is usually 65002),
-  `HOSTINGER_USER`, `HOSTINGER_SSH_KEY` (private key of a deploy key whose
-  public half is added in hPanel -> SSH Access), `HOSTINGER_PATH` (must end
-  in `public_html`, e.g. `domains/matchplaygroup.com/public_html`). Without
-  them the deploy step skips. Shawheen sets these himself; never handle the key.
-- Cutover plan: DNS on Cloudflare (proxy off), A record to Hostinger; copy
-  MX/SPF/DKIM exactly; then switch canonical traffic.
+- **Vercel** (team MatchPlay Group, Pro) deploys every push to `main` using
+  `vercel.json`: build `python3 tools/hosting/build.py`, output `dist/`,
+  `cleanUrls`, no trailing slash, the redirects, headers. Branches get
+  private preview deployments. Domains: `matchplaygroup.com` = Production,
+  `www` 308 -> bare domain. DNS stays at **GoDaddy**: A `@` 216.198.79.1 and
+  CNAME `www` -> `7442e0d7adde9279.vercel-dns-017.com` (switched 23 Oct 2026);
+  everything else there (Google MX, SPF, DKIM, DMARC, Mailgun/SES, `app`
+  3.208.206.173 and `pilot` 54.145.103.74, the v1 app on AWS) is untouched.
+  Rollback: put back A 198.202.211.1 and CNAME cdn.webflow.com (keep the
+  Webflow plan a few days before cancelling).
+- `.github/workflows/site.yml` only regenerates the blog and stories pages
+  (and commits them); Vercel deploys that commit too.
+- `tools/hosting/build.py` assembles `dist/`: top-level pages, `blog/`,
+  `css/`, `js/`, `assets/`, `animations/`, the editors; never `tools/` (post
+  and founder data), `.github`, `CLAUDE.md`, `README.md`. In the published
+  copy internal links lose `.html` (no redirect hop on Vercel; the source
+  keeps `.html`). It writes `sitemap.xml` (public pages + visible posts,
+  lastmod from the post's dateModified or git), `robots.txt` (all welcome, AI
+  crawlers included; editors and `/animations/` disallowed), `llms.txt`, and
+  rewrites the committed `vercel.json`. It **fails** if a public page lacks a
+  title, description, canonical (must equal its clean URL) or og:image, so
+  every new page needs those in its head (the blog generator adds them).
+- Redirects live once in `tools/hosting/redirects.json` (old Webflow URLs ->
+  new pages, from its sitemap; old blog URLs are unchanged). The same build
+  also writes `.htaccess` (Apache/Hostinger) and `_redirects`/`_headers`
+  (Cloudflare Pages) when not on Vercel (`VERCEL=1` skips them), so moving
+  host is cheap. `.htaccess` was tested against macOS Apache 2.4 (copy dist/
+  out of ~/Documents first).
+- Everything is self-hosted: the logo (`assets/brand/logo-long-dark.png`),
+  BW Gradual (`assets/fonts/`), the default share image
+  (`assets/brand/og-default.jpg`, 1200x630). Nothing loads from Webflow.
+- SEO in the pages: canonical, og:url/site_name/image, twitter card on every
+  page; Organization + WebSite JSON-LD on the homepage; NewsArticle on the
+  two press releases; BlogPosting + breadcrumbs on posts (generator).
 
 ## 8. Media and tools
 
@@ -361,6 +365,11 @@ around the MatchPlay mark (white ball + two white links).
   `js/main.js`). After editing the script, redeploy as a new version of the
   same deployment so the URL stays. Replace with a real email tool later.
 - Analytics (the old gtag) and the cookie banner were not carried over.
+- After go-live: add matchplaygroup.com to Google Search Console (domain
+  property, TXT at GoDaddy) and submit /sitemap.xml; cancel Webflow once the
+  new site has run cleanly for a few days.
+- Staging: Vercel previews every non-main branch; a `staging` branch +
+  staging.matchplaygroup.com was proposed, not set up.
 - README.md still describes the Webflow extraction; rewrite when convenient.
 - Possible: soften the Capital Partners "Diligence-backed" card copy to match
   the corrected "Curated" card (§2).
