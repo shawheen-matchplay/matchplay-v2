@@ -11,6 +11,9 @@ Then writes the host config from one neutral list, tools/hosting/redirects.json:
                        compression, no directory listings, no dotfiles
     dist/_redirects    Cloudflare Pages: the same redirects
     dist/_headers      Cloudflare Pages: the same caching
+    vercel.json        Vercel (repo root, committed: Vercel reads it before
+                       building): build command, output, clean URLs, the
+                       redirects, headers
 
 Each host ignores the other's files, so moving hosts is a change to the
 deploy step only. Standard library only:
@@ -142,12 +145,41 @@ def cf_headers():
     ])
 
 
+def vercel_json(redirects):
+    """Vercel reads vercel.json from the repo root before it builds, so this
+    one is written there and committed (the build keeps it in step with
+    redirects.json). The build command and output folder live here rather
+    than in the dashboard."""
+    rules = []
+    for src, to in redirects:
+        if src.endswith("/*"):
+            src = src[:-2] + "/:rest*"
+        rules.append({"source": src, "destination": to, "statusCode": 301})
+    return json.dumps({
+        "$schema": "https://openapi.vercel.sh/vercel.json",
+        "framework": None,
+        "buildCommand": "python3 tools/hosting/build.py",
+        "outputDirectory": "dist",
+        "cleanUrls": True,
+        "trailingSlash": False,
+        "redirects": rules,
+        "headers": [
+            {"source": "/(.*)", "headers": [
+                {"key": "X-Content-Type-Options", "value": "nosniff"},
+                {"key": "Referrer-Policy", "value": "strict-origin-when-cross-origin"}]},
+            {"source": "/assets/(.*)", "headers": [
+                {"key": "Cache-Control", "value": "public, max-age=2592000"}]},
+        ],
+    }, indent=2) + "\n"
+
+
 def build():
     redirects = load_redirects()
     assemble()
     io.open(os.path.join(DIST, ".htaccess"), "w", encoding="utf-8").write(htaccess(redirects))
     io.open(os.path.join(DIST, "_redirects"), "w", encoding="utf-8").write(cf_redirects(redirects))
     io.open(os.path.join(DIST, "_headers"), "w", encoding="utf-8").write(cf_headers())
+    io.open(os.path.join(ROOT, "vercel.json"), "w", encoding="utf-8").write(vercel_json(redirects))
     files = sum(len(f) for _, _, f in os.walk(DIST))
     print("dist/: %d files, %d redirects" % (files, len(redirects)))
 

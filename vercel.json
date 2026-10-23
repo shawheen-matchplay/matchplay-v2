@@ -1,0 +1,214 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "python3 tools/hosting/build.py",
+  "outputDirectory": "dist",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/articles/how-to-find-investors-for-my-startup",
+      "destination": "/blog/how-to-find-investors-for-my-startup",
+      "statusCode": 301
+    },
+    {
+      "source": "/legal/terms-of-use",
+      "destination": "/terms",
+      "statusCode": 301
+    },
+    {
+      "source": "/legal/privacy-policy",
+      "destination": "/privacy",
+      "statusCode": 301
+    },
+    {
+      "source": "/legal/acceptable-use-policy",
+      "destination": "/acceptable-use",
+      "statusCode": 301
+    },
+    {
+      "source": "/legal/copyright-and-trademark-policy",
+      "destination": "/copyright-trademark",
+      "statusCode": 301
+    },
+    {
+      "source": "/legal/brand-assets",
+      "destination": "/press",
+      "statusCode": 301
+    },
+    {
+      "source": "/resources/team",
+      "destination": "/team",
+      "statusCode": 301
+    },
+    {
+      "source": "/resources/partners",
+      "destination": "/partners",
+      "statusCode": 301
+    },
+    {
+      "source": "/partners-private",
+      "destination": "/partners",
+      "statusCode": 301
+    },
+    {
+      "source": "/resources/press/press",
+      "destination": "/press",
+      "statusCode": 301
+    },
+    {
+      "source": "/resources/press/press-home",
+      "destination": "/press",
+      "statusCode": 301
+    },
+    {
+      "source": "/resources/press/matchplay-group-and-opentreatments-foundation-collaborate-to-empower-startups-in-advancing-objective-pain-measurement",
+      "destination": "/press-opentreatments",
+      "statusCode": 301
+    },
+    {
+      "source": "/resources/one-pager",
+      "destination": "/",
+      "statusCode": 301
+    },
+    {
+      "source": "/testimonials",
+      "destination": "/founders",
+      "statusCode": 301
+    },
+    {
+      "source": "/waitlist",
+      "destination": "https://app.matchplaygroup.com/#/auth/signup",
+      "statusCode": 301
+    },
+    {
+      "source": "/tiers/2025-nyc-summit",
+      "destination": "/summit-2025",
+      "statusCode": 301
+    },
+    {
+      "source": "/tiers/2025-nyc-summit-photos",
+      "destination": "/summit-2025",
+      "statusCode": 301
+    },
+    {
+      "source": "/tiers/summit-2024",
+      "destination": "/summit-2024",
+      "statusCode": 301
+    },
+    {
+      "source": "/tiers/investors",
+      "destination": "/capital-partners",
+      "statusCode": 301
+    },
+    {
+      "source": "/tiers/investor-offering",
+      "destination": "/capital-partners",
+      "statusCode": 301
+    },
+    {
+      "source": "/tiers/challenge",
+      "destination": "/founders",
+      "statusCode": 301
+    },
+    {
+      "source": "/tiers/invitational",
+      "destination": "/founders",
+      "statusCode": 301
+    },
+    {
+      "source": "/tiers/challenge-programs/:rest*",
+      "destination": "/founders",
+      "statusCode": 301
+    },
+    {
+      "source": "/tiers/:rest*",
+      "destination": "/founders",
+      "statusCode": 301
+    },
+    {
+      "source": "/investment-stories/bringing-real-time-intelligence-into-the-operating-room-why-we-invested-in-neurovrd",
+      "destination": "https://matchplayventures.com/portfolio/bringing-real-time-intelligence-into-the-operating-room/",
+      "statusCode": 301
+    },
+    {
+      "source": "/investment-stories/building-the-data-infrastructure-for-precision-medicine-why-we-invested-in-geneial",
+      "destination": "https://matchplayventures.com/portfolio/building-the-data-infrastructure-for-precision-medicine/",
+      "statusCode": 301
+    },
+    {
+      "source": "/investment-stories/building-the-engagement-layer-rehabilitation-has-been-missing-why-we-invested-in-tenzr-health",
+      "destination": "https://matchplayventures.com/portfolio/building-the-engagement-layer-rehabilitation-has-been-missing/",
+      "statusCode": 301
+    },
+    {
+      "source": "/investment-stories/making-life-saving-drug-delivery-work-in-the-real-world-why-we-invested-in-solution-medical",
+      "destination": "https://matchplayventures.com/portfolio/making-life-saving-drug-delivery-work-in-the-real-world/",
+      "statusCode": 301
+    },
+    {
+      "source": "/investment-stories/rebuilding-the-operating-system-for-clinical-trials-why-we-invested-in-jeeva",
+      "destination": "https://matchplayventures.com/portfolio/rebuilding-the-operating-system-for-clinical-trials/",
+      "statusCode": 301
+    },
+    {
+      "source": "/investment-stories",
+      "destination": "https://matchplayventures.com/#portfolio",
+      "statusCode": 301
+    },
+    {
+      "source": "/investment-stories/:rest*",
+      "destination": "https://matchplayventures.com/#portfolio",
+      "statusCode": 301
+    },
+    {
+      "source": "/html-lesson-pages/:rest*",
+      "destination": "/founders",
+      "statusCode": 301
+    },
+    {
+      "source": "/testing/:rest*",
+      "destination": "/",
+      "statusCode": 301
+    },
+    {
+      "source": "/shawheen-test",
+      "destination": "/",
+      "statusCode": 301
+    },
+    {
+      "source": "/untitled",
+      "destination": "/",
+      "statusCode": 301
+    },
+    {
+      "source": "/untitled-2",
+      "destination": "/",
+      "statusCode": 301
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=2592000"
+        }
+      ]
+    }
+  ]
+}
